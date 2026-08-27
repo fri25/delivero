@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Audit ChapExpress — 27 août 2026</title>
+  <style>
+    @page { size: A4; margin: 16mm 14mm 18mm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", Calibri, Arial, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.45;
+      color: #1a1a1a;
+      margin: 0;
+    }
+    h1 { font-size: 20pt; margin: 0 0 6pt; }
+    h2 { font-size: 13pt; margin: 18pt 0 8pt; border-bottom: 1px solid #ccc; padding-bottom: 4pt; }
+    h3 { font-size: 11pt; margin: 12pt 0 6pt; }
+    p, li { margin: 0 0 6pt; }
+    .meta { color: #555; font-size: 9.5pt; margin-bottom: 12pt; }
+    .callout {
+      border: 1px solid #c9a227;
+      background: #fffbeb;
+      padding: 8pt 10pt;
+      margin: 10pt 0;
+    }
+    .callout.info { border-color: #3b6ea5; background: #f0f6fc; }
+    .kpis { display: table; width: 100%; border-collapse: separate; border-spacing: 6pt; margin: 8pt 0 12pt; }
+    .kpi { display: table-cell; width: 25%; border: 1px solid #ddd; padding: 8pt; text-align: center; }
+    .kpi .n { font-size: 16pt; font-weight: 700; }
+    .kpi .l { font-size: 8pt; color: #555; }
+    .danger { color: #9b1c1c; }
+    .ok { color: #146c2e; }
+    table { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin: 8pt 0 12pt; }
+    th, td { border: 1px solid #ccc; padding: 4pt 5pt; vertical-align: top; text-align: left; }
+    th { background: #f3f3f3; font-weight: 600; }
+    tr.high td:nth-child(2) { font-weight: 700; color: #9b1c1c; }
+    tr.med td:nth-child(2) { color: #9a6700; }
+    .pill { display: inline-block; border: 1px solid #bbb; padding: 1pt 6pt; margin: 0 3pt 3pt 0; font-size: 8pt; }
+    .pill.ok { border-color: #146c2e; color: #146c2e; }
+    .pill.warn { border-color: #9a6700; color: #9a6700; }
+    .pill.off { border-color: #9b1c1c; color: #9b1c1c; }
+    ul { margin: 0 0 8pt; padding-left: 16pt; }
+    footer { font-size: 8pt; color: #666; margin-top: 16pt; }
+    code { font-family: Consolas, "Courier New", monospace; font-size: 8.5pt; }
+  </style>
+</head>
+<body>
+  <h1>Audit ChapExpress</h1>
+  <p class="meta">
+    2<sup>e</sup> passe — 27 août 2026, 12h40 (UTC+1).<br />
+    Source : code <code>apps/*</code> + Prisma, croisé avec <code>docs/modules.md</code>.
+    Audit statique (pas de pentest réseau ni exécution des e2e).
+  </p>
+
+  <div class="callout info">
+    <strong>Delta depuis 11h (même journée).</strong>
+    Courses express a désormais des écrans client et livreur. Hub 4 services actif.
+    Aucun des 6 hotfixes sécurité P0 (A01–A06) n’est dans le code.
+    Nouvelle précision : aucune prise de course ne revalide la zone (V02b).
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n ok">38%</div><div class="l">Items F-xxx faits (32/84)</div></div>
+    <div class="kpi"><div class="n">15</div><div class="l">Partiels</div></div>
+    <div class="kpi"><div class="n danger">37</div><div class="l">Absents</div></div>
+    <div class="kpi"><div class="n danger">6</div><div class="l">Vulnérabilités élevées</div></div>
+  </div>
+
+  <div class="callout">
+    <strong>La doc de cadrage est en retard sur le code.</strong>
+    CLAUDE.md dit encore « seul Repas est construit ». Le code livre les 4 services
+    côté client/livreur. <code>docs/modules.md</code> se contredit (Emplettes coché,
+    puis « Rien commencé »). Ne pas piloter le backlog uniquement sur CLAUDE.md.
+  </div>
+
+  <h2>1. Verdict</h2>
+  <p>
+    Les quatre services (Repas, Colis, Emplettes liste libre, Courses express) sont
+    utilisables bout-en-bout côté client et livreur. L’app partenaires ne gère que
+    les restaurants. L’admin est un squelette. Paiements réels, caisse livreur,
+    temps réel, S3, Maps et offline IndexedDB manquent.
+  </p>
+  <p>
+    <span class="pill ok">Hub 4 services</span>
+    <span class="pill ok">Repas</span>
+    <span class="pill ok">Colis + suivi public</span>
+    <span class="pill ok">Emplettes liste</span>
+    <span class="pill ok">Courses express</span>
+    <span class="pill warn">PWA sans offline</span>
+    <span class="pill off">Admin vide</span>
+    <span class="pill off">FedaPay / WS / S3 / Maps</span>
+  </p>
+
+  <h2>2. Couverture F-xxx (84 items)</h2>
+  <p>Fait = parcours utilisable bout-en-bout. Partiel = backend ou UI incomplet. +10 faits vs 11h (Courses express + hub).</p>
+  <table>
+    <thead>
+      <tr><th>Module</th><th>Fait</th><th>Partiel</th><th>Absent</th><th>Total</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Client (F-CLI)</td><td>23</td><td>6</td><td>8</td><td>37</td></tr>
+      <tr><td>Restaurant (F-RES)</td><td>4</td><td>2</td><td>3</td><td>9</td></tr>
+      <tr><td>Commerce (F-COM)</td><td>0</td><td>0</td><td>8</td><td>8</td></tr>
+      <tr><td>Livreur (F-LIV)</td><td>5</td><td>4</td><td>2</td><td>11</td></tr>
+      <tr><td>Admin (F-ADM)</td><td>0</td><td>3</td><td>16</td><td>19</td></tr>
+      <tr><td><strong>Total</strong></td><td><strong>32</strong></td><td><strong>15</strong></td><td><strong>37</strong></td><td><strong>84</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Client</h3>
+  <p><strong>Utilisable :</strong> compte téléphone + mot de passe, hub 4 services, catalogue/fiche/panier Repas, suivi (polling), carnet au checkout, Colis (création, tarif, CR, programmation, interdits, suivi + lien public), Emplettes liste libre (budget, remplacements, pointage, décompte), Courses express (description, multi-étapes, tarif, suivi).</p>
+  <p><strong>Trous pour une ouverture ville :</strong> pas d’OTP SMS, pas d’invité, Mobile Money sans FedaPay, pas de WebSocket/push, historique non unifié (<code>/commandes</code> = Repas seulement), pas de recommander / notation / notifs, pas de photo (S3), pas de catalogue Emplettes.</p>
+
+  <h3>Restaurant</h3>
+  <p>Commandes (polling), acceptation/refus, préparation/prêt, menu, rupture, horaires / fermeture temporaire. Manque : délai d’acceptation, alerte sonore, CA, relevés, WhatsApp de secours.</p>
+
+  <h3>Commerce partenaire</h3>
+  <p>Type <code>commerce</code> en base. L’app partenaires ne sert que les restaurants. Bloque F-CLI-29 (Emplettes catalogue).</p>
+
+  <h3>Livreur</h3>
+  <p>Disponibilité, files des 4 services, transitions de statut, OTP Colis (côté client), pointage Emplettes, liens Maps 2 points. Pas de portefeuille, pas de récap journalier, pas d’offline IndexedDB, pas de photo enlèvement/ticket. Les routes <code>/</code> et <code>/mes-courses</code> = Repas, pas Courses express (<code>/courses-express</code>).</p>
+
+  <h3>Back-office</h3>
+  <p>Aucune route admin. Pas de dispatch auto (RG-14), pas de caisse (RG-03), pas de reversement Colis (RG-04). Zones et taux existent en données seulement.</p>
+
+  <h2>3. Vulnérabilités</h2>
+  <p>Sain : Prisma paramétré (pas d’injection SQL), pas d’XSS HTML brut, prix Repas recalculés serveur, ownership des commandes, suivi public Colis en liste blanche (id, statut, taille, fragile, dates), register forcé en rôle <code>client</code>, bcrypt 12 rounds.</p>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Sévérité</th><th>Titre</th><th>Où</th><th>Pourquoi c’est exploitable</th></tr>
+    </thead>
+    <tbody>
+      <tr class="high"><td>V01</td><td>Élevée</td><td>Preuve Colis contournable (OTP optionnel)</td><td><code>livrer()</code></td><td>Un livreur peut marquer livré avec seulement un nom de réceptionnaire. RG-07 n’est pas imposé.</td></tr>
+      <tr class="high"><td>V02</td><td>Élevée</td><td>Course Repas : lecture puis écriture</td><td><code>prendreEnCharge()</code> repas</td><td>Colis/Emplettes/Courses utilisent <code>updateMany</code> atomique. Repas lit puis écrit : deux livreurs peuvent se disputer la même course.</td></tr>
+      <tr class="high"><td>V02b</td><td>Élevée</td><td>Zone non revalidée à la prise (4 services)</td><td>les 4 <code>prendreEnCharge</code></td><td>La liste « disponibles » filtre par zone ; l’assignation ne le recontrôle pas. Un livreur qui connaît l’id peut prendre une course hors zone.</td></tr>
+      <tr class="high"><td>V03</td><td>Élevée</td><td>Pas de rate limit auth</td><td><code>POST /auth/login</code>, <code>/register</code></td><td>Force brute / énumération (409 si numéro déjà pris). Mot de passe min. 8 caractères.</td></tr>
+      <tr class="high"><td>V04</td><td>Élevée</td><td>CORS ouvert si CORS_ORIGINS vide</td><td><code>main.ts</code></td><td><code>origin: true</code> reflète n’importe quel Origin. JWT 7 jours en localStorage.</td></tr>
+      <tr class="high"><td>V05</td><td>Élevée</td><td>JWT long, rôle figé, pas de révocation</td><td><code>JwtAuthGuard</code></td><td>Rôle lu dans le jeton, pas en base. Compte rétrogradé ou jeton volé valides jusqu’à 7 jours.</td></tr>
+      <tr class="med"><td>V06</td><td>Moyenne</td><td>Fiche restaurant publique trop large</td><td><code>findOnePublic()</code></td><td><code>GET /restaurants/:id</code> expose <code>userId</code>, <code>tauxCommission</code>, GPS, <code>zoneId</code>.</td></tr>
+      <tr class="med"><td>V07</td><td>Moyenne</td><td>Messages Prisma exposés</td><td><code>all-exceptions.filter.ts</code></td><td>P2002/P2003/P2025 renvoient <code>exception.message</code> (schéma, contraintes).</td></tr>
+      <tr class="med"><td>V08</td><td>Moyenne</td><td>OTP Colis via Math.random</td><td><code>generateCodeOtp()</code></td><td>PRNG non crypto. Atténué par omit livreur, mais V01 rend le code optionnel.</td></tr>
+      <tr class="med"><td>V09</td><td>Moyenne</td><td>Plafonds livreur jamais appliqués</td><td><code>plafondAvance</code> / <code>plafondCaisse</code></td><td>Champs seedés, jamais lus. RG-02 / RG-14 non appliqués.</td></tr>
+      <tr class="med"><td>V10</td><td>Moyenne</td><td>Comptes démo + seed prod</td><td><code>prisma/seed.ts</code></td><td>Mot de passe <code>demo12345</code>. Seed non bloqué en production.</td></tr>
+      <tr class="med"><td>V11</td><td>Moyenne</td><td>PII avant acceptation</td><td>listes disponibles</td><td>Tout livreur de la zone voit nom, téléphone et adresses des commandes non prises.</td></tr>
+      <tr><td>V12</td><td>Faible</td><td>Pas de Helmet ni JWT global</td><td><code>main.ts</code></td><td>Nouvel endpoint oublié ouvert par défaut.</td></tr>
+      <tr><td>V13</td><td>Faible</td><td>Permissions seedées jamais évaluées</td><td><code>RolesGuard</code></td><td>15 codes d’action admin en seed ; seul le nom de rôle JWT compte.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>4. Incohérences docs / code</h2>
+  <table>
+    <thead>
+      <tr><th>Sujet</th><th>Doc / modèle</th><th>Code réel</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>CLAUDE.md</td><td>Seul Repas construit</td><td>4 services E2E client/livreur ; admin vide</td></tr>
+      <tr><td>modules.md Emplettes</td><td>Coché puis « Rien commencé »</td><td>API + écrans liste libre livrés</td></tr>
+      <tr><td>Phasage Q-01</td><td>Repas → Colis → Emplettes → Courses</td><td>Les 4 sont livrés (mode simplifié)</td></tr>
+      <tr><td>RG-08 commission</td><td><code>tauxCommission</code> partenaire</td><td>15 % en dur dans <code>create()</code> Repas</td></tr>
+      <tr><td>F-CLI-06</td><td>Historique unifié</td><td><code>/commandes</code> = Repas seulement</td></tr>
+      <tr><td>F-CLI-13</td><td>Options / suppléments</td><td>Modèle Plat plat, instructions texte</td></tr>
+      <tr><td>F-CLI-03</td><td>Carnet d’adresses</td><td>CRUD API + checkout ; raccourci hub désactivé</td></tr>
+      <tr><td>Invité</td><td>Champs invite au schéma</td><td>Tous les POST exigent un JWT client</td></tr>
+      <tr><td>RBAC</td><td>Permissions granulaires</td><td>Seed seulement, aucun endpoint admin</td></tr>
+      <tr><td>Plan P0 11h23</td><td>A01–A06 à merger</td><td>CORS, OTP, throttle, projection resto : inchangés</td></tr>
+    </tbody>
+  </table>
+
+  <h2>5. Règles métier vs code</h2>
+  <table>
+    <thead>
+      <tr><th>Règle</th><th>Statut</th><th>Écart</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>RG-01 Paiement MoMo / espèces</td><td>Partiel</td><td>Mode stocké ; aucun appel agrégateur</td></tr>
+      <tr><td>RG-02 Plafond avance / caisse</td><td>Absent</td><td>Champs DB ignorés</td></tr>
+      <tr><td>RG-03 Clôture caisse</td><td>Absent</td><td>Pas d’admin, pas de mouvements</td></tr>
+      <tr><td>RG-04 CR Colis / reversement</td><td>Partiel</td><td>Encaissement saisi ; pas de reverse expéditeur</td></tr>
+      <tr><td>RG-05 Budget Emplettes</td><td>Fait (liste)</td><td>Blocage + validation client ; pas d’escalade Q-26</td></tr>
+      <tr><td>RG-06 Remplacements</td><td>Fait</td><td>Préférence par article</td></tr>
+      <tr><td>RG-07 Preuve livraison</td><td>Partiel</td><td>OTP ou nom ; photo/S3 absents ; nom suffit (V01)</td></tr>
+      <tr><td>RG-08 Commission</td><td>Partiel</td><td>15 % hardcodé</td></tr>
+      <tr><td>RG-14 Attribution</td><td>Partiel</td><td>Self-serve par zone à la liste seulement</td></tr>
+    </tbody>
+  </table>
+
+  <h2>6. Priorités avant ouverture ville (Repas + Colis)</h2>
+  <ol>
+    <li>Durcir auth : rate limit, CORS obligatoire, JWT plus court, rôle relu en base.</li>
+    <li>OTP Colis obligatoire ; prise Repas atomique ; revalider la zone dans les 4 prises de course.</li>
+    <li>Projeter <code>GET /restaurants/:id</code> (masquer <code>userId</code> / <code>tauxCommission</code>).</li>
+    <li>Ne pas ouvrir espèces / contre-remboursement sans portefeuille livreur (RG-02) et un minimum de back-office caisse.</li>
+  </ol>
+  <p>Intégrations hors code : FedaPay, Web Push, WhatsApp/SMS, WebSockets, S3, Google Maps, offline livreur.</p>
+  <p>Plan d’action associé : vagues P0 (A01–A06) puis P1 (JWT, plafonds, commission, Helmet, PII).</p>
+
+  <footer>
+    ChapExpress / Delivero — audit interne. Fichier généré le 27 août 2026. Ne pas diffuser hors équipe projet.
+  </footer>
+</body>
+</html>

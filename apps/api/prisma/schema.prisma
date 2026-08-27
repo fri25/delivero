@@ -1,0 +1,624 @@
+// Socle commun (voir docs/modele-donnees.md) + module Repas (premier service
+// livré, Q-01). Les entités des autres services (ProduitCatalogue,
+// CommandeColis...) arrivent avec leur module respectif.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- Utilisateur, rôle, permissions ---------------------------------------
+// Permissions granulaires dès la conception (Q-09) : un rôle porte une liste
+// de permissions plutôt qu'un comportement câblé en dur sur son nom.
+// Un seul rôle (admin_dispatcher) est effectivement peuplé au lancement.
+
+model Role {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  description String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+  users       User[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  code        String           @unique
+  description String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  telephone    String   @unique
+  passwordHash String?  @map("password_hash")
+  nom          String
+  roleId       String   @map("role_id")
+  role         Role     @relation(fields: [roleId], references: [id])
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  adresses         Adresse[]
+  livreur          Livreur?
+  partenaire       Partenaire?
+  commandesClient  Commande[]     @relation("CommandeClient")
+  otpCodes         OtpCode[]
+
+  @@map("users")
+}
+
+// --- Authentification par OTP ----------------------------------------------
+
+model OtpCode {
+  id         String    @id @default(cuid())
+  telephone  String
+  codeHash   String    @map("code_hash")
+  userId     String?   @map("user_id")
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([telephone])
+  @@map("otp_codes")
+}
+
+// --- Adressage ---------------------------------------------------------
+// Point de repère textuel obligatoire ; coordonnées carte en complément,
+// jamais l'inverse (contrainte locale, voir CLAUDE.md).
+
+model Adresse {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  libelle       String
+  pointDeRepere String   @map("point_de_repere")
+  latitude      Decimal? @db.Decimal(10, 7)
+  longitude     Decimal? @db.Decimal(10, 7)
+  estParDefaut  Boolean  @default(false) @map("est_par_defaut")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  commandes                Commande[]
+  commandesColisEnlevement CommandeColis[]
+
+  @@map("adresses")
+}
+
+// --- Zones et partenaires ---------------------------------------------
+
+// fraisLivraison : grille de frais de livraison Repas par zone, décidée le
+// 2026-08-25 (voir docs/regles-gestion.md RG-08 — 500 FCFA centre-ville /
+// 1 000 FCFA zone éloignée). La frontière exacte entre zones reste ouverte
+// (docs/decisions-ouvertes.md Q-28) ; en attendant, une commande facture le
+// tarif de la zone du restaurant, pas celle de l'adresse du client
+// — simplification à revoir une fois Q-28 tranchée.
+model Zone {
+  id             String   @id @default(cuid())
+  nom            String   @unique
+  description    String?
+  fraisLivraison Decimal  @default(500) @map("frais_livraison") @db.Decimal(10, 2)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  partenaires          Partenaire[]
+  livreurs             Livreur[]
+  grilleTarifaireColis         GrilleTarifaireColis?
+  grilleTarifaireCoursesExpress GrilleTarifaireCoursesExpress?
+  commandesColis               CommandeColis[]
+  commandesEmplettes           CommandeEmplettes[]
+  commandesCoursesExpress      CommandeCoursesExpress[]
+
+  @@map("zones")
+}
+
+enum TypePartenaire {
+  restaurant
+  commerce
+}
+
+model Partenaire {
+  id              String         @id @default(cuid())
+  userId          String         @unique @map("user_id")
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nom             String
+  type            TypePartenaire
+  description     String?
+  horaires        String?
+  // Point de repère textuel obligatoire, coordonnées en complément (même
+  // contrainte d'adressage approximatif que pour l'Adresse client) — requis
+  // pour que le livreur sache où récupérer la commande.
+  adresse         String?
+  pointDeRepere   String?        @map("point_de_repere")
+  latitude        Decimal?       @db.Decimal(10, 7)
+  longitude       Decimal?       @db.Decimal(10, 7)
+  zoneId          String         @map("zone_id")
+  zone            Zone           @relation(fields: [zoneId], references: [id])
+  statutOuverture Boolean        @default(true) @map("statut_ouverture")
+  tauxCommission  Decimal?       @map("taux_commission") @db.Decimal(5, 2)
+  noteMoyenne     Decimal?       @map("note_moyenne") @db.Decimal(3, 2)
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  plats          Plat[]
+  commandesRepas CommandeRepas[]
+
+  @@map("partenaires")
+}
+
+// --- Livreur -------------------------------------------------------------
+
+model Livreur {
+  id             String   @id @default(cuid())
+  userId         String   @unique @map("user_id")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  zoneId         String   @map("zone_id")
+  zone           Zone     @relation(fields: [zoneId], references: [id])
+  plafondAvance  Decimal  @map("plafond_avance") @db.Decimal(12, 2)
+  plafondCaisse  Decimal  @map("plafond_caisse") @db.Decimal(12, 2)
+  disponible     Boolean  @default(false)
+  noteMoyenne    Decimal? @map("note_moyenne") @db.Decimal(3, 2)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  commandes Commande[]
+
+  @@map("livreurs")
+}
+
+// --- Commande (entité générique) -----------------------------------------
+// type_service est un champ de première classe (voir CLAUDE.md). Le statut
+// vit sur la spécialisation par service (ex. CommandeRepas.statut), chacune
+// avec sa propre machine à états — voir docs/modele-donnees.md. Une vue
+// unifiée multi-services (F-CLI-06) recalculera un statut agrégé au niveau
+// Commande quand plusieurs services existeront ; inutile de l'anticiper avec
+// un seul service en place.
+
+enum TypeService {
+  repas
+  colis
+  courses_express
+  emplettes
+}
+
+model Commande {
+  id          String      @id @default(cuid())
+  typeService TypeService @map("type_service")
+
+  clientId              String?  @map("client_id")
+  client                User?    @relation("CommandeClient", fields: [clientId], references: [id])
+  clientNomInvite       String?  @map("client_nom_invite")
+  clientTelephoneInvite String?  @map("client_telephone_invite")
+
+  adresseId String?  @map("adresse_id")
+  adresse   Adresse? @relation(fields: [adresseId], references: [id])
+
+  livreurId String?  @map("livreur_id")
+  livreur   Livreur? @relation(fields: [livreurId], references: [id])
+
+  // Décomposition du prix Repas (RG-08, décidée le 2026-08-25) : le
+  // restaurant est reversé sur sousTotal en intégralité (pas de retenue),
+  // fraisLivraison + commission reviennent à ChapExpress. montantTotal reste
+  // le total payé par le client (sousTotal + fraisLivraison + commission).
+  // Nullable : les autres services (Colis, Emplettes...) n'ont pas encore ce
+  // modèle de décomposition.
+  sousTotal      Decimal? @map("sous_total") @db.Decimal(12, 2)
+  fraisLivraison Decimal? @map("frais_livraison") @db.Decimal(12, 2)
+  commission     Decimal? @map("commission") @db.Decimal(12, 2)
+  montantTotal   Decimal? @map("montant_total") @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  commandeRepas         CommandeRepas?
+  commandeColis         CommandeColis?
+  commandeEmplettes     CommandeEmplettes?
+  commandeCoursesExpress CommandeCoursesExpress?
+  paiement              Paiement?
+
+  @@map("commandes")
+}
+
+// --- Module Repas ---------------------------------------------------------
+// Machine à états et parcours : voir docs/service-repas.md. Les statuts
+// recuperee_par_livreur / en_route / livree existent pour fidélité au modèle
+// de données mais ne sont pas encore atteignables via l'API : l'attribution
+// livreur (RG-14) relève du futur module Livreur et son algorithme n'est pas
+// tranché (Q-15).
+
+enum StatutRepas {
+  en_attente_acceptation
+  confirmee
+  refusee
+  en_preparation
+  prete
+  recuperee_par_livreur
+  en_route
+  livree
+  annulee
+}
+
+model Plat {
+  id           String   @id @default(cuid())
+  partenaireId String   @map("partenaire_id")
+  partenaire   Partenaire @relation(fields: [partenaireId], references: [id], onDelete: Cascade)
+  nom          String
+  categorie    String?
+  description  String?
+  prix         Decimal  @db.Decimal(10, 2)
+  photoUrl     String?  @map("photo_url")
+  disponible   Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  lignes LigneCommandeRepas[]
+
+  @@map("plats")
+}
+
+model CommandeRepas {
+  id           String      @id @default(cuid())
+  commandeId   String      @unique @map("commande_id")
+  commande     Commande    @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+  partenaireId String      @map("partenaire_id")
+  partenaire   Partenaire  @relation(fields: [partenaireId], references: [id])
+  statut       StatutRepas @default(en_attente_acceptation)
+  motifRefus   String?     @map("motif_refus")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  lignes LigneCommandeRepas[]
+
+  @@map("commandes_repas")
+}
+
+model LigneCommandeRepas {
+  id              String        @id @default(cuid())
+  commandeRepasId String        @map("commande_repas_id")
+  commandeRepas   CommandeRepas @relation(fields: [commandeRepasId], references: [id], onDelete: Cascade)
+  platId          String        @map("plat_id")
+  plat            Plat          @relation(fields: [platId], references: [id])
+  quantite        Int
+  prixUnitaire    Decimal       @map("prix_unitaire") @db.Decimal(10, 2)
+  instructions    String?
+
+  @@map("lignes_commande_repas")
+}
+
+// --- Paiement --------------------------------------------------------------
+// Enregistrement du mode/statut choisi à la commande (RG-01, F-CLI-04) ;
+// aucune intégration FedaPay réelle à ce stade (Q-07 décide le prestataire,
+// pas l'intégration).
+
+enum ModePaiement {
+  mobile_money
+  especes
+}
+
+enum StatutPaiement {
+  en_attente
+  reussi
+  echoue
+  a_percevoir_livraison
+}
+
+model Paiement {
+  id                   String         @id @default(cuid())
+  commandeId           String         @unique @map("commande_id")
+  commande             Commande       @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+  montant              Decimal        @db.Decimal(12, 2)
+  mode                 ModePaiement
+  statut               StatutPaiement @default(en_attente)
+  referenceTransaction String?        @map("reference_transaction")
+  createdAt            DateTime       @default(now()) @map("created_at")
+
+  @@map("paiements")
+}
+
+// --- Module Colis -----------------------------------------------------------
+// Machine à états et parcours : voir docs/service-colis.md. Backend only à ce
+// stade (aucun écran client/livreur/suivi public) : voir la passe frontend
+// séparée qui s'appuiera sur docs/api-colis.md.
+
+enum TailleColis {
+  petit
+  moyen
+  grand
+}
+
+enum StatutColis {
+  confirmee
+  livreur_en_route_enlevement
+  colis_recupere
+  en_route
+  livre
+  litige
+  annulee
+}
+
+// Tarification Colis non arbitrée (taille x zone/distance — voir
+// docs/service-colis.md "Tarification et règles de gestion", RG-11
+// [À ARBITRER]). tarifBase est une valeur PROVISOIRE par zone (tarif "petit"),
+// non validée par la direction — jamais à présenter comme un chiffre final.
+// La majoration par taille (moyen/grand) vit en code (voir
+// commandes-colis.service.ts), pas en base : seule la composante par zone a
+// besoin d'être ajustable sans déploiement pour l'instant.
+model GrilleTarifaireColis {
+  id        String   @id @default(cuid())
+  zoneId    String   @unique @map("zone_id")
+  zone      Zone     @relation(fields: [zoneId], references: [id])
+  tarifBase Decimal  @map("tarif_base") @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("grilles_tarifaires_colis")
+}
+
+model CommandeColis {
+  id         String   @id @default(cuid())
+  commandeId String   @unique @map("commande_id")
+  commande   Commande @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+
+  // Adresse d'enlèvement : réutilise le carnet d'adresses du client
+  // (expéditeur), comme pour Repas. L'adresse de livraison, elle, ne peut pas
+  // référencer le carnet d'adresses : le destinataire n'est pas forcément un
+  // utilisateur de la plateforme (RG-07, suivi par lien public sans compte).
+  adresseEnlevementId String  @map("adresse_enlevement_id")
+  adresseEnlevement   Adresse @relation(fields: [adresseEnlevementId], references: [id])
+
+  destinataireNom        String   @map("destinataire_nom")
+  destinataireTelephone  String   @map("destinataire_telephone")
+  adresseLivraison       String   @map("adresse_livraison")
+  pointDeRepereLivraison String   @map("point_de_repere_livraison")
+  latitudeLivraison      Decimal? @map("latitude_livraison") @db.Decimal(10, 7)
+  longitudeLivraison     Decimal? @map("longitude_livraison") @db.Decimal(10, 7)
+
+  // Zone d'enlèvement, transmise explicitement par l'appelant à la création
+  // (estimation et création) : Adresse n'a pas de zoneId aujourd'hui (seuls
+  // Partenaire et Livreur en ont un). Résoudre automatiquement la zone à
+  // partir d'une adresse libre est laissé à la passe frontend / à une
+  // évolution ultérieure.
+  zoneId String      @map("zone_id")
+  zone   Zone        @relation(fields: [zoneId], references: [id])
+  taille TailleColis
+
+  valeurDeclaree             Decimal? @map("valeur_declaree") @db.Decimal(12, 2)
+  fragile                    Boolean  @default(false)
+  montantContreRemboursement Decimal? @map("montant_contre_remboursement") @db.Decimal(12, 2)
+  // Montant réellement encaissé par le livreur à la livraison (RG-04). Simple
+  // traçabilité sur la commande à ce stade : le reversement périodique à
+  // l'expéditeur et le portefeuille livreur consolidé (F-LIV-09) sont des
+  // chantiers séparés, non couverts ici.
+  montantEncaisse Decimal? @map("montant_encaisse") @db.Decimal(12, 2)
+
+  conditionsAcceptees Boolean   @default(false) @map("conditions_acceptees")
+  programmationAt     DateTime? @map("programmation_at")
+
+  // Code de remise à communiquer au destinataire. À la différence d'OtpCode
+  // (authentification, code_hash), ce code doit rester lisible par le client
+  // propriétaire de la commande pour qu'il puisse le relayer lui-même : aucune
+  // notification SMS/WhatsApp automatique n'existe encore (CLAUDE.md,
+  // [À FAIRE]). Stocké en clair par choix délibéré ; jamais exposé par
+  // l'endpoint public de suivi ni par les endpoints livreur.
+  codeOtp           String  @map("code_otp")
+  nomReceptionnaire String? @map("nom_receptionnaire")
+
+  // Motif de litige ou d'annulation. `litige` est atteignable dans cette
+  // itération : déclaré par le livreur (colis endommagé, refusé, destinataire
+  // injoignable), sans validation ni traitement par un dispatcher — aucun
+  // back-office n'existe encore pour ça (RG-12). Voir docs/service-colis.md.
+  statut StatutColis @default(confirmee)
+  motif  String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("commandes_colis")
+}
+
+// --- Module Emplettes (mode liste libre uniquement) -------------------------
+// Machine à états et parcours : voir docs/service-emplettes.md. Le mode (b)
+// catalogue partenaire (et le module Commerce partenaire qu'il suppose)
+// n'est pas implémenté : `mode` accepte les deux valeurs pour rester fidèle
+// au modèle métier, mais seule `liste_libre` est acceptée à la création
+// (voir commandes-emplettes.service.ts). Backend only à ce stade, voir
+// docs/api-emplettes.md.
+
+enum ModeEmplettes {
+  liste_libre
+  catalogue
+}
+
+enum ModeFinancementEmplettes {
+  mobile_money_anticipe
+  especes_livraison
+  avance_livreur
+}
+
+enum PreferenceRemplacement {
+  equivalent
+  appeler
+  ne_pas_acheter
+}
+
+enum StatutArticleEmplette {
+  en_attente
+  achete
+  indisponible
+  remplace
+}
+
+enum StatutEmplettes {
+  confirmee
+  achats_en_cours
+  validation_depassement
+  achats_termines
+  en_route
+  livree
+  litige
+  annulee
+}
+
+model CommandeEmplettes {
+  id         String   @id @default(cuid())
+  commandeId String   @unique @map("commande_id")
+  commande   Commande @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+
+  mode ModeEmplettes @default(liste_libre)
+
+  // Texte libre ("Marché central", "Supermarché X"...), pas de FK vers un
+  // partenaire : les vendeurs de marché ne sont pas enregistrés comme
+  // partenaires (voir service-emplettes.md, mode liste libre).
+  lieuAchat String? @map("lieu_achat")
+
+  // Zone transmise explicitement à la création, même simplification que pour
+  // Colis (Adresse n'a pas de zoneId) — voir commentaire sur CommandeColis.
+  zoneId String @map("zone_id")
+  zone   Zone   @relation(fields: [zoneId], references: [id])
+
+  // Obligatoire en mode liste libre (RG-05) ; resterait nullable pour un
+  // futur mode catalogue, où le montant est connu à l'avance.
+  budgetMax Decimal @map("budget_max") @db.Decimal(12, 2)
+
+  // Montant réel des achats, recalculé à chaque pointage d'article par le
+  // livreur (somme des articles achetés/remplacés). Null tant qu'aucun
+  // article n'a été pointé.
+  montantReel Decimal? @map("montant_reel") @db.Decimal(12, 2)
+
+  modeFinancement ModeFinancementEmplettes @map("mode_financement")
+
+  // Récapitulatif texte des prix négociés (RG-07) : substitut à la photo du
+  // ticket de caisse, aucun stockage S3 n'étant intégré. Obligatoire avant le
+  // passage en achats_termines.
+  recapitulatifAchats String? @map("recapitulatif_achats")
+
+  // `litige` atteignable dans cette itération, déclaré par le livreur, sans
+  // validation dispatcher (aucun back-office) — même principe que Colis.
+  statut StatutEmplettes @default(confirmee)
+  motif  String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  articles ArticleEmplette[]
+
+  @@map("commandes_emplettes")
+}
+
+model ArticleEmplette {
+  id                  String            @id @default(cuid())
+  commandeEmplettesId String            @map("commande_emplettes_id")
+  commandeEmplettes   CommandeEmplettes @relation(fields: [commandeEmplettesId], references: [id], onDelete: Cascade)
+
+  // Texte libre saisi par le client (ex. "2 kg de tomates") : pas de
+  // référence à un produit catalogué en mode liste libre.
+  libelle String
+
+  // Défaut ne_pas_acheter (Q-11, [DÉDUIT] — recommandation la plus prudente
+  // financièrement, voir decisions-arbitrage.md).
+  preferenceRemplacement PreferenceRemplacement @default(ne_pas_acheter) @map("preference_remplacement")
+
+  statut                     StatutArticleEmplette @default(en_attente)
+  prixReel                   Decimal?              @map("prix_reel") @db.Decimal(12, 2)
+  produitRemplacementLibelle String?               @map("produit_remplacement_libelle")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("articles_emplettes")
+}
+
+// --- Module Courses express -------------------------------------------------
+// Machine à états et parcours : voir docs/service-courses-express.md. Backend
+// only à ce stade, voir docs/api-courses-express.md.
+
+enum StatutCoursesExpress {
+  confirmee
+  en_cours
+  etape_realisee
+  terminee
+  litige
+  annulee
+}
+
+// Tarification non arbitrée (distance + nombre d'arrêts — voir
+// docs/service-courses-express.md "Tarification et règles de gestion").
+// tarifBase est une valeur PROVISOIRE par zone (course à un seul arrêt), non
+// validée par la direction. La majoration par arrêt supplémentaire vit en
+// code (voir commandes-courses-express.service.ts), même pattern que
+// GrilleTarifaireColis.
+model GrilleTarifaireCoursesExpress {
+  id        String   @id @default(cuid())
+  zoneId    String   @unique @map("zone_id")
+  zone      Zone     @relation(fields: [zoneId], references: [id])
+  tarifBase Decimal  @map("tarif_base") @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("grilles_tarifaires_courses_express")
+}
+
+model CommandeCoursesExpress {
+  id         String   @id @default(cuid())
+  commandeId String   @unique @map("commande_id")
+  commande   Commande @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+
+  // Description libre obligatoire de la commission (quoi faire, où aller,
+  // quoi récupérer/déposer) ; pas de pièces jointes/photos, aucun stockage
+  // S3 intégré.
+  description String
+
+  // Zone transmise explicitement à la création, même simplification que
+  // Colis/Emplettes (Adresse n'a pas de zoneId).
+  zoneId String @map("zone_id")
+  zone   Zone   @relation(fields: [zoneId], references: [id])
+
+  // `litige` atteignable dans cette itération, déclaré par le livreur, sans
+  // validation dispatcher (aucun back-office) — même principe que Colis et
+  // Emplettes.
+  statut StatutCoursesExpress @default(confirmee)
+  motif  String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  etapes EtapeCourseExpress[]
+
+  @@map("commandes_courses_express")
+}
+
+model EtapeCourseExpress {
+  id                       String                 @id @default(cuid())
+  commandeCoursesExpressId String                 @map("commande_courses_express_id")
+  commandeCoursesExpress   CommandeCoursesExpress @relation(fields: [commandeCoursesExpressId], references: [id], onDelete: Cascade)
+
+  ordre         Int
+  // Ce qu'il faut faire à cette étape (récupérer, déposer...).
+  description   String
+  // Texte libre ("Boutique X, quartier Y") ; pointDeRepere obligatoire,
+  // contrainte d'adressage approximatif commune au projet.
+  adresse       String?
+  pointDeRepere String  @map("point_de_repere")
+
+  // Aucune preuve formalisée par étape au-delà du passage à "réalisée"
+  // (RG-07, [DÉDUIT]).
+  realisee   Boolean   @default(false)
+  realiseeAt DateTime? @map("realisee_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("etapes_courses_express")
+}

@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@import "@delivero/config/tailwind-theme.css";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";

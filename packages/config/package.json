@@ -1,0 +1,9 @@
+{
+  "name": "@delivero/config",
+  "private": true,
+  "version": "0.0.0",
+  "exports": {
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./tailwind-theme.css": "./tailwind-theme.css"
+  }
+}

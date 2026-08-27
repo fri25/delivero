@@ -1,0 +1,109 @@
+/*
+ * Identité visuelle du module Client ChapExpress — surcharge locale des
+ * tokens partagés (packages/config/tailwind-theme.css). N'affecte que cette
+ * app : admin, livreur et partenaires gardent leurs tokens par défaut.
+ *
+ * Palette : retour à l'identité d'origine (bleu marine + bleu ciel, fond
+ * blanc), sans le vert — décision utilisateur du 2026-08-26. Tout usage de
+ * brand-green / --success / --accent hérite du bleu à la place.
+ */
+
+@theme {
+  --color-brand-navy: #002050;
+  --color-brand-blue: #1070c0;
+  --color-brand-green: #1070c0; /* plus de vert : aligné sur le bleu */
+
+  /* Tokens de marque introduits pour les enseignes/cartes — repointés sur le
+     bleu/blanc, aucune trace de latérite/mangue/bissap/gingembre. */
+  --color-brand-braise: #002050;
+  --color-brand-laterite: #1070c0;
+  --color-brand-mangue: #1070c0;
+  --color-brand-bissap: #0b3d77;
+  --color-brand-gingembre: #2e8fe0;
+  --color-brand-sable: #f6f8fc;
+
+  --font-heading: 'Bricolage Grotesque Variable', var(--font-sans);
+
+  /* Durées et easing centralisés — jamais de valeur en dur dans un composant. */
+  --duration-instant: 120ms;
+  --duration-fast: 220ms;
+  --duration-base: 320ms;
+  --duration-slow: 480ms;
+  --ease-signature: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root {
+  --background: #f6f8fc;
+  --foreground: #0b1b33;
+  --card: #ffffff;
+  --card-foreground: #0b1b33;
+  --popover: #ffffff;
+  --popover-foreground: #0b1b33;
+  --primary: #1070c0;
+  --primary-foreground: #ffffff;
+  --secondary: #e8f1fb;
+  --secondary-foreground: #0b1b33;
+  --muted: #eef2f7;
+  --muted-foreground: #5b6b82;
+  --accent: #e8f1fb;
+  --accent-foreground: #0b3d77;
+  --success: #1070c0;
+  --success-foreground: #ffffff;
+  --border: #dde4ee;
+  --input: #dde4ee;
+  --ring: #1070c0;
+  --radius: 1rem;
+}
+
+.dark {
+  --background: #0a1424;
+  --foreground: #e9f1fa;
+  --card: #101e33;
+  --card-foreground: #e9f1fa;
+  --popover: #101e33;
+  --popover-foreground: #e9f1fa;
+  --primary: #4aa3ea;
+  --primary-foreground: #06182b;
+  --secondary: #16283f;
+  --secondary-foreground: #e9f1fa;
+  --muted: #16283f;
+  --muted-foreground: #93a6be;
+  --accent: #16283f;
+  --accent-foreground: #7fc0f0;
+  --success: #4aa3ea;
+  --success-foreground: #06182b;
+  --border: color-mix(in oklab, white 10%, transparent);
+  --input: color-mix(in oklab, white 15%, transparent);
+  --ring: #4aa3ea;
+}
+
+@keyframes shimmer-sweep {
+  from {
+    background-position: -150% 0;
+  }
+  to {
+    background-position: 150% 0;
+  }
+}
+
+.shimmer {
+  background-image: linear-gradient(
+    100deg,
+    transparent 30%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-sweep 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
