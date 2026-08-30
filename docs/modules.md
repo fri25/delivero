@@ -4,7 +4,7 @@ Checklist exhaustive par module, avec ID stable réutilisable en ticket. Détail
 parcours et règles : voir les fiches de service. Détail des règles métier
 transversales : [regles-gestion.md](regles-gestion.md).
 
-**Statut** (dernière mise à jour 2026-08-27, sur le code réel de `apps/` — voir aussi
+**Statut** (dernière mise à jour 2026-08-30, sur le code réel de `apps/` — voir aussi
 [decisions-arbitrage.md](decisions-arbitrage.md) pour le phasage retenu
 Repas → Colis → Emplettes → Courses express) :
 `[x]` fait · `[ ]` *(partiel : ...)* commencé mais incomplet · `[ ]` non commencé.
@@ -21,18 +21,20 @@ Repas → Colis → Emplettes → Courses express) :
 - [ ] F-CLI-04 — Choix du paiement (Mobile Money ou espèces à la livraison) —
       *(partiel : mode choisi et stocké (`Paiement`), aucune intégration réelle
       d'agrégateur — voir F-ADM-16)*
-- [ ] F-CLI-05 — Suivi en temps réel de chaque demande, statuts adaptés au service —
-      *(partiel : stepper de statut Repas présent, pas de WebSocket/push, rafraîchi
-      par polling)*
+- [x] F-CLI-05 — Suivi en temps réel de chaque demande, statuts adaptés au service —
+      *(WebSocket (Socket.IO) ajouté le 27/08 sur les 4 services : le client est
+      notifié à chaque changement de statut via `commande:statut`, en plus du
+      polling conservé comme filet de secours — voir
+      `apps/api/src/realtime/realtime.gateway.ts`)*
 - [ ] F-CLI-06 — Historique unifié de toutes les commandes, tous services — *(non
       fait : `OrdersPage` ne liste que les commandes Repas, seul service existant)*
 - [ ] F-CLI-07 — Recommander en un clic
 - [ ] F-CLI-08 — Notation du partenaire et du livreur après prestation
 - [ ] F-CLI-09 — Notifications SMS/WhatsApp/e-mail aux étapes clés
-- [ ] F-CLI-10 — Accueil présentant les 4 services et orientant vers le bon parcours
-      — *(non fait : `HomePage` est directement le catalogue restaurants, pas un
-      hub de services — attendu tant qu'un seul service est livré, mais à bâtir
-      avant l'ouverture de Colis)*
+- [x] F-CLI-10 — Accueil présentant les 4 services et orientant vers le bon parcours
+      — *(`ServicesHubPage` est désormais la route `/`, une tuile par service ;
+      raccourcis Historique/Carnet d'adresses/Promotions/Aide présents mais tous
+      sauf Historique restent désactivés)*
 
 ### Repas
 - [x] F-CLI-11 — Catalogue des restaurants (recherche, filtres cuisine/prix/note/délai)
@@ -120,14 +122,14 @@ uniquement — voir [api-emplettes.md](api-emplettes.md) et
 [service-emplettes.md](service-emplettes.md). Mode catalogue partenaire, le
 module Commerce partenaire qu'il suppose, l'appel client intégré en dur (un
 lien `tel:` existe côté livreur) et le portefeuille livreur consolidé restent
-hors périmètre.)*
-
-*(Rien commencé — 3ᵉ dans l'ordre de phasage.)*
+hors périmètre. 3ᵉ dans l'ordre de phasage, livré comme les 3 autres services.)*
 
 ## Module Restaurant (F-RES)
 
-- [ ] F-RES-01 — Réception des commandes en temps réel, alerte sonore — *(partiel :
-      réception par polling via `me/commandes`, pas de push/alerte sonore vérifiée)*
+- [x] F-RES-01 — Réception des commandes en temps réel, alerte sonore — *(WebSocket
+      ajouté le 27/08 : événement `commande:nouvelle` + bip généré (Web Audio,
+      pas de fichier son) côté `apps/partenaires` ; le polling sur `me/commandes`
+      reste en filet de secours)*
 - [x] F-RES-02 — Acceptation ou refus motivé dans un délai imparti — *(acceptation/
       refus avec motif faits ; le délai imparti n'est pas mis en œuvre)*
 - [x] F-RES-03 — Indication du temps de préparation, passage à « commande prête »
@@ -160,8 +162,9 @@ ne sert aujourd'hui que les restaurants.)*
       repères, liste d'achats, montants à avancer/encaisser) — *(fait pour les
       4 services : Repas, Colis, Emplettes, Courses express)*
 - [x] F-LIV-02 — Acceptation de la course — *(4 services ; la prise en charge
-      Colis/Emplettes/Courses express est atomique, gère explicitement le cas
-      "déjà pris" par un autre livreur)*
+      est atomique sur les 4 (Repas inclus depuis le correctif V02/V02b du
+      27/08), gère explicitement le cas "déjà pris" par un autre livreur et
+      revalide la zone du livreur à l'assignation)*
 - [x] F-LIV-03 — Mise à jour des statuts propres à chaque service — *(4
       services)*
 - [x] F-LIV-04 — Emplettes : pointage article par article, saisie prix réels, photo
@@ -176,17 +179,26 @@ ne sert aujourd'hui que les restaurants.)*
       réceptionnaire" a été implémenté à la livraison, pas à l'enlèvement, pour
       rester fidèle au contrat d'API de la passe 1 — voir api-colis.md)*
 - [x] F-LIV-07 — Colis : saisie du code de confirmation ou photo de remise +
-      encaissement du contre-remboursement — *(code de remise et/ou nom du
-      réceptionnaire faits ; pas de photo — S3 absent)*
+      encaissement du contre-remboursement — *(code de remise désormais
+      obligatoire à la livraison (correctif sécurité V01 du 27/08, RG-07
+      imposé) ; nom du réceptionnaire reste une information complémentaire ;
+      pas de photo — S3 absent)*
 - [ ] F-LIV-08 — Itinéraires multi-arrêts (ouverture dans Google Maps) — *(partiel :
       liens Google Maps simples faits pour Repas et Colis (2 points) et pour
       Courses express (un lien par étape) ; toujours une recherche simple
       point par point, jamais un itinéraire multi-arrêts unique calculé —
       aucune intégration cartographique réelle, voir CLAUDE.md [À FAIRE])*
 - [ ] F-LIV-09 — Portefeuille livreur (plafond d'avance, montants avancés/encaissés,
-      solde à reverser) — *(non fait : `Livreur.plafondAvance`/`plafondCaisse`
-      existent en base, aucun mouvement de portefeuille n'est tracé — bloquant pour
-      RG-02/RG-03)*
+      solde à reverser) — *(partiel, ajouté le 29/08 : les plafonds d'avance et de
+      caisse (`Livreur.plafondAvance`/`plafondCaisse`) sont désormais vérifiés à
+      l'attribution (automatique et manuelle) sur les 4 services, et chaque
+      encaissement espèces est tracé dans `MouvementPortefeuille` à la livraison
+      — voir `apps/api/src/portefeuille/portefeuille.service.ts`. Toujours
+      absent : aucune vue consolidée du solde à reverser (ni côté livreur ni
+      côté admin), pas de mouvement de type "avance" réellement enregistré
+      (`getAvanceEnCours` recalcule à la volée depuis les commandes Emplettes en
+      cours), pas de clôture de caisse (RG-03, F-ADM-13) ni de reversement à
+      l'expéditeur (RG-04) — voir F-LIV-11 et F-ADM-12/13)*
 - [x] F-LIV-10 — Statut disponible / indisponible — *(disponible/indisponible fait,
       sans motif de passage en indisponible)*
 - [ ] F-LIV-11 — Récapitulatif journalier (courses par service, montants, gains)
@@ -196,15 +208,24 @@ ne sert aujourd'hui que les restaurants.)*
 
 ## Module Back-office — Admin/Dispatcher (F-ADM)
 
-L'app `apps/admin` est un squelette vide à ce stade (page unique « Socle en cours de
-construction », aucune route, aucun appel API). L'intégralité du module est à faire.
+L'app `apps/admin` a été bootstrappée le 28/08 (routeur, TanStack Query, Zustand,
+shadcn/ui — mêmes fondations que `partenaires`/`client`, jusque-là un squelette vide).
+Compte de démo : `+22900000004` / `demo12345` (rôle `admin_dispatcher`, voir
+`prisma/seed.ts`).
 
 ### Supervision et dispatching
-- [ ] F-ADM-01 — Vue d'ensemble des demandes en cours, tous services (filtres, code
-      couleur par statut, alertes de retard)
-- [ ] F-ADM-02 — Attribution automatique des courses (livreur disponible le plus
-      proche / rotation)
-- [ ] F-ADM-03 — Réattribution manuelle d'une course
+- [x] F-ADM-01 — Vue d'ensemble des demandes en cours, tous services (filtres, code
+      couleur par statut, alertes de retard) — *(filtre par service et pagination
+      faits ; pas de code couleur par statut ni d'alerte de retard)*
+- [x] F-ADM-02 — Attribution automatique des courses (livreur disponible le plus
+      proche / rotation) — *(par rotation uniquement : le livreur disponible de
+      la zone dont la dernière commande assignée est la plus ancienne, filtré
+      par les plafonds RG-02 — pas de "plus proche", aucune intégration
+      cartographique. Choix documenté en `[DÉDUIT]` dans
+      `admin-commandes.service.ts`, RG-14 ne tranche pas le départage)*
+- [x] F-ADM-03 — Réattribution manuelle d'une course — *(même endpoint que
+      F-ADM-02 avec un `livreurId` explicite ; contourne volontairement zone
+      et plafonds, contrairement à l'automatique)*
 - [ ] F-ADM-04 — Saisie manuelle d'une demande reçue hors plateforme (téléphone,
       WhatsApp), pour les 4 services
 - [ ] F-ADM-05 — Validation des demandes sensibles
@@ -217,10 +238,12 @@ construction », aucune route, aucun appel API). L'intégralité du module est �
       suspension) — *(partiel côté données : `Partenaire.tauxCommission` existe,
       aucune interface d'administration)*
 - [ ] F-ADM-09 — Gestion des livreurs (enregistrement, pièces, zones, plafonds,
-      performance)
-- [ ] F-ADM-10 — Gestion des zones et des grilles tarifaires par service — *(partiel
-      côté données : `Zone.fraisLivraison` existe pour Repas uniquement, aucune
-      interface d'administration)*
+      performance) — *(partiel : enregistrement (création de compte + profil),
+      zone et plafonds faits ; pas de gestion des pièces d'identité — aucun
+      stockage S3 — ni de statistiques de performance)*
+- [x] F-ADM-10 — Gestion des zones et des grilles tarifaires par service —
+      *(création/modification d'une zone avec ses 3 tarifs — Repas, Colis,
+      Courses express — en une fois)*
 - [ ] F-ADM-11 — Gestion des promotions (codes promo, réductions, livraison offerte)
 - [ ] F-ADM-12 — Rapprochement de caisse (avances, encaissements espèces,
       contre-remboursements)

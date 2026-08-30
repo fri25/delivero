@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Audit ChapExpress — 30 août 2026</title>
+  <style>
+    @page { size: A4; margin: 16mm 14mm 18mm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", Calibri, Arial, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.45;
+      color: #1a1a1a;
+      margin: 0;
+    }
+    h1 { font-size: 20pt; margin: 0 0 6pt; }
+    h2 { font-size: 13pt; margin: 18pt 0 8pt; border-bottom: 1px solid #ccc; padding-bottom: 4pt; }
+    h3 { font-size: 11pt; margin: 12pt 0 6pt; }
+    p, li { margin: 0 0 6pt; }
+    .meta { color: #555; font-size: 9.5pt; margin-bottom: 12pt; }
+    .callout {
+      border: 1px solid #c9a227;
+      background: #fffbeb;
+      padding: 8pt 10pt;
+      margin: 10pt 0;
+    }
+    .callout.info { border-color: #3b6ea5; background: #f0f6fc; }
+    .callout.good { border-color: #146c2e; background: #f0fbf3; }
+    .kpis { display: table; width: 100%; border-collapse: separate; border-spacing: 6pt; margin: 8pt 0 12pt; }
+    .kpi { display: table-cell; width: 25%; border: 1px solid #ddd; padding: 8pt; text-align: center; }
+    .kpi .n { font-size: 16pt; font-weight: 700; }
+    .kpi .l { font-size: 8pt; color: #555; }
+    .danger { color: #9b1c1c; }
+    .ok { color: #146c2e; }
+    table { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin: 8pt 0 12pt; }
+    th, td { border: 1px solid #ccc; padding: 4pt 5pt; vertical-align: top; text-align: left; }
+    th { background: #f3f3f3; font-weight: 600; }
+    tr.high td:nth-child(2) { font-weight: 700; color: #9b1c1c; }
+    tr.med td:nth-child(2) { color: #9a6700; }
+    tr.fixed td { color: #146c2e; }
+    .pill { display: inline-block; border: 1px solid #bbb; padding: 1pt 6pt; margin: 0 3pt 3pt 0; font-size: 8pt; }
+    .pill.ok { border-color: #146c2e; color: #146c2e; }
+    .pill.warn { border-color: #9a6700; color: #9a6700; }
+    .pill.off { border-color: #9b1c1c; color: #9b1c1c; }
+    ul { margin: 0 0 8pt; padding-left: 16pt; }
+    footer { font-size: 8pt; color: #666; margin-top: 16pt; }
+    code { font-family: Consolas, "Courier New", monospace; font-size: 8.5pt; }
+  </style>
+</head>
+<body>
+  <h1>Audit ChapExpress</h1>
+  <p class="meta">
+    3<sup>e</sup> passe — 30 août 2026. Précédent : <a href="audit-chapexpress-2026-08-27.html">27 août, 12h40</a>.<br />
+    Source : code <code>apps/*</code> + Prisma (diff sur les 3 derniers jours), croisé avec
+    <code>docs/modules.md</code>. Audit statique (pas de pentest réseau ni exécution des e2e).
+  </p>
+
+  <div class="callout good">
+    <strong>Delta depuis le 27/08.</strong>
+    Les 13 vulnérabilités relevées la dernière fois (V01–V13) sont corrigées, sauf V13.
+    Portefeuille livreur démarré : plafonds d'avance/caisse désormais appliqués à
+    l'attribution (4 services) et encaissements tracés à la livraison — encore aucune
+    vue consolidée du solde à reverser. Reste inchangé par ailleurs : Commerce
+    partenaire absent, caisse/incidents/promotions/dashboards admin absents,
+    FedaPay/WebPush/S3/Maps/offline non intégrés.
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n ok">48%</div><div class="l">Items F-xxx faits (40/84)</div></div>
+    <div class="kpi"><div class="n">11</div><div class="l">Partiels</div></div>
+    <div class="kpi"><div class="n danger">33</div><div class="l">Absents</div></div>
+    <div class="kpi"><div class="n ok">0</div><div class="l">Vulnérabilités élevées ouvertes (6 → 0)</div></div>
+  </div>
+
+  <h2>1. Verdict</h2>
+  <p>
+    Fonctionnellement, rien n'a bougé côté client/partenaires/restaurant depuis le
+    27/08 : les 4 services restent utilisables bout-en-bout côté client et livreur,
+    l'app partenaires ne gère toujours que les restaurants. Le mouvement des trois
+    derniers jours est ailleurs : une passe de durcissement sécurité complète (tous
+    les <code>V01</code>–<code>V12</code> de l'audit précédent corrigés) et le début
+    du portefeuille livreur (plafonds appliqués, encaissements tracés — RG-02/RG-14
+    ont désormais un effet réel, RG-03/RG-04 restent sans interface). L'admin, sorti
+    de son squelette le 28/08, couvre supervision + dispatch + zones + livreurs ;
+    caisse, incidents, promotions et tableaux de bord restent à construire.
+  </p>
+  <p>
+    <span class="pill ok">Hub 4 services</span>
+    <span class="pill ok">Sécurité durcie (12/13 corrigés)</span>
+    <span class="pill ok">Dispatch admin (auto + manuel)</span>
+    <span class="pill warn">Portefeuille livreur démarré</span>
+    <span class="pill warn">PWA sans offline</span>
+    <span class="pill off">Commerce partenaire absent</span>
+    <span class="pill off">Caisse / incidents / promos admin</span>
+    <span class="pill off">FedaPay / Maps / S3 / Push</span>
+  </p>
+
+  <h2>2. Couverture F-xxx (84 items)</h2>
+  <p>Fait = parcours utilisable bout-en-bout (annotation « partiel » comptée à part même si la case est cochée). Un seul changement de statut depuis le 27/08 : F-LIV-09.</p>
+  <table>
+    <thead>
+      <tr><th>Module</th><th>Fait</th><th>Partiel</th><th>Absent</th><th>Total</th><th>Delta / 27-08</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Client (F-CLI)</td><td>24</td><td>5</td><td>8</td><td>37</td><td>—</td></tr>
+      <tr><td>Restaurant (F-RES)</td><td>6</td><td>0</td><td>3</td><td>9</td><td>—</td></tr>
+      <tr><td>Commerce (F-COM)</td><td>0</td><td>0</td><td>8</td><td>8</td><td>—</td></tr>
+      <tr><td>Livreur (F-LIV)</td><td>6</td><td>4</td><td>1</td><td>11</td><td>F-LIV-09 absent → partiel</td></tr>
+      <tr><td>Admin (F-ADM)</td><td>4</td><td>2</td><td>13</td><td>19</td><td>—</td></tr>
+      <tr><td><strong>Total</strong></td><td><strong>40</strong></td><td><strong>11</strong></td><td><strong>33</strong></td><td><strong>84</strong></td><td><strong>+1 partiel</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Livreur — ce qui change</h3>
+  <p>
+    <code>apps/api/src/portefeuille/portefeuille.service.ts</code> (nouveau, 29/08) :
+    <code>verifierPlafondAvance</code>/<code>verifierPlafondCaisse</code> appelés à
+    l'attribution (automatique <code>admin-commandes.service.ts</code> et manuelle)
+    sur les 4 services, <code>enregistrerEncaissement</code> appelé à la livraison
+    espèces sur les 4 services (table <code>mouvements_portefeuille</code>,
+    migration <code>20260827210356_add_portefeuille_livreur</code>). Toujours
+    absent : solde à reverser non affiché (ni livreur ni admin), pas de mouvement
+    « avance » réellement enregistré (recalcul à la volée), pas de clôture de
+    caisse ni de récapitulatif journalier (F-LIV-11, F-ADM-12/13).
+  </p>
+
+  <h3>Admin — inchangé depuis le 28/08</h3>
+  <p>Connexion, vue d'ensemble filtrable par service, attribution auto (rotation + plafonds) et manuelle, gestion livreurs (zone/plafonds, pas de pièces d'identité) et zones (tarifs par service). Toujours absent : saisie manuelle hors plateforme, validation des demandes sensibles, incidents, journal d'audit, gestion partenaires/promotions, caisse, tableaux de bord, export, paiement/commission/reversement.</p>
+
+  <h2>3. Sécurité — suivi des constats du 27/08</h2>
+  <p>
+    Les 13 constats de l'audit précédent ont tous une trace de correctif dans le
+    code (commentaires <code>// V0x</code> / <code>// V1x</code>), sauf V13.
+    Aucune nouvelle vulnérabilité de sévérité équivalente identifiée sur le
+    périmètre modifié depuis.
+  </p>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Sévérité d'origine</th><th>Constat (27/08)</th><th>Statut (30/08)</th><th>Où</th></tr>
+    </thead>
+    <tbody>
+      <tr class="fixed"><td>V01</td><td>Élevée</td><td>Preuve Colis contournable (OTP optionnel)</td><td>Corrigé — code de remise obligatoire</td><td><code>livrer-colis.dto.ts</code></td></tr>
+      <tr class="fixed"><td>V02</td><td>Élevée</td><td>Course Repas : lecture puis écriture</td><td>Corrigé — prise atomique (<code>updateMany</code>)</td><td><code>commandes-repas.service.ts</code></td></tr>
+      <tr class="fixed"><td>V02b</td><td>Élevée</td><td>Zone non revalidée à la prise (4 services)</td><td>Corrigé — zone revalidée à l'assignation</td><td>4 × <code>prendreEnCharge()</code></td></tr>
+      <tr class="fixed"><td>V03</td><td>Élevée</td><td>Pas de rate limit auth</td><td>Corrigé — Throttler 5 req/min sur login/register</td><td><code>auth.controller.ts</code></td></tr>
+      <tr class="fixed"><td>V04</td><td>Élevée</td><td>CORS ouvert si <code>CORS_ORIGINS</code> vide</td><td>Corrigé — obligatoire en production</td><td><code>env.validation.ts</code>, <code>main.ts</code></td></tr>
+      <tr class="fixed"><td>V05</td><td>Élevée</td><td>JWT long, rôle figé, pas de révocation</td><td>Corrigé — JWT 2h, rôle relu en base à chaque requête</td><td><code>jwt-auth.guard.ts</code></td></tr>
+      <tr class="fixed"><td>V06</td><td>Moyenne</td><td>Fiche restaurant publique trop large</td><td>Corrigé — projection en liste blanche (<code>select</code>)</td><td><code>restaurants.service.ts</code></td></tr>
+      <tr class="fixed"><td>V07</td><td>Moyenne</td><td>Messages Prisma exposés</td><td>Corrigé — message générique par code, détail en log serveur</td><td><code>all-exceptions.filter.ts</code></td></tr>
+      <tr class="fixed"><td>V08</td><td>Moyenne</td><td>OTP Colis via <code>Math.random</code></td><td>Corrigé — <code>crypto.randomInt</code></td><td><code>commandes-colis.service.ts</code></td></tr>
+      <tr class="fixed"><td>V09</td><td>Moyenne</td><td>Plafonds livreur jamais appliqués</td><td>Corrigé — vérifiés à l'attribution, 4 services (voir §2)</td><td><code>portefeuille.service.ts</code></td></tr>
+      <tr class="fixed"><td>V10</td><td>Moyenne</td><td>Comptes démo + seed prod</td><td>Corrigé — seed bloqué si <code>NODE_ENV=production</code></td><td><code>prisma/seed.ts</code></td></tr>
+      <tr class="fixed"><td>V11</td><td>Moyenne</td><td>PII avant acceptation</td><td>Corrigé — nom/téléphone/adresse masqués avant prise en charge, 4 services</td><td>4 × service <code>commandes-*</code></td></tr>
+      <tr class="fixed"><td>V12</td><td>Faible</td><td>Pas de Helmet ni JWT global</td><td>Corrigé — Helmet + guard global deny-by-default (<code>@Public()</code> en liste blanche)</td><td><code>main.ts</code>, <code>jwt-auth.guard.ts</code></td></tr>
+      <tr><td>V13</td><td>Faible</td><td>Permissions seedées jamais évaluées</td><td><strong>Ouvert</strong> — <code>RolesGuard</code> ne lit toujours que le nom de rôle du JWT, pas les 15 codes d'action seedés</td><td><code>roles.guard.ts</code></td></tr>
+    </tbody>
+  </table>
+  <p>
+    Nouveau depuis le 27/08, non lié à un constat antérieur : rate limiting global
+    par défaut (60 req/min/IP, <code>ThrottlerModule</code>) en plus du throttle
+    auth ciblé.
+  </p>
+
+  <h2>4. Incohérences docs / code</h2>
+  <p>La quasi-totalité des écarts relevés le 27/08 (CLAUDE.md, phasage, historique
+  unifié, RBAC) sont corrigés dans les docs actuelles. Un nouvel écart trouvé et
+  corrigé pendant cet audit :</p>
+  <table>
+    <thead>
+      <tr><th>Sujet</th><th>Doc (avant cet audit)</th><th>Code réel</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>CLAUDE.md — admin</td><td>« dispatch automatique … restent à faire »</td><td>Dispatch auto par rotation + réattribution manuelle livrés le 28/08 (F-ADM-02/03)</td><td>Corrigé dans ce commit</td></tr>
+      <tr><td>modules.md — F-LIV-09</td><td>« non fait, aucun mouvement tracé »</td><td>Plafonds + encaissements tracés depuis le 29/08 (portefeuille)</td><td>Corrigé dans ce commit</td></tr>
+    </tbody>
+  </table>
+
+  <h2>5. Règles métier vs code</h2>
+  <table>
+    <thead>
+      <tr><th>Règle</th><th>Statut (27/08)</th><th>Statut (30/08)</th><th>Écart restant</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>RG-01 Paiement MoMo / espèces</td><td>Partiel</td><td>Partiel</td><td>Mode stocké ; aucun appel agrégateur (FedaPay)</td></tr>
+      <tr><td>RG-02 Plafond avance / caisse</td><td>Absent</td><td><strong>Partiel</strong></td><td>Plafonds appliqués à l'attribution ; pas de vue du solde ni de régularisation</td></tr>
+      <tr><td>RG-03 Clôture caisse</td><td>Absent</td><td>Absent</td><td>Mouvements tracés en base mais aucune interface de clôture/rapprochement</td></tr>
+      <tr><td>RG-04 CR Colis / reversement</td><td>Partiel</td><td>Partiel</td><td>Encaissement saisi ; pas de reversement à l'expéditeur</td></tr>
+      <tr><td>RG-05 Budget Emplettes</td><td>Fait (liste)</td><td>Fait (liste)</td><td>Pas d'escalade automatique (Q-26 non arbitré)</td></tr>
+      <tr><td>RG-07 Preuve livraison</td><td>Partiel</td><td>Partiel</td><td>Code de remise désormais obligatoire (V01) ; photo/S3 toujours absents</td></tr>
+      <tr><td>RG-14 Attribution</td><td>Partiel</td><td>Partiel</td><td>Rotation + plafonds (avance et caisse) ; pas de « plus proche » (pas de Maps)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>6. Priorités avant ouverture ville (Repas + Colis)</h2>
+  <ol>
+    <li>Donner une vue du portefeuille (solde à reverser, avances en cours) au livreur et à l'admin — le calcul existe déjà côté serveur, il manque l'exposition (endpoint + écran).</li>
+    <li>Construire un minimum de caisse admin (clôture journalière, rapprochement — F-ADM-12/13) avant d'ouvrir l'encaissement espèces à l'échelle : RG-03 reste sans interface malgré RG-02 désormais appliqué.</li>
+    <li>Traiter V13 (permissions granulaires jamais évaluées) avant d'ajouter des rôles admin au-delà du dispatcher unique actuel.</li>
+    <li>Le reste est inchangé depuis le 27/08 : FedaPay, Web Push, WhatsApp/SMS, Google Maps, S3, offline livreur, module Commerce partenaire.</li>
+  </ol>
+
+  <footer>
+    ChapExpress / Delivero — audit interne. Fichier généré le 30 août 2026. Ne pas diffuser hors équipe projet.
+  </footer>
+</body>
+</html>

@@ -5,13 +5,20 @@ Quatre services sous un même point d'entrée : Repas, Colis, Courses express,
 Emplettes. Cinq modules : Client, Restaurant, Commerce partenaire, Livreur,
 Back-office (admin + dispatching, porté par une seule personne).
 
-Monorepo pnpm en implémentation active. Seul le service **Repas** est construit à
-ce jour (phasage retenu : Repas → Colis → Emplettes → Courses express, voir
-[docs/decisions-arbitrage.md](docs/decisions-arbitrage.md)) : API NestJS/Prisma,
-apps `client`/`partenaires`/`livreur` fonctionnelles sur ce seul service. L'app
-`admin` (back-office) est un squelette vide. Statut détaillé fonctionnalité par
-fonctionnalité : [docs/modules.md](docs/modules.md), tenu à jour à chaque audit —
-le relire avant d'affirmer qu'une fonctionnalité existe ou non.
+Monorepo pnpm en implémentation active. Les **4 services** (Repas, Colis, Emplettes
+en mode liste libre, Courses express) sont livrés côté API NestJS/Prisma et côté
+apps `client`/`livreur` (phasage retenu : Repas → Colis → Emplettes → Courses
+express, voir [docs/decisions-arbitrage.md](docs/decisions-arbitrage.md)) — le
+phasage a servi à l'ordre de développement, pas à limiter ce qui est livré.
+`apps/partenaires` ne gère que les restaurants (le module Commerce partenaire,
+requis pour Emplettes en mode catalogue, est entièrement à faire). L'app `admin`
+(back-office) a une vue d'ensemble des commandes, un dispatch (automatique par
+rotation + réattribution manuelle) et une gestion des livreurs/zones depuis le
+28/08 ; caisse (clôture, rapprochement) et reversement restent à faire — voir
+F-ADM-12/13/18. Statut détaillé fonctionnalité par fonctionnalité :
+[docs/modules.md](docs/modules.md), tenu à jour à chaque audit — le relire avant
+d'affirmer qu'une fonctionnalité existe ou non. Dernier audit :
+[docs/audit-chapexpress-2026-08-30.html](docs/audit-chapexpress-2026-08-30.html).
 
 ## Stack
 
@@ -26,7 +33,10 @@ Choix tranchés (voir [docs/decisions-arbitrage.md](docs/decisions-arbitrage.md)
 - API REST — NestJS + PostgreSQL (Prisma). Monorepo pnpm multi-apps
   (`apps/api`, `apps/client`, `apps/partenaires`, `apps/livreur`, `apps/admin`,
   `packages/config`).
-- Temps réel : WebSockets — **[À FAIRE]**, le suivi actuel se fait par polling.
+- Temps réel : WebSockets (Socket.IO). Ajouté le 27/08 pour le suivi client
+  (F-CLI-05, 4 services) et l'alerte nouvelle commande restaurant (F-RES-01) —
+  voir `apps/api/src/realtime/`. Le polling reste en place comme filet de
+  secours (reconnexion, 3G instable) ; livreur et back-office non couverts.
 - Push : Web Push (VAPID) + fallback WhatsApp/SMS obligatoire — **[À FAIRE]**.
 - Paiement : agrégateur Mobile Money, FedaPay (choisi, non intégré — le mode de
   paiement est aujourd'hui seulement enregistré, aucun appel réel à un
@@ -47,7 +57,7 @@ docker compose up -d db      # PostgreSQL local (postgres:16, voir docker-compos
 pnpm dev:client               # apps/client   (PWA client)
 pnpm dev:partenaires          # apps/partenaires (PWA restaurant/commerce)
 pnpm dev:livreur              # apps/livreur  (PWA livreur)
-pnpm dev:admin                # apps/admin    (back-office — squelette)
+pnpm dev:admin                # apps/admin    (back-office)
 pnpm dev:api                  # apps/api      (NestJS, watch mode)
 
 pnpm build                    # build de toutes les apps (apps/**)

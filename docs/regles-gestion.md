@@ -113,6 +113,13 @@ Montant total client = Prix des plats (menu)
   Emplettes (voir [service-emplettes.md](service-emplettes.md)).
 - **[À ARBITRER]** : périodicité exacte du reversement au restaurant (exemple
   cité : hebdomadaire).
+
+**État du code (27/08/2026)** : `tauxCommission` reste seedé sur chaque
+`Partenaire` pour rester aligné avec ce document, mais n'est lu par aucun
+service — Repas facture 15 % en dur comme décrit ci-dessus, et Colis/Emplettes/
+Courses express n'ont pas encore de modèle de commission par partenaire. Ce
+n'est pas une incohérence à corriger sans nouvel arbitrage : le champ redevient
+pertinent seulement si un service adopte un taux négocié par partenaire.
 - **[À ARBITRER]** : ce modèle (frais séparés + commission côté client, restaurant
   payé plein tarif) est propre au Repas à ce stade. Reste à décider s'il doit être
   étendu à Courses express, Colis, ou au mode catalogue d'Emplettes, ou si ces
@@ -187,6 +194,14 @@ nécessaire (taille de colis, volume d'emplettes), et du plafond d'avance restan
 livreur (RG-02). Réattribution manuelle possible par le dispatcher à tout moment.
 **[À ARBITRER]** : algorithme exact de priorisation en cas d'égalité entre plusieurs
 livreurs disponibles.
+
+**État du code (29/08/2026)** : attribution automatique implémentée par rotation
+uniquement (livreur disponible de la zone dont la dernière commande assignée est
+la plus ancienne), filtrée par le plafond de caisse en plus du plafond d'avance —
+pas de "plus proche" (aucune intégration cartographique, voir CLAUDE.md
+[À FAIRE]) ni de prise en compte de la capacité de transport. Réattribution
+manuelle disponible côté back-office (`apps/admin`), contourne volontairement
+zone et plafonds. Voir `apps/api/src/admin/admin-commandes.service.ts`.
 
 ## RG-15 — Facturation des clients entreprises
 
