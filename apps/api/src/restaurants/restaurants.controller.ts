@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -29,6 +30,7 @@ export class RestaurantsController {
     private readonly commandesRepasService: CommandesRepasService,
   ) {}
 
+  @Public()
   @Get()
   findAll(@Query('q') search?: string) {
     return this.restaurantsService.findAllPublic(search);
@@ -122,6 +124,7 @@ export class RestaurantsController {
     return this.restaurantsService.removePlat(user.id, id);
   }
 
+  @Public()
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.restaurantsService.findOnePublic(id);

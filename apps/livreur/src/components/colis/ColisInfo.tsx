@@ -38,15 +38,17 @@ export function ColisInfo({ commande }: { commande: CommandeColis }) {
         </a>
       </div>
 
-      <div className="flex items-center justify-between">
-        <span className="text-muted-foreground">{destinataireNom}</span>
-        <a
-          href={`tel:${destinataireTelephone}`}
-          className="inline-flex items-center gap-1 text-brand-blue hover:underline"
-        >
-          <Phone className="size-3.5" /> {destinataireTelephone}
-        </a>
-      </div>
+      {destinataireNom && destinataireTelephone && (
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">{destinataireNom}</span>
+          <a
+            href={`tel:${destinataireTelephone}`}
+            className="inline-flex items-center gap-1 text-brand-blue hover:underline"
+          >
+            <Phone className="size-3.5" /> {destinataireTelephone}
+          </a>
+        </div>
+      )}
 
       {commande.montantContreRemboursement && (
         <p className="rounded-md bg-muted/60 px-2 py-1.5 font-medium">

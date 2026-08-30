@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -12,6 +13,8 @@ import {
   TypeService,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PortefeuilleService } from '../portefeuille/portefeuille.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { CreateCommandeRepasDto } from './dto/create-commande-repas.dto';
 
 const DETAIL_INCLUDE = {
@@ -38,11 +41,50 @@ type CommandeRepasDetail = Prisma.CommandeRepasGetPayload<{
   include: typeof DETAIL_INCLUDE;
 }>;
 
+// V11 : avant acceptation, un livreur ne doit pas voir le nom/téléphone du
+// client (contact direct possible hors plateforme) — seule l'adresse
+// (point de repère) reste nécessaire pour juger de la faisabilité de la
+// course. Le contact complet redevient visible une fois la course prise
+// (voir DETAIL_INCLUDE, utilisé par getOwnedByLivreur).
+const DISPONIBLES_INCLUDE = {
+  commande: {
+    include: {
+      adresse: true,
+      paiement: { select: { mode: true, statut: true } },
+    },
+  },
+  partenaire: {
+    select: {
+      id: true,
+      nom: true,
+      userId: true,
+      adresse: true,
+      pointDeRepere: true,
+    },
+  },
+  lignes: { include: { plat: { select: { id: true, nom: true } } } },
+} satisfies Prisma.CommandeRepasInclude;
+
 const ADMIN_ROLE_NAME = 'admin_dispatcher';
 
 @Injectable()
 export class CommandesRepasService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly portefeuille: PortefeuilleService,
+    private readonly realtime: RealtimeGateway,
+  ) {}
+
+  // F-CLI-05 : notifie le client d'un changement de statut, pour remplacer
+  // le polling par un rafraîchissement immédiat côté front (le polling
+  // reste en place comme filet de secours, voir realtime.gateway.ts).
+  private notifierClient(clientId: string, commandeId: string, statut: string) {
+    this.realtime.emitToUser(clientId, 'commande:statut', {
+      typeService: 'repas',
+      commandeId,
+      statut,
+    });
+  }
 
   async create(clientId: string, dto: CreateCommandeRepasDto) {
     const partenaire = await this.prisma.partenaire.findFirst({
@@ -138,6 +180,13 @@ export class CommandesRepasService {
       return created;
     });
 
+    // F-RES-01 : alerte temps réel côté restaurant, remplace le polling sur
+    // /restaurants/me/commandes.
+    this.realtime.emitToUser(partenaire.userId, 'commande:nouvelle', {
+      typeService: 'repas',
+      commandeId: commandeRepas.id,
+    });
+
     return commandeRepas;
   }
 
@@ -176,7 +225,7 @@ export class CommandesRepasService {
         commande: { livreurId: null },
         partenaire: { zoneId: livreur.zoneId },
       },
-      include: DETAIL_INCLUDE,
+      include: DISPONIBLES_INCLUDE,
       orderBy: { createdAt: 'asc' },
     });
   }
@@ -190,6 +239,12 @@ export class CommandesRepasService {
     });
   }
 
+  // Prise en charge atomique (V02) : l'assignation du livreur passe par un
+  // updateMany conditionné sur livreurId: null ET statut prete ET zone du
+  // partenaire == zone du livreur (V02b), comme pour Colis/Emplettes/Courses
+  // express — deux livreurs ne peuvent plus se disputer la même course, et un
+  // livreur ne peut plus prendre une course hors de sa zone en connaissant
+  // simplement son id.
   async prendreEnCharge(userId: string, id: string) {
     const livreur = await this.getLivreurByUserId(userId);
     if (!livreur.disponible) {
@@ -197,83 +252,185 @@ export class CommandesRepasService {
         'Passez votre statut à disponible avant de prendre une course.',
       );
     }
-    const commandeRepas = await this.getDetail(id);
-    this.assertStatut(commandeRepas, StatutRepas.prete);
-    if (commandeRepas.commande.livreurId) {
-      throw new BadRequestException('Cette course a déjà été prise en charge.');
+
+    const commandeRepas = await this.prisma.commandeRepas.findUnique({
+      where: { id },
+      select: {
+        commandeId: true,
+        commande: {
+          select: {
+            clientId: true,
+            montantTotal: true,
+            paiement: { select: { mode: true } },
+          },
+        },
+      },
+    });
+    if (!commandeRepas) {
+      throw new NotFoundException('Commande introuvable.');
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      await tx.commande.update({
-        where: { id: commandeRepas.commande.id },
-        data: { livreurId: livreur.id },
-      });
-      return tx.commandeRepas.update({
-        where: { id },
-        data: { statut: StatutRepas.recuperee_par_livreur },
-        include: DETAIL_INCLUDE,
-      });
+    // V09 / RG-02 : le cash Repas collecté à la livraison compte pour le
+    // plafond de caisse du livreur, comme les autres services.
+    if (commandeRepas.commande.paiement?.mode === 'especes') {
+      await this.portefeuille.verifierPlafondCaisse(
+        livreur.id,
+        livreur.plafondCaisse,
+        Number(commandeRepas.commande.montantTotal ?? 0),
+      );
+    }
+
+    const { count } = await this.prisma.commande.updateMany({
+      where: {
+        id: commandeRepas.commandeId,
+        livreurId: null,
+        commandeRepas: {
+          statut: StatutRepas.prete,
+          partenaire: { zoneId: livreur.zoneId },
+        },
+      },
+      data: { livreurId: livreur.id },
     });
+    if (count === 0) {
+      throw new ConflictException(
+        'Cette course a déjà été prise en charge ou n’est plus disponible.',
+      );
+    }
+
+    const updated = await this.prisma.commandeRepas.update({
+      where: { id },
+      data: { statut: StatutRepas.recuperee_par_livreur },
+      include: DETAIL_INCLUDE,
+    });
+    if (commandeRepas.commande.clientId) {
+      this.notifierClient(
+        commandeRepas.commande.clientId,
+        id,
+        StatutRepas.recuperee_par_livreur,
+      );
+    }
+    return updated;
   }
 
   async marquerEnRoute(userId: string, id: string) {
     const commandeRepas = await this.getOwnedByLivreur(userId, id);
     this.assertStatut(commandeRepas, StatutRepas.recuperee_par_livreur);
-    return this.prisma.commandeRepas.update({
+    const updated = await this.prisma.commandeRepas.update({
       where: { id },
       data: { statut: StatutRepas.en_route },
       include: DETAIL_INCLUDE,
     });
+    if (commandeRepas.commande.clientId) {
+      this.notifierClient(
+        commandeRepas.commande.clientId,
+        id,
+        StatutRepas.en_route,
+      );
+    }
+    return updated;
   }
 
   async marquerLivree(userId: string, id: string) {
+    const livreur = await this.getLivreurByUserId(userId);
     const commandeRepas = await this.getOwnedByLivreur(userId, id);
     this.assertStatut(commandeRepas, StatutRepas.en_route);
-    return this.prisma.commandeRepas.update({
-      where: { id },
-      data: { statut: StatutRepas.livree },
-      include: DETAIL_INCLUDE,
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.commandeRepas.update({
+        where: { id },
+        data: { statut: StatutRepas.livree },
+        include: DETAIL_INCLUDE,
+      });
+      if (commandeRepas.commande.paiement?.mode === 'especes') {
+        await this.portefeuille.enregistrerEncaissement(
+          tx,
+          livreur.id,
+          commandeRepas.commande.id,
+          Number(commandeRepas.commande.montantTotal ?? 0),
+        );
+      }
+      return result;
     });
+    if (commandeRepas.commande.clientId) {
+      this.notifierClient(
+        commandeRepas.commande.clientId,
+        id,
+        StatutRepas.livree,
+      );
+    }
+    return updated;
   }
 
   async accepter(userId: string, id: string) {
     const commandeRepas = await this.getOwnedByRestaurant(userId, id);
     this.assertStatut(commandeRepas, StatutRepas.en_attente_acceptation);
-    return this.prisma.commandeRepas.update({
+    const updated = await this.prisma.commandeRepas.update({
       where: { id },
       data: { statut: StatutRepas.confirmee },
       include: DETAIL_INCLUDE,
     });
+    if (commandeRepas.commande.clientId) {
+      this.notifierClient(
+        commandeRepas.commande.clientId,
+        id,
+        StatutRepas.confirmee,
+      );
+    }
+    return updated;
   }
 
   async refuser(userId: string, id: string, motif: string) {
     const commandeRepas = await this.getOwnedByRestaurant(userId, id);
     this.assertStatut(commandeRepas, StatutRepas.en_attente_acceptation);
-    return this.prisma.commandeRepas.update({
+    const updated = await this.prisma.commandeRepas.update({
       where: { id },
       data: { statut: StatutRepas.refusee, motifRefus: motif },
       include: DETAIL_INCLUDE,
     });
+    if (commandeRepas.commande.clientId) {
+      this.notifierClient(
+        commandeRepas.commande.clientId,
+        id,
+        StatutRepas.refusee,
+      );
+    }
+    return updated;
   }
 
   async marquerEnPreparation(userId: string, id: string) {
     const commandeRepas = await this.getOwnedByRestaurant(userId, id);
     this.assertStatut(commandeRepas, StatutRepas.confirmee);
-    return this.prisma.commandeRepas.update({
+    const updated = await this.prisma.commandeRepas.update({
       where: { id },
       data: { statut: StatutRepas.en_preparation },
       include: DETAIL_INCLUDE,
     });
+    if (commandeRepas.commande.clientId) {
+      this.notifierClient(
+        commandeRepas.commande.clientId,
+        id,
+        StatutRepas.en_preparation,
+      );
+    }
+    return updated;
   }
 
   async marquerPrete(userId: string, id: string) {
     const commandeRepas = await this.getOwnedByRestaurant(userId, id);
     this.assertStatut(commandeRepas, StatutRepas.en_preparation);
-    return this.prisma.commandeRepas.update({
+    const updated = await this.prisma.commandeRepas.update({
       where: { id },
       data: { statut: StatutRepas.prete },
       include: DETAIL_INCLUDE,
     });
+    if (commandeRepas.commande.clientId) {
+      this.notifierClient(
+        commandeRepas.commande.clientId,
+        id,
+        StatutRepas.prete,
+      );
+    }
+    return updated;
   }
 
   async annuler(userId: string, id: string) {
@@ -282,11 +439,18 @@ export class CommandesRepasService {
       throw new ForbiddenException('Cette commande ne vous appartient pas.');
     }
     this.assertStatut(commandeRepas, StatutRepas.en_attente_acceptation);
-    return this.prisma.commandeRepas.update({
+    const updated = await this.prisma.commandeRepas.update({
       where: { id },
       data: { statut: StatutRepas.annulee },
       include: DETAIL_INCLUDE,
     });
+    // Notifie aussi le restaurant : la commande annulée disparaît de sa file.
+    this.realtime.emitToUser(updated.partenaire.userId, 'commande:statut', {
+      typeService: 'repas',
+      commandeId: id,
+      statut: StatutRepas.annulee,
+    });
+    return updated;
   }
 
   private async getDetail(id: string): Promise<CommandeRepasDetail> {

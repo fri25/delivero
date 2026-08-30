@@ -12,6 +12,8 @@ import {
   TypeService,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PortefeuilleService } from '../portefeuille/portefeuille.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { CreateCommandeCoursesExpressDto } from './dto/create-commande-courses-express.dto';
 import { DeclarerLitigeCoursesExpressDto } from './dto/declarer-litige-courses-express.dto';
 
@@ -30,6 +32,19 @@ type CommandeCoursesExpressDetail = Prisma.CommandeCoursesExpressGetPayload<{
   include: typeof DETAIL_INCLUDE;
 }>;
 
+// V11 : avant acceptation, pas de nom/téléphone client (voir même correctif
+// dans commandes-repas.service.ts) ; les étapes restent visibles, ce sont
+// les termes de la course elle-même, pas une donnée personnelle du client.
+const DISPONIBLES_INCLUDE = {
+  commande: {
+    include: {
+      paiement: { select: { mode: true, statut: true } },
+    },
+  },
+  etapes: { orderBy: { ordre: 'asc' } },
+  zone: { select: { id: true, nom: true } },
+} satisfies Prisma.CommandeCoursesExpressInclude;
+
 const ADMIN_ROLE_NAME = 'admin_dispatcher';
 
 // Majoration provisoire par arrêt supplémentaire, appliquée au tarif de base
@@ -39,7 +54,20 @@ const MAJORATION_PAR_ARRET_SUPPLEMENTAIRE = 200;
 
 @Injectable()
 export class CommandesCoursesExpressService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly portefeuille: PortefeuilleService,
+    private readonly realtime: RealtimeGateway,
+  ) {}
+
+  // F-CLI-05 : voir même principe que commandes-repas.service.ts.
+  private notifierClient(clientId: string, commandeId: string, statut: string) {
+    this.realtime.emitToUser(clientId, 'commande:statut', {
+      typeService: 'courses_express',
+      commandeId,
+      statut,
+    });
+  }
 
   async estimer(zoneId: string, nombreEtapes: number) {
     const tarif = await this.calculerTarif(zoneId, nombreEtapes);
@@ -128,7 +156,7 @@ export class CommandesCoursesExpressService {
         commande: { livreurId: null },
         zoneId: livreur.zoneId,
       },
-      include: DETAIL_INCLUDE,
+      include: DISPONIBLES_INCLUDE,
       orderBy: { createdAt: 'asc' },
     });
   }
@@ -156,17 +184,43 @@ export class CommandesCoursesExpressService {
     const commandeCoursesExpress =
       await this.prisma.commandeCoursesExpress.findUnique({
         where: { id },
-        select: { commandeId: true },
+        select: {
+          commandeId: true,
+          commande: {
+            select: {
+              clientId: true,
+              montantTotal: true,
+              paiement: { select: { mode: true } },
+            },
+          },
+        },
       });
     if (!commandeCoursesExpress) {
       throw new NotFoundException('Commande introuvable.');
     }
 
+    // V09 / RG-02 : le cash Courses express collecté à la fin de la course
+    // compte pour le plafond de caisse. Pas d'avance de fonds ici : "avance
+    // pour achat simple" est [À ARBITRER] (docs/service-courses-express.md),
+    // non implémentée.
+    if (commandeCoursesExpress.commande.paiement?.mode === 'especes') {
+      await this.portefeuille.verifierPlafondCaisse(
+        livreur.id,
+        livreur.plafondCaisse,
+        Number(commandeCoursesExpress.commande.montantTotal ?? 0),
+      );
+    }
+
+    // V02b : la zone est revalidée à l'assignation, pas seulement filtrée
+    // dans la liste "disponibles".
     const { count } = await this.prisma.commande.updateMany({
       where: {
         id: commandeCoursesExpress.commandeId,
         livreurId: null,
-        commandeCoursesExpress: { statut: StatutCoursesExpress.confirmee },
+        commandeCoursesExpress: {
+          statut: StatutCoursesExpress.confirmee,
+          zoneId: livreur.zoneId,
+        },
       },
       data: { livreurId: livreur.id },
     });
@@ -176,17 +230,26 @@ export class CommandesCoursesExpressService {
       );
     }
 
-    return this.prisma.commandeCoursesExpress.update({
+    const updated = await this.prisma.commandeCoursesExpress.update({
       where: { id },
       data: { statut: StatutCoursesExpress.en_cours },
       include: DETAIL_INCLUDE,
     });
+    if (commandeCoursesExpress.commande.clientId) {
+      this.notifierClient(
+        commandeCoursesExpress.commande.clientId,
+        id,
+        StatutCoursesExpress.en_cours,
+      );
+    }
+    return updated;
   }
 
   // Chaque étape peut être réalisée tant que la commande est en_cours ou
   // etape_realisee (auto-boucle de la machine à états : "étape suivante"),
   // jamais depuis confirmee/terminee/litige/annulee.
   async realiserEtape(userId: string, id: string, etapeId: string) {
+    const livreur = await this.getLivreurByUserId(userId);
     const commande = await this.getOwnedByLivreur(userId, id);
     if (
       commande.statut !== StatutCoursesExpress.en_cours &&
@@ -214,15 +277,29 @@ export class CommandesCoursesExpressService {
       (e) => e.id !== etapeId && !e.realisee,
     );
 
-    return this.prisma.commandeCoursesExpress.update({
-      where: { id },
-      data: {
-        statut: resteAFaire
-          ? StatutCoursesExpress.etape_realisee
-          : StatutCoursesExpress.terminee,
-      },
-      include: DETAIL_INCLUDE,
+    const nouveauStatut = resteAFaire
+      ? StatutCoursesExpress.etape_realisee
+      : StatutCoursesExpress.terminee;
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.commandeCoursesExpress.update({
+        where: { id },
+        data: { statut: nouveauStatut },
+        include: DETAIL_INCLUDE,
+      });
+      if (!resteAFaire && commande.commande.paiement?.mode === 'especes') {
+        await this.portefeuille.enregistrerEncaissement(
+          tx,
+          livreur.id,
+          commande.commande.id,
+          Number(commande.commande.montantTotal ?? 0),
+        );
+      }
+      return result;
     });
+    if (commande.commande.clientId) {
+      this.notifierClient(commande.commande.clientId, id, nouveauStatut);
+    }
+    return updated;
   }
 
   // Litige atteignable dans cette itération, déclaré par le livreur, sans
@@ -236,11 +313,19 @@ export class CommandesCoursesExpressService {
   ) {
     const commande = await this.getOwnedByLivreur(userId, id);
     this.assertStatut(commande, StatutCoursesExpress.en_cours);
-    return this.prisma.commandeCoursesExpress.update({
+    const updated = await this.prisma.commandeCoursesExpress.update({
       where: { id },
       data: { statut: StatutCoursesExpress.litige, motif: dto.motif },
       include: DETAIL_INCLUDE,
     });
+    if (commande.commande.clientId) {
+      this.notifierClient(
+        commande.commande.clientId,
+        id,
+        StatutCoursesExpress.litige,
+      );
+    }
+    return updated;
   }
 
   // Annulation possible uniquement avant l'attribution (confirmee), conforme

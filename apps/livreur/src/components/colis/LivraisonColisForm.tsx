@@ -17,8 +17,8 @@ export function LivraisonColisForm({ commande }: { commande: CommandeColis }) {
   const confirmer = () => {
     setErreur(null);
 
-    if (!codeOtp.trim() && !nomReceptionnaire.trim()) {
-      setErreur('Renseignez le code de remise ou le nom du réceptionnaire.');
+    if (!codeOtp.trim()) {
+      setErreur('Le code de remise fourni par le destinataire est obligatoire.');
       return;
     }
     if (contreRembourseAttendu && !montantEncaisse) {
@@ -29,7 +29,7 @@ export function LivraisonColisForm({ commande }: { commande: CommandeColis }) {
     livrer.mutate(
       {
         id: commande.id,
-        codeOtp: codeOtp.trim() || undefined,
+        codeOtp: codeOtp.trim(),
         nomReceptionnaire: nomReceptionnaire.trim() || undefined,
         montantEncaisse: montantEncaisse ? Number(montantEncaisse) : undefined,
       },
@@ -47,17 +47,18 @@ export function LivraisonColisForm({ commande }: { commande: CommandeColis }) {
       <p className="text-sm font-medium">Confirmer la livraison</p>
 
       <div className="space-y-1.5">
-        <Label htmlFor={`otp-${commande.id}`}>Code de remise (fourni par le destinataire)</Label>
+        <Label htmlFor={`otp-${commande.id}`}>Code de remise (fourni par le destinataire) *</Label>
         <Input
           id={`otp-${commande.id}`}
           inputMode="numeric"
+          required
           value={codeOtp}
           onChange={(event) => setCodeOtp(event.target.value)}
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor={`receptionnaire-${commande.id}`}>Ou nom du réceptionnaire</Label>
+        <Label htmlFor={`receptionnaire-${commande.id}`}>Nom du réceptionnaire (optionnel)</Label>
         <Input
           id={`receptionnaire-${commande.id}`}
           value={nomReceptionnaire}

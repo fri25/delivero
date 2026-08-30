@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+import { Public } from '../auth/decorators/public.decorator';
 import { ZonesService } from './zones.service';
 
 // Public, en lecture seule : le choix de la zone de collecte (Colis) doit se
@@ -8,6 +9,7 @@ import { ZonesService } from './zones.service';
 export class ZonesController {
   constructor(private readonly zonesService: ZonesService) {}
 
+  @Public()
   @Get()
   findAll() {
     return this.zonesService.findAllPublic();
