@@ -54,6 +54,7 @@ Gestionnaire de paquets : pnpm (workspace `apps/*` + `packages/*`).
 pnpm install                 # installe tout le monorepo
 docker compose up -d db      # PostgreSQL local (postgres:16, voir docker-compose.yml)
 
+pnpm dev                      # lance db + les 5 apps en parallèle (concurrently)
 pnpm dev:client               # apps/client   (PWA client)
 pnpm dev:partenaires          # apps/partenaires (PWA restaurant/commerce)
 pnpm dev:livreur              # apps/livreur  (PWA livreur)
