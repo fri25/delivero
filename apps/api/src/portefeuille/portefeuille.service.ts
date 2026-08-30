@@ -9,10 +9,9 @@ import { PrismaService } from '../prisma/prisma.service';
 
 // V09 / RG-02 / RG-14 : jusqu'ici plafondAvance et plafondCaisse existaient en
 // base mais n'étaient jamais lus. Ce service leur donne un effet réel au
-// moment de l'attribution d'une course, sans construire le back-office caisse
-// (F-ADM-12/13, hors périmètre — voir docs/modules.md). Voir le commentaire
-// sur MouvementPortefeuille dans schema.prisma pour les choix de modélisation
-// et leurs limites assumées.
+// moment de l'attribution d'une course. Voir le commentaire sur
+// MouvementPortefeuille et ClotureCaisse dans schema.prisma pour les choix de
+// modélisation et leurs limites assumées.
 @Injectable()
 export class PortefeuilleService {
   constructor(private readonly prisma: PrismaService) {}
@@ -38,9 +37,16 @@ export class PortefeuilleService {
     );
   }
 
+  // Seuls les encaissements pas encore rattachés à une ClotureCaisse comptent
+  // — une fois clôturés (F-ADM-13), ils sortent du solde courant. Voir le
+  // commentaire sur MouvementPortefeuille dans schema.prisma.
   async getCaisseAReverser(livreurId: string): Promise<number> {
     const result = await this.prisma.mouvementPortefeuille.aggregate({
-      where: { livreurId, type: TypeMouvementPortefeuille.encaissement },
+      where: {
+        livreurId,
+        type: TypeMouvementPortefeuille.encaissement,
+        clotureCaisseId: null,
+      },
       _sum: { montant: true },
     });
     return Number(result._sum.montant ?? 0);
@@ -87,6 +93,61 @@ export class PortefeuilleService {
       caisseAReverser,
       plafondCaisse: Number(plafondCaisse),
     };
+  }
+
+  // Clôture journalière (RG-03, F-ADM-13) : fige les encaissements pas
+  // encore clôturés sur une nouvelle ClotureCaisse et compare au montant
+  // déclaré par le livreur. Ne corrige ni ne bloque rien en cas d'écart —
+  // la procédure exacte reste [À ARBITRER] (docs/regles-gestion.md RG-03),
+  // le rapprochement (F-ADM-12) n'est qu'une prise d'acte du dispatcher.
+  // "Journalière" est simplifié en une clôture par jour calendaire UTC (pas
+  // de fuseau propre au projet configuré) — [DÉDUIT], pas une exigence
+  // confirmée.
+  async cloturerCaisse(livreurId: string, montantDeclare: number) {
+    const debutJournee = new Date();
+    debutJournee.setUTCHours(0, 0, 0, 0);
+
+    const clotureExistante = await this.prisma.clotureCaisse.findFirst({
+      where: { livreurId, createdAt: { gte: debutJournee } },
+    });
+    if (clotureExistante) {
+      throw new BadRequestException(
+        'La caisse a déjà été clôturée aujourd\'hui.',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const mouvementsOuverts = await tx.mouvementPortefeuille.findMany({
+        where: {
+          livreurId,
+          type: TypeMouvementPortefeuille.encaissement,
+          clotureCaisseId: null,
+        },
+        select: { id: true, montant: true },
+      });
+      const montantTheorique = mouvementsOuverts.reduce(
+        (total, m) => total + Number(m.montant),
+        0,
+      );
+
+      const cloture = await tx.clotureCaisse.create({
+        data: {
+          livreurId,
+          montantTheorique,
+          montantDeclare,
+          ecart: montantDeclare - montantTheorique,
+        },
+      });
+
+      if (mouvementsOuverts.length > 0) {
+        await tx.mouvementPortefeuille.updateMany({
+          where: { id: { in: mouvementsOuverts.map((m) => m.id) } },
+          data: { clotureCaisseId: cloture.id },
+        });
+      }
+
+      return cloture;
+    });
   }
 
   enregistrerEncaissement(

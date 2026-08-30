@@ -28,6 +28,14 @@ supervisé par l'administrateur pour l'ensemble des livreurs. **[À ARBITRER]** 
 procédure exacte en cas d'écart constaté (relance, retenue, blocage du compte
 livreur).
 
+**État du code (30/08/2026)** : clôture livrée pour le volet encaissements
+espèces uniquement (`ClotureCaisse`, une par jour calendaire UTC — voir
+docs/modules.md F-ADM-13) ; les avances n'ont pas de mouvement dédié
+(F-LIV-09) donc ne rentrent pas dans le montant théorique comparé. Le
+rapprochement admin (F-ADM-12) enregistre qui a pris acte de l'écart et
+quand, mais n'applique aucune des trois options citées ci-dessus
+(relance/retenue/blocage) — cette procédure reste entièrement à arbitrer.
+
 ## RG-04 — Contre-remboursement et reversement à l'expéditeur
 
 Sur une livraison Colis avec option contre-remboursement, le livreur encaisse un

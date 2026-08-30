@@ -33,4 +33,18 @@ export class LivreursService {
       data: { disponible },
     });
   }
+
+  async cloturerCaisse(userId: string, montantDeclare: number) {
+    const livreur = await this.getOwn(userId);
+    return this.portefeuille.cloturerCaisse(livreur.id, montantDeclare);
+  }
+
+  async getClotures(userId: string) {
+    const livreur = await this.getOwn(userId);
+    return this.prisma.clotureCaisse.findMany({
+      where: { livreurId: livreur.id },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+  }
 }
