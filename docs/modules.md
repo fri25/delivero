@@ -238,8 +238,17 @@ Compte de démo : `+22900000004` / `demo12345` (rôle `admin_dispatcher`, voir
 - [x] F-ADM-03 — Réattribution manuelle d'une course — *(même endpoint que
       F-ADM-02 avec un `livreurId` explicite ; contourne volontairement zone
       et plafonds, contrairement à l'automatique)*
-- [ ] F-ADM-04 — Saisie manuelle d'une demande reçue hors plateforme (téléphone,
-      WhatsApp), pour les 4 services
+- [x] F-ADM-04 — Saisie manuelle d'une demande reçue hors plateforme (téléphone,
+      WhatsApp), pour les 4 services — *(ajouté le 31/08 : page "Saisie manuelle",
+      un formulaire par service. Le mode invité (F-CLI-02) n'existant pas, un
+      compte client "coquille" est créé ou retrouvé par numéro de téléphone
+      (sans mot de passe) puis la commande passe par le même `create()` que le
+      parcours client normal — même tarification, mêmes validations, aucune
+      logique dupliquée. Voir
+      `apps/api/src/admin/admin-saisie-manuelle.service.ts`. Mode de paiement
+      fixé à "espèces" dans le formulaire (pas de saisie Mobile Money côté
+      dispatcher) ; limite assumée : si l'appelant s'inscrit plus tard
+      normalement, son numéro est déjà pris, aucune fusion de compte prévue)*
 - [ ] F-ADM-05 — Validation des demandes sensibles
 - [ ] F-ADM-06 — Gestion des incidents (annulation, remboursement, litige, client
       injoignable, colis refusé/endommagé, article contesté)
