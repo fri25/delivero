@@ -23,6 +23,16 @@ const PRISMA_STATUS_MAP: Record<string, HttpStatus> = {
   P2003: HttpStatus.BAD_REQUEST, // foreign key constraint failed
 };
 
+// V07 : exception.message pour un code Prisma connu contient le nom de
+// table/contrainte/colonne (schéma interne) — jamais renvoyé tel quel au
+// client, remplacé par un message générique par code.
+const PRISMA_GENERIC_MESSAGE: Record<string, string> = {
+  P2002: 'Cette ressource existe déjà.',
+  P2025: 'Ressource introuvable.',
+  P2003: 'Référence invalide.',
+};
+const PRISMA_DEFAULT_MESSAGE = 'Requête invalide.';
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
@@ -71,10 +81,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof Prisma.PrismaClientKnownRequestError) {
       const status =
         PRISMA_STATUS_MAP[exception.code] ?? HttpStatus.BAD_REQUEST;
+      // Le détail (table, contrainte, colonne) reste utile côté serveur pour
+      // débugger, donc journalisé ici — mais jamais renvoyé au client (V07).
+      this.logger.debug(`Prisma:${exception.code} — ${exception.message}`);
       return {
         statusCode: status,
         error: `Prisma:${exception.code}`,
-        message: exception.message,
+        message:
+          PRISMA_GENERIC_MESSAGE[exception.code] ?? PRISMA_DEFAULT_MESSAGE,
       };
     }
 

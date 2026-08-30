@@ -30,10 +30,22 @@ export class RestaurantsService {
     });
   }
 
+  // V06 : projection en liste blanche — un `include` sans `select` renvoyait
+  // tous les champs scalaires de Partenaire, dont userId, tauxCommission,
+  // latitude/longitude et zoneId (aucun usage client à ce stade, aucune
+  // intégration Maps réelle — voir CLAUDE.md [À FAIRE]).
   async findOnePublic(id: string) {
     const restaurant = await this.prisma.partenaire.findFirst({
       where: { id, type: TypePartenaire.restaurant },
-      include: {
+      select: {
+        id: true,
+        nom: true,
+        description: true,
+        horaires: true,
+        adresse: true,
+        pointDeRepere: true,
+        statutOuverture: true,
+        noteMoyenne: true,
         plats: { orderBy: [{ categorie: 'asc' }, { nom: 'asc' }] },
         zone: { select: { fraisLivraison: true } },
       },

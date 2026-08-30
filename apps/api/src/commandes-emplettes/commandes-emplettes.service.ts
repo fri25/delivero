@@ -15,6 +15,8 @@ import {
   TypeService,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PortefeuilleService } from '../portefeuille/portefeuille.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { CreateCommandeEmplettesDto } from './dto/create-commande-emplettes.dto';
 import { DeclarerLitigeEmplettesDto } from './dto/declarer-litige-emplettes.dto';
 import { PointerArticleDto } from './dto/pointer-article.dto';
@@ -37,6 +39,19 @@ type CommandeEmplettesDetail = Prisma.CommandeEmplettesGetPayload<{
   include: typeof DETAIL_INCLUDE;
 }>;
 
+// V11 : avant acceptation, pas de nom/téléphone client (voir même correctif
+// dans commandes-repas.service.ts).
+const DISPONIBLES_INCLUDE = {
+  commande: {
+    include: {
+      adresse: true,
+      paiement: { select: { mode: true, statut: true } },
+    },
+  },
+  articles: { orderBy: { createdAt: 'asc' } },
+  zone: { select: { id: true, nom: true } },
+} satisfies Prisma.CommandeEmplettesInclude;
+
 const ADMIN_ROLE_NAME = 'admin_dispatcher';
 
 // Frais de service Emplettes : aucun pourcentage/forfait n'est arbitré (voir
@@ -46,7 +61,20 @@ const FRAIS_SERVICE_POURCENTAGE = 0.1;
 
 @Injectable()
 export class CommandesEmplettesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly portefeuille: PortefeuilleService,
+    private readonly realtime: RealtimeGateway,
+  ) {}
+
+  // F-CLI-05 : voir même principe que commandes-repas.service.ts.
+  private notifierClient(clientId: string, commandeId: string, statut: string) {
+    this.realtime.emitToUser(clientId, 'commande:statut', {
+      typeService: 'emplettes',
+      commandeId,
+      statut,
+    });
+  }
 
   async estimer(zoneId: string, budgetMax: number) {
     const zone = await this.prisma.zone.findUnique({ where: { id: zoneId } });
@@ -171,7 +199,7 @@ export class CommandesEmplettesService {
         commande: { livreurId: null },
         zoneId: livreur.zoneId,
       },
-      include: DETAIL_INCLUDE,
+      include: DISPONIBLES_INCLUDE,
       orderBy: { createdAt: 'asc' },
     });
   }
@@ -200,17 +228,51 @@ export class CommandesEmplettesService {
 
     const commandeEmplettes = await this.prisma.commandeEmplettes.findUnique({
       where: { id },
-      select: { commandeId: true },
+      select: {
+        commandeId: true,
+        modeFinancement: true,
+        budgetMax: true,
+        commande: { select: { clientId: true, montantTotal: true } },
+      },
     });
     if (!commandeEmplettes) {
       throw new NotFoundException('Commande introuvable.');
     }
 
+    // V09 / RG-02 / RG-14 : un livreur ne peut pas prendre une commande qui
+    // ferait dépasser son plafond d'avance (mode avance_livreur) ou son
+    // plafond de caisse (tout mode réglé en espèces à la livraison).
+    if (
+      commandeEmplettes.modeFinancement ===
+      ModeFinancementEmplettes.avance_livreur
+    ) {
+      await this.portefeuille.verifierPlafondAvance(
+        livreur.id,
+        livreur.plafondAvance,
+        Number(commandeEmplettes.budgetMax),
+      );
+    }
+    if (
+      commandeEmplettes.modeFinancement !==
+      ModeFinancementEmplettes.mobile_money_anticipe
+    ) {
+      await this.portefeuille.verifierPlafondCaisse(
+        livreur.id,
+        livreur.plafondCaisse,
+        Number(commandeEmplettes.commande.montantTotal ?? 0),
+      );
+    }
+
+    // V02b : la zone est revalidée à l'assignation, pas seulement filtrée
+    // dans la liste "disponibles".
     const { count } = await this.prisma.commande.updateMany({
       where: {
         id: commandeEmplettes.commandeId,
         livreurId: null,
-        commandeEmplettes: { statut: StatutEmplettes.confirmee },
+        commandeEmplettes: {
+          statut: StatutEmplettes.confirmee,
+          zoneId: livreur.zoneId,
+        },
       },
       data: { livreurId: livreur.id },
     });
@@ -220,11 +282,19 @@ export class CommandesEmplettesService {
       );
     }
 
-    return this.prisma.commandeEmplettes.update({
+    const updated = await this.prisma.commandeEmplettes.update({
       where: { id },
       data: { statut: StatutEmplettes.achats_en_cours },
       include: DETAIL_INCLUDE,
     });
+    if (commandeEmplettes.commande.clientId) {
+      this.notifierClient(
+        commandeEmplettes.commande.clientId,
+        id,
+        StatutEmplettes.achats_en_cours,
+      );
+    }
+    return updated;
   }
 
   async pointerArticle(
@@ -285,7 +355,7 @@ export class CommandesEmplettesService {
     const nouveauDepassement =
       montantReel > budgetMax && !etaitDejaEnDepassement;
 
-    return this.prisma.commandeEmplettes.update({
+    const updated = await this.prisma.commandeEmplettes.update({
       where: { id },
       data: {
         montantReel,
@@ -295,6 +365,15 @@ export class CommandesEmplettesService {
       },
       include: DETAIL_INCLUDE,
     });
+    // Le client doit valider explicitement (RG-05) : notification prioritaire.
+    if (nouveauDepassement && commande.commande.clientId) {
+      this.notifierClient(
+        commande.commande.clientId,
+        id,
+        StatutEmplettes.validation_depassement,
+      );
+    }
+    return updated;
   }
 
   // RG-05 / Q-12 (décidé sur le principe) : blocage par défaut, le client
@@ -343,7 +422,7 @@ export class CommandesEmplettesService {
     const commission = Math.round(sousTotal * FRAIS_SERVICE_POURCENTAGE);
     const montantTotal = sousTotal + fraisLivraison + commission;
 
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       await tx.commande.update({
         where: { id: commande.commande.id },
         data: { sousTotal, commission, montantTotal },
@@ -357,26 +436,66 @@ export class CommandesEmplettesService {
         include: DETAIL_INCLUDE,
       });
     });
+    if (commande.commande.clientId) {
+      this.notifierClient(
+        commande.commande.clientId,
+        id,
+        StatutEmplettes.achats_termines,
+      );
+    }
+    return updated;
   }
 
   async marquerEnRoute(userId: string, id: string) {
     const commande = await this.getOwnedByLivreur(userId, id);
     this.assertStatut(commande, StatutEmplettes.achats_termines);
-    return this.prisma.commandeEmplettes.update({
+    const updated = await this.prisma.commandeEmplettes.update({
       where: { id },
       data: { statut: StatutEmplettes.en_route },
       include: DETAIL_INCLUDE,
     });
+    if (commande.commande.clientId) {
+      this.notifierClient(
+        commande.commande.clientId,
+        id,
+        StatutEmplettes.en_route,
+      );
+    }
+    return updated;
   }
 
   async marquerLivree(userId: string, id: string) {
+    const livreur = await this.getLivreurByUserId(userId);
     const commande = await this.getOwnedByLivreur(userId, id);
     this.assertStatut(commande, StatutEmplettes.en_route);
-    return this.prisma.commandeEmplettes.update({
-      where: { id },
-      data: { statut: StatutEmplettes.livree },
-      include: DETAIL_INCLUDE,
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.commandeEmplettes.update({
+        where: { id },
+        data: { statut: StatutEmplettes.livree },
+        include: DETAIL_INCLUDE,
+      });
+      // RG-02 : le cash collecté à la livraison (mode especes_livraison ou
+      // avance_livreur) part au portefeuille — mobile_money_anticipe ne
+      // laisse aucune espèce entre les mains du livreur.
+      if (commande.commande.paiement?.mode === 'especes') {
+        await this.portefeuille.enregistrerEncaissement(
+          tx,
+          livreur.id,
+          commande.commande.id,
+          Number(commande.commande.montantTotal ?? 0),
+        );
+      }
+      return result;
     });
+    if (commande.commande.clientId) {
+      this.notifierClient(
+        commande.commande.clientId,
+        id,
+        StatutEmplettes.livree,
+      );
+    }
+    return updated;
   }
 
   // Litige atteignable dans cette itération, déclaré par le livreur, sans
@@ -390,11 +509,19 @@ export class CommandesEmplettesService {
   ) {
     const commande = await this.getOwnedByLivreur(userId, id);
     this.assertStatut(commande, StatutEmplettes.achats_en_cours);
-    return this.prisma.commandeEmplettes.update({
+    const updated = await this.prisma.commandeEmplettes.update({
       where: { id },
       data: { statut: StatutEmplettes.litige, motif: dto.motif },
       include: DETAIL_INCLUDE,
     });
+    if (commande.commande.clientId) {
+      this.notifierClient(
+        commande.commande.clientId,
+        id,
+        StatutEmplettes.litige,
+      );
+    }
+    return updated;
   }
 
   // Annulation possible uniquement avant le début des achats (confirmee),

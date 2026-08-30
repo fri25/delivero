@@ -175,9 +175,39 @@ model Livreur {
   noteMoyenne    Decimal? @map("note_moyenne") @db.Decimal(3, 2)
   createdAt      DateTime @default(now()) @map("created_at")
 
-  commandes Commande[]
+  commandes              Commande[]
+  mouvementsPortefeuille MouvementPortefeuille[]
 
   @@map("livreurs")
+}
+
+// --- Portefeuille livreur (RG-02/RG-03) -----------------------------------
+// Ledger append-only, pas un solde stocké : "avance" et "encaissement" sont
+// deux faits distincts, jamais nettés entre eux ici (RG-02 parle d'un
+// "solde net à reverser" mais ne précise pas le mécanisme de recouvrement
+// exact — voir docs/regles-gestion.md). L'avance en cours (pour le plafond
+// d'avance, RG-14) se déduit directement des commandes Emplettes non
+// terminées, pas de ce ledger — voir PortefeuilleService.getAvanceEnCours.
+// La caisse à reverser (RG-03) est la somme de tous les encaissements
+// jamais compensés : aucune clôture admin n'existe encore (F-ADM-12/13,
+// back-office non construit), donc ce solde ne peut que croître jusqu'à
+// une réconciliation manuelle — comportement voulu, pas un bug.
+enum TypeMouvementPortefeuille {
+  avance
+  encaissement
+}
+
+model MouvementPortefeuille {
+  id         String                    @id @default(cuid())
+  livreurId  String                    @map("livreur_id")
+  livreur    Livreur                   @relation(fields: [livreurId], references: [id])
+  commandeId String?                   @map("commande_id")
+  commande   Commande?                 @relation(fields: [commandeId], references: [id])
+  type       TypeMouvementPortefeuille
+  montant    Decimal                   @db.Decimal(12, 2)
+  createdAt  DateTime                  @default(now()) @map("created_at")
+
+  @@map("mouvements_portefeuille")
 }
 
 // --- Commande (entité générique) -----------------------------------------
@@ -229,6 +259,7 @@ model Commande {
   commandeEmplettes     CommandeEmplettes?
   commandeCoursesExpress CommandeCoursesExpress?
   paiement              Paiement?
+  mouvementsPortefeuille MouvementPortefeuille[]
 
   @@map("commandes")
 }

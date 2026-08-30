@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { randomInt } from 'node:crypto';
 import {
   Prisma,
   StatutColis,
@@ -13,6 +14,8 @@ import {
   TypeService,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PortefeuilleService } from '../portefeuille/portefeuille.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { CreateCommandeColisDto } from './dto/create-commande-colis.dto';
 import { DeclarerLitigeColisDto } from './dto/declarer-litige-colis.dto';
 import { LivrerColisDto } from './dto/livrer-colis.dto';
@@ -38,6 +41,27 @@ type CommandeColisDetail = Prisma.CommandeColisGetPayload<{
 // obtenue de l'expéditeur. Appliqué à toutes les requêtes/réponses côté
 // livreur ci-dessous.
 const LIVREUR_OMIT = { codeOtp: true } satisfies Prisma.CommandeColisOmit;
+
+// V11 : avant acceptation, ni le contact de l'expéditeur (commande.client) ni
+// celui du destinataire (destinataireNom/destinataireTelephone) ne doivent
+// être visibles — seules les adresses restent nécessaires pour juger de la
+// faisabilité. Redevient visible une fois le colis pris (voir DETAIL_INCLUDE
+// + LIVREUR_OMIT, utilisés par getOwnedByLivreur).
+const DISPONIBLES_INCLUDE = {
+  commande: {
+    include: {
+      adresse: true,
+      paiement: { select: { mode: true, statut: true } },
+    },
+  },
+  adresseEnlevement: true,
+  zone: { select: { id: true, nom: true } },
+} satisfies Prisma.CommandeColisInclude;
+const DISPONIBLES_OMIT = {
+  codeOtp: true,
+  destinataireNom: true,
+  destinataireTelephone: true,
+} satisfies Prisma.CommandeColisOmit;
 
 // Champs sûrs à exposer publiquement au destinataire (RG-07, suivi par lien
 // public sans compte) : jamais le téléphone/l'adresse du client, jamais le
@@ -66,7 +90,20 @@ const MAJORATION_TAILLE: Record<TailleColis, number> = {
 
 @Injectable()
 export class CommandesColisService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly portefeuille: PortefeuilleService,
+    private readonly realtime: RealtimeGateway,
+  ) {}
+
+  // F-CLI-05 : voir même principe que commandes-repas.service.ts.
+  private notifierClient(clientId: string, commandeId: string, statut: string) {
+    this.realtime.emitToUser(clientId, 'commande:statut', {
+      typeService: 'colis',
+      commandeId,
+      statut,
+    });
+  }
 
   async estimer(zoneId: string, taille: TailleColis) {
     const tarif = await this.calculerTarif(zoneId, taille);
@@ -188,8 +225,8 @@ export class CommandesColisService {
           { programmationAt: { lte: new Date() } },
         ],
       },
-      include: DETAIL_INCLUDE,
-      omit: LIVREUR_OMIT,
+      include: DISPONIBLES_INCLUDE,
+      omit: DISPONIBLES_OMIT,
       orderBy: { createdAt: 'asc' },
     });
   }
@@ -205,10 +242,12 @@ export class CommandesColisService {
   }
 
   // Prise en charge atomique : l'assignation du livreur (updateMany conditionné
-  // sur livreurId: null ET statut confirmee via la relation) empêche deux
-  // livreurs de prendre le même colis simultanément. Si zéro ligne affectée,
-  // 409 sans chercher à distinguer la cause exacte (déjà pris / mauvais
-  // statut) — l'appelant doit simplement rafraîchir la liste des disponibles.
+  // sur livreurId: null ET statut confirmee ET zone via la relation) empêche
+  // deux livreurs de prendre le même colis simultanément et empêche une prise
+  // hors zone (V02b) même si le livreur connaît l'id d'un colis qui n'est pas
+  // dans sa zone. Si zéro ligne affectée, 409 sans chercher à distinguer la
+  // cause exacte (déjà pris / mauvais statut / mauvaise zone) — l'appelant
+  // doit simplement rafraîchir la liste des disponibles.
   async prendreEnCharge(userId: string, id: string) {
     const livreur = await this.getLivreurByUserId(userId);
     if (!livreur.disponible) {
@@ -222,17 +261,45 @@ export class CommandesColisService {
     // atomique, sans quoi le filtre `Commande.id` ne matcherait jamais rien.
     const commandeColis = await this.prisma.commandeColis.findUnique({
       where: { id },
-      select: { commandeId: true },
+      select: {
+        commandeId: true,
+        montantContreRemboursement: true,
+        commande: {
+          select: {
+            clientId: true,
+            montantTotal: true,
+            paiement: { select: { mode: true } },
+          },
+        },
+      },
     });
     if (!commandeColis) {
       throw new NotFoundException('Commande introuvable.');
+    }
+
+    // V09 / RG-02 / RG-04 : le livreur va potentiellement encaisser le tarif
+    // (si payé en espèces) et/ou le contre-remboursement — les deux comptent
+    // pour son plafond de caisse.
+    const encaissementPotentiel =
+      (commandeColis.commande.paiement?.mode === 'especes'
+        ? Number(commandeColis.commande.montantTotal ?? 0)
+        : 0) + Number(commandeColis.montantContreRemboursement ?? 0);
+    if (encaissementPotentiel > 0) {
+      await this.portefeuille.verifierPlafondCaisse(
+        livreur.id,
+        livreur.plafondCaisse,
+        encaissementPotentiel,
+      );
     }
 
     const { count } = await this.prisma.commande.updateMany({
       where: {
         id: commandeColis.commandeId,
         livreurId: null,
-        commandeColis: { statut: StatutColis.confirmee },
+        commandeColis: {
+          statut: StatutColis.confirmee,
+          zoneId: livreur.zoneId,
+        },
       },
       data: { livreurId: livreur.id },
     });
@@ -242,12 +309,20 @@ export class CommandesColisService {
       );
     }
 
-    return this.prisma.commandeColis.update({
+    const updated = await this.prisma.commandeColis.update({
       where: { id },
       data: { statut: StatutColis.livreur_en_route_enlevement },
       include: DETAIL_INCLUDE,
       omit: LIVREUR_OMIT,
     });
+    if (commandeColis.commande.clientId) {
+      this.notifierClient(
+        commandeColis.commande.clientId,
+        id,
+        StatutColis.livreur_en_route_enlevement,
+      );
+    }
+    return updated;
   }
 
   // Contrôle visuel à l'enlèvement, sans photo (aucun stockage de fichiers
@@ -255,35 +330,47 @@ export class CommandesColisService {
   async marquerRecupere(userId: string, id: string) {
     const commandeColis = await this.getOwnedByLivreur(userId, id);
     this.assertStatut(commandeColis, StatutColis.livreur_en_route_enlevement);
-    return this.prisma.commandeColis.update({
+    const updated = await this.prisma.commandeColis.update({
       where: { id },
       data: { statut: StatutColis.colis_recupere },
       include: DETAIL_INCLUDE,
       omit: LIVREUR_OMIT,
     });
+    if (commandeColis.commande.clientId) {
+      this.notifierClient(
+        commandeColis.commande.clientId,
+        id,
+        StatutColis.colis_recupere,
+      );
+    }
+    return updated;
   }
 
   async marquerEnRoute(userId: string, id: string) {
     const commandeColis = await this.getOwnedByLivreur(userId, id);
     this.assertStatut(commandeColis, StatutColis.colis_recupere);
-    return this.prisma.commandeColis.update({
+    const updated = await this.prisma.commandeColis.update({
       where: { id },
       data: { statut: StatutColis.en_route },
       include: DETAIL_INCLUDE,
       omit: LIVREUR_OMIT,
     });
+    if (commandeColis.commande.clientId) {
+      this.notifierClient(
+        commandeColis.commande.clientId,
+        id,
+        StatutColis.en_route,
+      );
+    }
+    return updated;
   }
 
   async livrer(userId: string, id: string, dto: LivrerColisDto) {
+    const livreur = await this.getLivreurByUserId(userId);
     const commandeColis = await this.getOwnedByLivreur(userId, id);
     this.assertStatut(commandeColis, StatutColis.en_route);
 
-    if (!dto.codeOtp && !dto.nomReceptionnaire) {
-      throw new BadRequestException(
-        'Le code de remise ou le nom du réceptionnaire est obligatoire.',
-      );
-    }
-    if (dto.codeOtp && dto.codeOtp !== commandeColis.codeOtp) {
+    if (dto.codeOtp !== commandeColis.codeOtp) {
       throw new BadRequestException('Code de remise incorrect.');
     }
     if (commandeColis.montantContreRemboursement && !dto.montantEncaisse) {
@@ -292,16 +379,39 @@ export class CommandesColisService {
       );
     }
 
-    return this.prisma.commandeColis.update({
-      where: { id },
-      data: {
-        statut: StatutColis.livre,
-        nomReceptionnaire: dto.nomReceptionnaire,
-        montantEncaisse: dto.montantEncaisse,
-      },
-      include: DETAIL_INCLUDE,
-      omit: LIVREUR_OMIT,
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.commandeColis.update({
+        where: { id },
+        data: {
+          statut: StatutColis.livre,
+          nomReceptionnaire: dto.nomReceptionnaire,
+          montantEncaisse: dto.montantEncaisse,
+        },
+        include: DETAIL_INCLUDE,
+        omit: LIVREUR_OMIT,
+      });
+      // RG-02/RG-04 : tarif espèces + contre-remboursement encaissés au même
+      // moment (voir prendreEnCharge pour le contrôle de plafond en amont).
+      const encaisse =
+        (commandeColis.commande.paiement?.mode === 'especes'
+          ? Number(commandeColis.commande.montantTotal ?? 0)
+          : 0) + Number(dto.montantEncaisse ?? 0);
+      await this.portefeuille.enregistrerEncaissement(
+        tx,
+        livreur.id,
+        commandeColis.commande.id,
+        encaisse,
+      );
+      return result;
     });
+    if (commandeColis.commande.clientId) {
+      this.notifierClient(
+        commandeColis.commande.clientId,
+        id,
+        StatutColis.livre,
+      );
+    }
+    return updated;
   }
 
   // Litige atteignable dans cette itération : déclaré par le livreur, sans
@@ -321,12 +431,20 @@ export class CommandesColisService {
         `Transition impossible depuis le statut « ${commandeColis.statut} ».`,
       );
     }
-    return this.prisma.commandeColis.update({
+    const updated = await this.prisma.commandeColis.update({
       where: { id },
       data: { statut: StatutColis.litige, motif: dto.motif },
       include: DETAIL_INCLUDE,
       omit: LIVREUR_OMIT,
     });
+    if (commandeColis.commande.clientId) {
+      this.notifierClient(
+        commandeColis.commande.clientId,
+        id,
+        StatutColis.litige,
+      );
+    }
+    return updated;
   }
 
   // Annulation possible uniquement avant l'enlèvement (depuis confirmee),
@@ -427,10 +545,10 @@ export class CommandesColisService {
   }
 }
 
-// Code de remise à 6 chiffres, communiqué au destinataire par le client lui-
-// même (voir commentaire codeOtp dans schema.prisma). Pas de dépendance
-// crypto dédiée : Math.random suffit pour un code à usage unique non
-// sensible (proof-of-delivery, pas une authentification).
+// Code de remise à 6 chiffres, communiqué au destinataire par le client
+// lui-même (voir commentaire codeOtp dans schema.prisma). V08 : généré par
+// crypto.randomInt (CSPRNG) plutôt que Math.random — depuis V01, ce code est
+// la seule preuve de remise acceptée, il ne doit plus être devinable.
 function generateCodeOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return randomInt(100000, 1000000).toString();
 }

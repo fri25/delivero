@@ -27,6 +27,12 @@ const DEMO_CLIENT = {
   nom: 'Client Démo',
 } as const;
 
+const DEMO_ADMIN = {
+  telephone: '+22900000004',
+  motDePasse: 'demo12345',
+  nom: 'Admin Démo',
+} as const;
+
 // Plafonds d'avance/de caisse : valeurs de développement arbitraires, la
 // question du montant réel n'est pas tranchée (Q-02, voir
 // docs/decisions-ouvertes.md) — ne jamais réutiliser ces chiffres comme une
@@ -46,7 +52,11 @@ const DEMO_LIVREUR = {
 // docs/modele-donnees.md, marqué [DÉDUIT]). Adresse, point de repère,
 // horaires et description restent les valeurs [FICTIF] de l'annexe,
 // suffisantes pour un jeu de données de développement. Le taux de commission
-// (15 %) est en revanche une valeur réelle, décidée le 2026-08-25 (RG-08).
+// (15 %) est seedé pour rester aligné avec RG-08, mais n'est lu par aucun
+// service à ce jour : Repas facture 15 % en dur (RG-08, décidé le
+// 2026-08-25, taux unique non négocié par restaurant) et les 3 autres
+// services n'ont pas encore de modèle de commission par partenaire. Ce n'est
+// pas un bug — ne pas re-signaler comme incohérence sans relire RG-08.
 interface PilotPlat {
   nom: string;
   categorie: string;
@@ -269,6 +279,14 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
+  // V10 : le seed crée des comptes de démonstration à mot de passe connu
+  // (`demo12345`) — jamais acceptable en production.
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'Le seed de développement ne doit jamais être exécuté en production (NODE_ENV=production).',
+    );
+  }
+
   for (const name of ROLE_NAMES) {
     await prisma.role.upsert({ where: { name }, update: {}, create: { name } });
   }
@@ -428,6 +446,20 @@ async function main() {
       plafondAvance: DEMO_LIVREUR.plafondAvance,
       plafondCaisse: DEMO_LIVREUR.plafondCaisse,
       disponible: true,
+    },
+  });
+
+  const adminRoleForUser = await prisma.role.findUniqueOrThrow({
+    where: { name: 'admin_dispatcher' },
+  });
+  await prisma.user.upsert({
+    where: { telephone: DEMO_ADMIN.telephone },
+    update: {},
+    create: {
+      telephone: DEMO_ADMIN.telephone,
+      passwordHash: await bcrypt.hash(DEMO_ADMIN.motDePasse, SALT_ROUNDS),
+      nom: DEMO_ADMIN.nom,
+      roleId: adminRoleForUser.id,
     },
   });
 }

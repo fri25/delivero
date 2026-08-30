@@ -1,12 +1,11 @@
 import { IsNumber, IsOptional, IsPositive, IsString } from 'class-validator';
 
-// Au moins un de codeOtp / nomReceptionnaire est exigé (RG-07, "et/ou") —
-// vérifié dans le service plutôt que dans le DTO, car la règle porte sur la
-// combinaison des deux champs.
+// V01 : le code de remise est désormais obligatoire (RG-07 imposé, pas
+// seulement recommandé) — nomReceptionnaire reste une information
+// complémentaire, mais ne peut plus remplacer l'OTP à lui seul.
 export class LivrerColisDto {
-  @IsOptional()
   @IsString()
-  codeOtp?: string;
+  codeOtp!: string;
 
   @IsOptional()
   @IsString()

@@ -66,7 +66,7 @@ export function useMarquerColisEnRoute() {
 
 interface LivrerColisInput {
   id: string;
-  codeOtp?: string;
+  codeOtp: string;
   nomReceptionnaire?: string;
   montantEncaisse?: number;
 }
