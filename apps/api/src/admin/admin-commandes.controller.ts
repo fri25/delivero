@@ -7,6 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -22,11 +23,13 @@ const ADMIN_ROLE_NAME = 'admin_dispatcher';
 export class AdminCommandesController {
   constructor(private readonly adminCommandesService: AdminCommandesService) {}
 
+  @RequirePermissions('commandes.consulter_toutes')
   @Get()
   findAll(@Query() dto: ListCommandesDto) {
     return this.adminCommandesService.findAll(dto);
   }
 
+  @RequirePermissions('commandes.attribuer')
   @Patch(':id/attribuer')
   attribuer(@Param('id') id: string, @Body() dto: AttribuerCommandeDto) {
     return this.adminCommandesService.attribuer(id, dto);

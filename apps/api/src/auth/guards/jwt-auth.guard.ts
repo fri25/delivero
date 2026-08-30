@@ -45,15 +45,22 @@ export class JwtAuthGuard implements CanActivate {
     // V05 : le rôle n'est plus pris tel quel dans le jeton mais relu en base
     // à chaque requête — un compte rétrogradé ou supprimé perd l'accès
     // immédiatement, sans attendre l'expiration du JWT (2h par défaut).
+    // V13 : les permissions du rôle sont chargées ici (même requête) pour que
+    // RolesGuard puisse les vérifier — jusqu'ici RolePermission était seedé
+    // mais jamais lu, seul le nom du rôle comptait.
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
-      include: { role: true },
+      include: { role: { include: { permissions: { include: { permission: true } } } } },
     });
     if (!user) {
       throw new UnauthorizedException('Compte introuvable.');
     }
 
-    request.user = { id: user.id, role: user.role.name };
+    request.user = {
+      id: user.id,
+      role: user.role.name,
+      permissions: user.role.permissions.map((rp) => rp.permission.code),
+    };
     return true;
   }
 }
