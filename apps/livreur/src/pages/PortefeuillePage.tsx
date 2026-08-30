@@ -5,9 +5,68 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useClotures, useCloturerCaisse, usePortefeuille } from '@/api/livreur';
+import { useClotures, useCloturerCaisse, usePortefeuille, useRecapJournalier } from '@/api/livreur';
 import { formatDateHeure, formatPrixFcfa } from '@/lib/format';
-import type { ClotureCaisse } from '@/api/types';
+import type { ClotureCaisse, TypeService } from '@/api/types';
+
+const LABELS_SERVICE: Record<TypeService, string> = {
+  repas: 'Repas',
+  colis: 'Colis',
+  emplettes: 'Emplettes',
+  courses_express: 'Courses express',
+};
+
+function RecapJournalierCard() {
+  const { data: recap, isPending } = useRecapJournalier();
+
+  if (isPending) {
+    return <Skeleton className="h-32 w-full" />;
+  }
+
+  if (!recap) {
+    return null;
+  }
+
+  const totalCourses = Object.values(recap.parService).reduce((a, b) => a + b, 0);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Aujourd'hui</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {totalCourses === 0 ? (
+          <p className="text-sm text-muted-foreground">Aucune course livrée aujourd'hui.</p>
+        ) : (
+          <div className="flex flex-wrap gap-4 text-sm">
+            {(Object.entries(recap.parService) as [TypeService, number][])
+              .filter(([, nombre]) => nombre > 0)
+              .map(([service, nombre]) => (
+                <div key={service}>
+                  <span className="text-lg font-semibold">{nombre}</span>{' '}
+                  <span className="text-muted-foreground">{LABELS_SERVICE[service]}</span>
+                </div>
+              ))}
+          </div>
+        )}
+        <div className="flex flex-wrap gap-6 border-t border-border pt-3 text-sm">
+          <div>
+            <div className="text-muted-foreground">Encaissé aujourd'hui</div>
+            <div className="font-medium">{formatPrixFcfa(recap.encaisseAujourdhui)}</div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">Avancé aujourd'hui (Emplettes)</div>
+            <div className="font-medium">{formatPrixFcfa(recap.avanceAujourdhui)}</div>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Ne montre pas vos gains : le mode de rémunération par course n'est pas encore défini
+          par ChapExpress.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
 
 function SoldeCard({
   titre,
@@ -184,6 +243,8 @@ export function PortefeuillePage() {
           prise ou livrée.
         </p>
       </div>
+
+      <RecapJournalierCard />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <SoldeCard

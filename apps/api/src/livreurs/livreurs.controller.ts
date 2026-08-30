@@ -44,4 +44,9 @@ export class LivreursController {
   ) {
     return this.livreursService.cloturerCaisse(user.id, dto.montantDeclare);
   }
+
+  @Get('me/recap-journalier')
+  getRecapJournalier(@CurrentUser() user: AuthenticatedUser) {
+    return this.livreursService.getRecapJournalier(user.id);
+  }
 }
