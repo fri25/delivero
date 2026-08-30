@@ -27,6 +27,15 @@ export interface PortefeuilleResume {
   plafondCaisse: number;
 }
 
+export interface ClotureCaisse {
+  id: string;
+  montantTheorique: string;
+  montantDeclare: string;
+  ecart: string;
+  rapprocheeAt: string | null;
+  createdAt: string;
+}
+
 export type StatutRepas =
   | 'en_attente_acceptation'
   | 'confirmee'

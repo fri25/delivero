@@ -197,11 +197,12 @@ ne sert aujourd'hui que les restaurants.)*
       exposé et affiché depuis le 30/08 — côté livreur (`GET
       /livreurs/me/portefeuille`, écran "Mon portefeuille") et côté admin
       (`GET /admin/livreurs` enrichi, colonnes de la page Livreurs) — voir
-      `apps/api/src/portefeuille/portefeuille.service.ts`. Toujours absent :
-      pas de mouvement de type "avance" réellement enregistré
-      (`getAvanceEnCours` recalcule à la volée depuis les commandes Emplettes en
-      cours), pas de clôture de caisse (RG-03, F-ADM-13) ni de reversement à
-      l'expéditeur (RG-04) — voir F-LIV-11 et F-ADM-12/13)*
+      `apps/api/src/portefeuille/portefeuille.service.ts`. Clôture de caisse
+      journalière ajoutée le 30/08 (`POST /livreurs/me/cloture-caisse`, une
+      par jour calendaire UTC — voir F-ADM-13). Toujours absent : pas de
+      mouvement de type "avance" réellement enregistré (`getAvanceEnCours`
+      recalcule à la volée depuis les commandes Emplettes en cours), pas de
+      reversement à l'expéditeur (RG-04) — voir F-LIV-11)*
 - [x] F-LIV-10 — Statut disponible / indisponible — *(disponible/indisponible fait,
       sans motif de passage en indisponible)*
 - [ ] F-LIV-11 — Récapitulatif journalier (courses par service, montants, gains)
@@ -249,8 +250,20 @@ Compte de démo : `+22900000004` / `demo12345` (rôle `admin_dispatcher`, voir
       Courses express — en une fois)*
 - [ ] F-ADM-11 — Gestion des promotions (codes promo, réductions, livraison offerte)
 - [ ] F-ADM-12 — Rapprochement de caisse (avances, encaissements espèces,
-      contre-remboursements)
-- [ ] F-ADM-13 — Clôture de caisse journalière par livreur
+      contre-remboursements) — *(partiel, ajouté le 30/08 : page "Caisse"
+      listant les clôtures déclarées par les livreurs, avec un bouton "Marquer
+      rapprochée" qui trace qui l'a fait et quand — voir
+      `apps/api/src/admin/admin-caisse.service.ts`. Ne couvre que
+      l'encaissement espèces (Repas, contre-remboursement Colis, Emplettes) ;
+      "avances" n'a pas de mouvement dédié (voir F-LIV-09). Le rapprochement
+      ne fait que prendre acte de l'écart : aucune procédure de relance,
+      retenue ou blocage — **[À ARBITRER]** dans regles-gestion.md RG-03)*
+- [x] F-ADM-13 — Clôture de caisse journalière par livreur — *(le livreur
+      déclare le montant en espèces compté, comparé au montant théorique
+      (encaissements pas encore clôturés) ; une clôture par jour calendaire
+      UTC — `POST /livreurs/me/cloture-caisse`, voir
+      `apps/api/src/portefeuille/portefeuille.service.ts` méthode
+      `cloturerCaisse`)*
 - [ ] F-ADM-14 — Tableaux de bord (demandes, CA, panier moyen, taux d'annulation,
       délais moyens, classement partenaires/livreurs)
 - [ ] F-ADM-15 — Export des données (Excel/CSV)

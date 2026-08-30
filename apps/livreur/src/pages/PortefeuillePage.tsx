@@ -1,7 +1,13 @@
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { usePortefeuille } from '@/api/livreur';
-import { formatPrixFcfa } from '@/lib/format';
+import { useClotures, useCloturerCaisse, usePortefeuille } from '@/api/livreur';
+import { formatDateHeure, formatPrixFcfa } from '@/lib/format';
+import type { ClotureCaisse } from '@/api/types';
 
 function SoldeCard({
   titre,
@@ -38,6 +44,112 @@ function SoldeCard({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function ClotureCaisseForm() {
+  const cloturerCaisse = useCloturerCaisse();
+  const [montantDeclare, setMontantDeclare] = useState('');
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Clôturer ma caisse du jour</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form
+          className="flex flex-wrap items-end gap-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            cloturerCaisse.mutate(Number(montantDeclare), {
+              onSuccess: (cloture) => {
+                const ecart = Number(cloture.ecart);
+                toast.success(
+                  ecart === 0
+                    ? 'Caisse clôturée, aucun écart.'
+                    : `Caisse clôturée, écart de ${formatPrixFcfa(cloture.ecart)}.`,
+                );
+                setMontantDeclare('');
+              },
+              onError: (error) => toast.error(error.message),
+            });
+          }}
+        >
+          <div className="space-y-1.5">
+            <Label htmlFor="montant-declare">Montant en espèces compté (FCFA)</Label>
+            <Input
+              id="montant-declare"
+              type="number"
+              min="0"
+              className="w-40"
+              value={montantDeclare}
+              onChange={(e) => setMontantDeclare(e.target.value)}
+              required
+            />
+          </div>
+          <Button type="submit" size="sm" disabled={cloturerCaisse.isPending}>
+            Clôturer
+          </Button>
+        </form>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Une seule clôture par jour. Le montant théorique (encaissements non encore clôturés)
+          est comparé à ce que vous comptez ; l'écart est transmis au dispatcher.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ClotureRow({ cloture }: { cloture: ClotureCaisse }) {
+  const ecart = Number(cloture.ecart);
+  return (
+    <tr className="border-t border-border">
+      <td className="px-3 py-2">{formatDateHeure(cloture.createdAt)}</td>
+      <td className="px-3 py-2">{formatPrixFcfa(cloture.montantTheorique)}</td>
+      <td className="px-3 py-2">{formatPrixFcfa(cloture.montantDeclare)}</td>
+      <td className="px-3 py-2">
+        <span className={ecart === 0 ? '' : ecart > 0 ? 'text-brand-green' : 'text-destructive'}>
+          {ecart > 0 ? '+' : ''}
+          {formatPrixFcfa(cloture.ecart)}
+        </span>
+      </td>
+      <td className="px-3 py-2 text-muted-foreground">
+        {cloture.rapprocheeAt ? 'Rapprochée' : 'En attente'}
+      </td>
+    </tr>
+  );
+}
+
+function HistoriqueClotures() {
+  const { data: clotures, isPending } = useClotures();
+
+  if (isPending) {
+    return <Skeleton className="h-24 w-full" />;
+  }
+
+  if (!clotures || clotures.length === 0) {
+    return <p className="text-sm text-muted-foreground">Aucune clôture pour l'instant.</p>;
+  }
+
+  return (
+    <div className="overflow-x-auto rounded-xl ring-1 ring-foreground/10">
+      <table className="w-full text-sm">
+        <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
+          <tr>
+            <th className="px-3 py-2 font-medium">Date</th>
+            <th className="px-3 py-2 font-medium">Théorique</th>
+            <th className="px-3 py-2 font-medium">Déclaré</th>
+            <th className="px-3 py-2 font-medium">Écart</th>
+            <th className="px-3 py-2 font-medium">Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          {clotures.map((cloture) => (
+            <ClotureRow key={cloture.id} cloture={cloture} />
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -84,6 +196,13 @@ export function PortefeuillePage() {
           montant={portefeuille.caisseAReverser}
           plafond={portefeuille.plafondCaisse}
         />
+      </div>
+
+      <ClotureCaisseForm />
+
+      <div className="space-y-2">
+        <h2 className="text-sm font-semibold">Historique des clôtures</h2>
+        <HistoriqueClotures />
       </div>
     </div>
   );

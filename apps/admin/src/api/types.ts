@@ -50,3 +50,14 @@ export interface Livreur {
   user: { nom: string; telephone: string };
   zone: { id: string; nom: string };
 }
+
+export interface ClotureCaisse {
+  id: string;
+  montantTheorique: string;
+  montantDeclare: string;
+  ecart: string;
+  rapprocheeAt: string | null;
+  createdAt: string;
+  livreur: { user: { nom: string; telephone: string } };
+  rapprocheePar: { nom: string } | null;
+}
