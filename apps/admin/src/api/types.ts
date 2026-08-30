@@ -45,6 +45,8 @@ export interface Livreur {
   noteMoyenne: string | null;
   plafondAvance: string;
   plafondCaisse: string;
+  avanceEnCours: number;
+  caisseAReverser: number;
   user: { nom: string; telephone: string };
   zone: { id: string; nom: string };
 }

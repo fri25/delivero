@@ -116,6 +116,14 @@ export function Header() {
             >
               Mes courses express
             </NavLink>
+            <NavLink
+              to="/portefeuille"
+              className={({ isActive }) =>
+                cn('text-white/75 hover:text-white', isActive && 'font-medium text-white')
+              }
+            >
+              Mon portefeuille
+            </NavLink>
           </nav>
         )}
 
@@ -198,6 +206,12 @@ export function Header() {
             className={({ isActive }) => cn('text-white/75', isActive && 'font-medium text-white')}
           >
             Mes courses express
+          </NavLink>
+          <NavLink
+            to="/portefeuille"
+            className={({ isActive }) => cn('text-white/75', isActive && 'font-medium text-white')}
+          >
+            Mon portefeuille
           </NavLink>
         </nav>
       )}

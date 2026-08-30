@@ -1,13 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './client';
 import { useAuthStore } from '../stores/auth-store';
-import type { Livreur } from './types';
+import type { Livreur, PortefeuilleResume } from './types';
 
 export function useMoi() {
   const token = useAuthStore((state) => state.token);
   return useQuery({
     queryKey: ['mon-profil-livreur'],
     queryFn: () => apiFetch<Livreur>('/livreurs/me', { token }),
+    enabled: Boolean(token),
+  });
+}
+
+export function usePortefeuille() {
+  const token = useAuthStore((state) => state.token);
+  return useQuery({
+    queryKey: ['mon-portefeuille-livreur'],
+    queryFn: () => apiFetch<PortefeuilleResume>('/livreurs/me/portefeuille', { token }),
     enabled: Boolean(token),
   });
 }

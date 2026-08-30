@@ -172,6 +172,8 @@ function LivreurRow({ livreur }: { livreur: Livreur }) {
         <td className="px-3 py-2">{livreur.zone.nom}</td>
         <td className="px-3 py-2">{formatPrixFcfa(livreur.plafondAvance)}</td>
         <td className="px-3 py-2">{formatPrixFcfa(livreur.plafondCaisse)}</td>
+        <td className="px-3 py-2">{formatPrixFcfa(livreur.avanceEnCours)}</td>
+        <td className="px-3 py-2">{formatPrixFcfa(livreur.caisseAReverser)}</td>
         <td className="px-3 py-2">
           <Button size="sm" variant="outline" onClick={() => setEdition(true)}>
             Modifier
@@ -213,6 +215,8 @@ function LivreurRow({ livreur }: { livreur: Livreur }) {
           onChange={(e) => setPlafondCaisse(e.target.value)}
         />
       </td>
+      <td className="px-3 py-2 text-muted-foreground">{formatPrixFcfa(livreur.avanceEnCours)}</td>
+      <td className="px-3 py-2 text-muted-foreground">{formatPrixFcfa(livreur.caisseAReverser)}</td>
       <td className="px-3 py-2">
         <div className="flex gap-2">
           <Button
@@ -257,9 +261,10 @@ export function LivreursPage() {
       <div>
         <h1 className="text-xl font-semibold">Livreurs</h1>
         <p className="text-sm text-muted-foreground">
-          Enregistrement, zone et plafonds d'avance/de caisse (F-ADM-09). La gestion des pièces
-          d'identité et les statistiques de performance restent hors périmètre (pas de stockage
-          de fichiers).
+          Enregistrement, zone et plafonds d'avance/de caisse (F-ADM-09). Avance en cours et
+          solde à reverser (F-LIV-09) sont calculés en direct depuis les commandes et
+          encaissements. La gestion des pièces d'identité et les statistiques de performance
+          restent hors périmètre (pas de stockage de fichiers).
         </p>
       </div>
 
@@ -279,6 +284,8 @@ export function LivreursPage() {
                 <th className="px-3 py-2 font-medium">Zone</th>
                 <th className="px-3 py-2 font-medium">Plafond avance</th>
                 <th className="px-3 py-2 font-medium">Plafond caisse</th>
+                <th className="px-3 py-2 font-medium">Avance en cours</th>
+                <th className="px-3 py-2 font-medium">Solde à reverser</th>
                 <th className="px-3 py-2 font-medium"></th>
               </tr>
             </thead>
