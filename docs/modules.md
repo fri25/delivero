@@ -206,6 +206,14 @@ ne sert aujourd'hui que les restaurants.)*
 - [x] F-LIV-10 — Statut disponible / indisponible — *(disponible/indisponible fait,
       sans motif de passage en indisponible)*
 - [ ] F-LIV-11 — Récapitulatif journalier (courses par service, montants, gains)
+      — *(partiel, ajouté le 30/08 : nombre de courses livrées aujourd'hui par
+      service, encaissements et avances Emplettes du jour (déjà tracés par le
+      portefeuille) — `GET /livreurs/me/recap-journalier`, carte "Aujourd'hui"
+      sur l'écran portefeuille. Pas de "gains" : Q-08
+      (decisions-ouvertes.md) laisse le modèle de rémunération du livreur
+      entièrement ouvert et cite explicitement ce récapitulatif comme
+      bloqué par cette question — choix confirmé par l'utilisateur le 30/08
+      plutôt que d'inventer un chiffre)*
 
 *(Mode dégradé hors ligne — IndexedDB + file de mutations, exigé par
 [pwa-offline.md](pwa-offline.md) pour ce module — non trouvé dans `apps/livreur`.)*

@@ -36,6 +36,14 @@ export interface ClotureCaisse {
   createdAt: string;
 }
 
+export type TypeService = 'repas' | 'colis' | 'emplettes' | 'courses_express';
+
+export interface RecapJournalier {
+  parService: Record<TypeService, number>;
+  encaisseAujourdhui: number;
+  avanceAujourdhui: number;
+}
+
 export type StatutRepas =
   | 'en_attente_acceptation'
   | 'confirmee'

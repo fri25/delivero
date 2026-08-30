@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './client';
 import { useAuthStore } from '../stores/auth-store';
-import type { ClotureCaisse, Livreur, PortefeuilleResume } from './types';
+import type { ClotureCaisse, Livreur, PortefeuilleResume, RecapJournalier } from './types';
 
 export function useMoi() {
   const token = useAuthStore((state) => state.token);
@@ -44,6 +44,15 @@ export function useCloturerCaisse() {
       queryClient.invalidateQueries({ queryKey: ['mes-clotures-caisse'] });
       queryClient.invalidateQueries({ queryKey: ['mon-portefeuille-livreur'] });
     },
+  });
+}
+
+export function useRecapJournalier() {
+  const token = useAuthStore((state) => state.token);
+  return useQuery({
+    queryKey: ['mon-recap-journalier'],
+    queryFn: () => apiFetch<RecapJournalier>('/livreurs/me/recap-journalier', { token }),
+    enabled: Boolean(token),
   });
 }
 
