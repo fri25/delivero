@@ -8,6 +8,7 @@
   },
   "packageManager": "pnpm@10.23.0",
   "scripts": {
+    "dev": "docker compose up -d db && concurrently -n API,CLIENT,PARTENAIRES,LIVREUR,ADMIN -c blue,green,yellow,magenta,cyan \"pnpm:dev:api\" \"pnpm:dev:client\" \"pnpm:dev:partenaires\" \"pnpm:dev:livreur\" \"pnpm:dev:admin\"",
     "dev:client": "pnpm --filter @delivero/client dev",
     "dev:livreur": "pnpm --filter @delivero/livreur dev",
     "dev:partenaires": "pnpm --filter @delivero/partenaires dev",
@@ -16,5 +17,8 @@
     "build": "pnpm -r --filter \"./apps/**\" build",
     "lint": "pnpm -r --filter \"./apps/**\" lint",
     "typecheck": "pnpm -r --filter \"./apps/**\" typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
   }
 }
