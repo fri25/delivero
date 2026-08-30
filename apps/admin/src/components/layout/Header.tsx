@@ -52,6 +52,14 @@ export function Header() {
             >
               Caisse
             </NavLink>
+            <NavLink
+              to="/saisie-manuelle"
+              className={({ isActive }) =>
+                cn('text-white/75 hover:text-white', isActive && 'font-medium text-white')
+              }
+            >
+              Saisie manuelle
+            </NavLink>
           </nav>
         )}
 

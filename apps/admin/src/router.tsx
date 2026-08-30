@@ -6,6 +6,7 @@ import { OverviewPage } from '@/pages/OverviewPage';
 import { LivreursPage } from '@/pages/LivreursPage';
 import { ZonesPage } from '@/pages/ZonesPage';
 import { CaissePage } from '@/pages/CaissePage';
+import { SaisieManuellePage } from '@/pages/SaisieManuellePage';
 
 export const router = createBrowserRouter([
   {
@@ -41,6 +42,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <CaissePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'saisie-manuelle',
+        element: (
+          <ProtectedRoute>
+            <SaisieManuellePage />
           </ProtectedRoute>
         ),
       },

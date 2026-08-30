@@ -61,3 +61,30 @@ export interface ClotureCaisse {
   livreur: { user: { nom: string; telephone: string } };
   rapprocheePar: { nom: string } | null;
 }
+
+export type ModePaiement = 'mobile_money' | 'especes';
+export type TailleColis = 'petit' | 'moyen' | 'grand';
+export type ModeEmplettes = 'liste_libre' | 'catalogue';
+export type ModeFinancementEmplettes =
+  | 'mobile_money_anticipe'
+  | 'especes_livraison'
+  | 'avance_livreur';
+export type PreferenceRemplacement = 'equivalent' | 'appeler' | 'ne_pas_acheter';
+
+export interface Plat {
+  id: string;
+  nom: string;
+  categorie: string;
+  prix: string;
+}
+
+export interface RestaurantListItem {
+  id: string;
+  nom: string;
+}
+
+export interface RestaurantDetail {
+  id: string;
+  nom: string;
+  plats: Plat[];
+}
