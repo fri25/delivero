@@ -92,6 +92,15 @@ Légende : ✔ autorisé · ✔* autorisé avec restriction (voir note) · — n
   (ex. « dispatching » séparé d'« administration ») plus tard sans refonte du modèle
   d'autorisation. Voir [decisions-ouvertes.md](decisions-ouvertes.md) Q-09 et
   [modele-donnees.md](modele-donnees.md).
+  **État du code (30/08/2026)** : jusqu'ici cette conception n'était pas
+  appliquée — `RolesGuard` ne lisait que le nom du rôle du JWT, jamais la
+  table `RolePermission`. Elle est désormais évaluée : chaque contrôleur
+  `apps/api/src/admin/*` porte un `@RequirePermissions(...)` qui vérifie que
+  le rôle de l'appelant a bien le ou les codes requis (voir
+  `apps/api/src/auth/decorators/require-permissions.decorator.ts`). Sans
+  effet observable tant qu'un seul rôle existe et porte tous les codes, mais
+  un second rôle plus restreint échouera désormais réellement sur les
+  actions qui lui manquent.
 - La colonne « Expéditeur de colis » documente l'usage du service Colis par un
   compte Client ; ce n'est pas un compte techniquement distinct (voir
   [service-colis.md](service-colis.md)).
