@@ -1,8 +1,11 @@
 import { Outlet } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
 import { Header } from '@/components/layout/Header';
+import { useRealtimeCommandeUpdates } from '@/api/realtime';
 
 export function RootLayout() {
+  useRealtimeCommandeUpdates();
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
