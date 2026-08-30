@@ -189,13 +189,16 @@ ne sert aujourd'hui que les restaurants.)*
       point par point, jamais un itinéraire multi-arrêts unique calculé —
       aucune intégration cartographique réelle, voir CLAUDE.md [À FAIRE])*
 - [ ] F-LIV-09 — Portefeuille livreur (plafond d'avance, montants avancés/encaissés,
-      solde à reverser) — *(partiel, ajouté le 29/08 : les plafonds d'avance et de
-      caisse (`Livreur.plafondAvance`/`plafondCaisse`) sont désormais vérifiés à
-      l'attribution (automatique et manuelle) sur les 4 services, et chaque
-      encaissement espèces est tracé dans `MouvementPortefeuille` à la livraison
-      — voir `apps/api/src/portefeuille/portefeuille.service.ts`. Toujours
-      absent : aucune vue consolidée du solde à reverser (ni côté livreur ni
-      côté admin), pas de mouvement de type "avance" réellement enregistré
+      solde à reverser) — *(partiel : les plafonds d'avance et de caisse
+      (`Livreur.plafondAvance`/`plafondCaisse`) sont vérifiés à l'attribution
+      (automatique et manuelle) sur les 4 services depuis le 29/08, chaque
+      encaissement espèces est tracé dans `MouvementPortefeuille` à la
+      livraison, et le solde (avance en cours, caisse à reverser) est désormais
+      exposé et affiché depuis le 30/08 — côté livreur (`GET
+      /livreurs/me/portefeuille`, écran "Mon portefeuille") et côté admin
+      (`GET /admin/livreurs` enrichi, colonnes de la page Livreurs) — voir
+      `apps/api/src/portefeuille/portefeuille.service.ts`. Toujours absent :
+      pas de mouvement de type "avance" réellement enregistré
       (`getAvanceEnCours` recalcule à la volée depuis les commandes Emplettes en
       cours), pas de clôture de caisse (RG-03, F-ADM-13) ni de reversement à
       l'expéditeur (RG-04) — voir F-LIV-11 et F-ADM-12/13)*

@@ -72,6 +72,23 @@ export class PortefeuilleService {
     }
   }
 
+  async getResume(
+    livreurId: string,
+    plafondAvance: Prisma.Decimal | number,
+    plafondCaisse: Prisma.Decimal | number,
+  ) {
+    const [avanceEnCours, caisseAReverser] = await Promise.all([
+      this.getAvanceEnCours(livreurId),
+      this.getCaisseAReverser(livreurId),
+    ]);
+    return {
+      avanceEnCours,
+      plafondAvance: Number(plafondAvance),
+      caisseAReverser,
+      plafondCaisse: Number(plafondCaisse),
+    };
+  }
+
   enregistrerEncaissement(
     tx: Prisma.TransactionClient,
     livreurId: string,

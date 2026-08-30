@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
+import { PortefeuilleService } from '../portefeuille/portefeuille.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLivreurDto } from './dto/create-livreur.dto';
 import { UpdateLivreurDto } from './dto/update-livreur.dto';
@@ -22,13 +23,30 @@ const LIVREUR_INCLUDE = {
 // périmètre de cette passe, nécessiterait d'agréger les 4 services.
 @Injectable()
 export class AdminLivreursService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly portefeuille: PortefeuilleService,
+  ) {}
 
-  findAll() {
-    return this.prisma.livreur.findMany({
+  // Enrichi avec le solde portefeuille (avance en cours, caisse à reverser) —
+  // voir docs/modules.md F-LIV-09. Un appel Prisma par livreur : acceptable
+  // vu le nombre de livreurs visé pour un dispatcher unique.
+  async findAll() {
+    const livreurs = await this.prisma.livreur.findMany({
       include: LIVREUR_INCLUDE,
       orderBy: { createdAt: 'desc' },
     });
+    return Promise.all(
+      livreurs.map(async (livreur) => {
+        const { avanceEnCours, caisseAReverser } =
+          await this.portefeuille.getResume(
+            livreur.id,
+            livreur.plafondAvance,
+            livreur.plafondCaisse,
+          );
+        return { ...livreur, avanceEnCours, caisseAReverser };
+      }),
+    );
   }
 
   async create(dto: CreateLivreurDto) {

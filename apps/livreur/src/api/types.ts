@@ -20,6 +20,13 @@ export interface Livreur {
   noteMoyenne: string | null;
 }
 
+export interface PortefeuilleResume {
+  avanceEnCours: number;
+  plafondAvance: number;
+  caisseAReverser: number;
+  plafondCaisse: number;
+}
+
 export type StatutRepas =
   | 'en_attente_acceptation'
   | 'confirmee'

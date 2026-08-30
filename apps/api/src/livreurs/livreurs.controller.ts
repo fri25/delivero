@@ -18,6 +18,11 @@ export class LivreursController {
     return this.livreursService.getOwn(user.id);
   }
 
+  @Get('me/portefeuille')
+  getPortefeuille(@CurrentUser() user: AuthenticatedUser) {
+    return this.livreursService.getPortefeuille(user.id);
+  }
+
   @Patch('me/disponibilite')
   toggleDisponibilite(
     @CurrentUser() user: AuthenticatedUser,

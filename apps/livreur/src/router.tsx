@@ -10,6 +10,7 @@ import { EmplettesDisponiblesPage } from '@/pages/EmplettesDisponiblesPage';
 import { MesEmplettesPage } from '@/pages/MesEmplettesPage';
 import { CoursesExpressDisponiblesPage } from '@/pages/CoursesExpressDisponiblesPage';
 import { MesCoursesExpressPage } from '@/pages/MesCoursesExpressPage';
+import { PortefeuillePage } from '@/pages/PortefeuillePage';
 
 export const router = createBrowserRouter([
   {
@@ -77,6 +78,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <MesCoursesExpressPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'portefeuille',
+        element: (
+          <ProtectedRoute>
+            <PortefeuillePage />
           </ProtectedRoute>
         ),
       },
