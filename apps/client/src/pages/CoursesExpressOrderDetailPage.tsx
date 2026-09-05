@@ -27,7 +27,7 @@ function EtapeRow({ etape }: { etape: EtapeCourseExpress }) {
       <span
         className={
           etape.realisee
-            ? 'shrink-0 text-xs font-medium text-brand-green'
+            ? 'shrink-0 text-xs font-medium text-success'
             : 'shrink-0 text-xs text-muted-foreground'
         }
       >

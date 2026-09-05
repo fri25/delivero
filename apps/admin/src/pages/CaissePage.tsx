@@ -20,7 +20,7 @@ function ClotureRow({ cloture }: { cloture: ClotureCaisse }) {
       <td className="px-3 py-2">{formatPrixFcfa(cloture.montantTheorique)}</td>
       <td className="px-3 py-2">{formatPrixFcfa(cloture.montantDeclare)}</td>
       <td className="px-3 py-2">
-        <span className={ecart === 0 ? '' : ecart > 0 ? 'text-brand-green' : 'text-destructive'}>
+        <span className={ecart === 0 ? '' : ecart > 0 ? 'text-success' : 'text-destructive'}>
           {ecart > 0 ? '+' : ''}
           {formatPrixFcfa(cloture.ecart)}
         </span>

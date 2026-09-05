@@ -33,7 +33,7 @@ export function EtapeRealisationRow({
       </div>
 
       {etape.realisee ? (
-        <span className="shrink-0 text-xs font-medium text-brand-green">Réalisée</span>
+        <span className="shrink-0 text-xs font-medium text-success">Réalisée</span>
       ) : (
         <Button
           size="sm"

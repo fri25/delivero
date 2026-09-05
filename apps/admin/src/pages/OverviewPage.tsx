@@ -59,7 +59,7 @@ function AttributionCell({ row }: { row: AdminCommandeRow }) {
   return (
     <div className="flex items-center gap-1.5">
       <select
-        className="h-7 max-w-32 rounded-lg border border-input bg-transparent px-1.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="h-8 max-w-32 rounded-lg border border-input bg-transparent px-1.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         value={choix}
         onChange={(e) => setChoix(e.target.value)}
       >
@@ -71,7 +71,7 @@ function AttributionCell({ row }: { row: AdminCommandeRow }) {
         ))}
       </select>
       <Button
-        size="sm"
+        size="xs"
         variant="outline"
         disabled={!choix || attribuer.isPending}
         onClick={() => {
@@ -90,7 +90,7 @@ function AttributionCell({ row }: { row: AdminCommandeRow }) {
         Assigner
       </Button>
       <Button
-        size="sm"
+        size="xs"
         disabled={attribuer.isPending}
         onClick={() => {
           attribuer.mutate(

@@ -4,22 +4,13 @@
  * app : admin, livreur et partenaires gardent leurs tokens par défaut.
  *
  * Palette : retour à l'identité d'origine (bleu marine + bleu ciel, fond
- * blanc), sans le vert — décision utilisateur du 2026-08-26. Tout usage de
- * brand-green / --success / --accent hérite du bleu à la place.
+ * blanc), sans le vert — décision utilisateur du 2026-08-26. --success et
+ * --accent héritent donc du bleu à la place.
  */
 
 @theme {
   --color-brand-navy: #002050;
   --color-brand-blue: #1070c0;
-  --color-brand-green: #1070c0; /* plus de vert : aligné sur le bleu */
-
-  /* Tokens de marque introduits pour les enseignes/cartes — repointés sur le
-     bleu/blanc, aucune trace de latérite/mangue/bissap/gingembre. */
-  --color-brand-braise: #002050;
-  --color-brand-laterite: #1070c0;
-  --color-brand-mangue: #1070c0;
-  --color-brand-bissap: #0b3d77;
-  --color-brand-gingembre: #2e8fe0;
   --color-brand-sable: #f6f8fc;
 
   --font-heading: 'Bricolage Grotesque Variable', var(--font-sans);

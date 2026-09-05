@@ -103,13 +103,18 @@ export function CartPage() {
           <span>Frais de livraison</span>
           <span>{fraisLivraison !== undefined ? formatPrixFcfa(fraisLivraison) : '—'}</span>
         </div>
-        <div className="flex items-center justify-between text-muted-foreground">
-          <span>Frais de service ChapExpress (15 %)</span>
-          <span>{fraisService !== undefined ? formatPrixFcfa(fraisService) : '—'}</span>
+        <div className="flex items-start justify-between gap-3 text-muted-foreground">
+          <span>
+            Frais de service ChapExpress
+            <span className="block text-xs">15 % des plats + livraison</span>
+          </span>
+          <span className="shrink-0">
+            {fraisService !== undefined ? formatPrixFcfa(fraisService) : '—'}
+          </span>
         </div>
-        <div className="flex items-center justify-between pt-1 font-medium text-foreground">
-          <span>Total</span>
-          <span>{formatPrixFcfa(total)}</span>
+        <div className="mt-2 flex items-baseline justify-between border-t border-border pt-2 text-foreground">
+          <span className="font-semibold">À payer</span>
+          <span className="font-heading text-2xl font-semibold">{formatPrixFcfa(total)}</span>
         </div>
       </div>
 

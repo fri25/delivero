@@ -137,7 +137,7 @@ export function PlatRow({ plat }: { plat: Plat }) {
           <Button
             size="sm"
             variant={plat.disponible ? 'default' : 'outline'}
-            className={plat.disponible ? 'bg-brand-green hover:bg-brand-green/85' : ''}
+            className={plat.disponible ? 'bg-success hover:bg-success/85' : ''}
             disabled={toggleDisponibilite.isPending}
             onClick={() => {
               toggleDisponibilite.mutate(

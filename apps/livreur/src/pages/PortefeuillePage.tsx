@@ -92,7 +92,7 @@ function SoldeCard({
         </p>
         <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
           <div
-            className={proche ? 'h-full bg-destructive' : 'h-full bg-brand-green'}
+            className={proche ? 'h-full bg-destructive' : 'h-full bg-success'}
             style={{ width: `${ratio * 100}%` }}
           />
         </div>
@@ -167,7 +167,7 @@ function ClotureRow({ cloture }: { cloture: ClotureCaisse }) {
       <td className="px-3 py-2">{formatPrixFcfa(cloture.montantTheorique)}</td>
       <td className="px-3 py-2">{formatPrixFcfa(cloture.montantDeclare)}</td>
       <td className="px-3 py-2">
-        <span className={ecart === 0 ? '' : ecart > 0 ? 'text-brand-green' : 'text-destructive'}>
+        <span className={ecart === 0 ? '' : ecart > 0 ? 'text-success' : 'text-destructive'}>
           {ecart > 0 ? '+' : ''}
           {formatPrixFcfa(cloture.ecart)}
         </span>
