@@ -1,5 +1,5 @@
 import { ExternalLink, Phone } from 'lucide-react';
-import { formatPrixFcfa, googleMapsSearchUrl } from '@/lib/format';
+import { formatPrixFcfa, googleMapsRouteUrl } from '@/lib/format';
 import type { CommandeEmplettes } from '@/api/types';
 
 export function EmplettesInfo({ commande }: { commande: CommandeEmplettes }) {
@@ -19,7 +19,7 @@ export function EmplettesInfo({ commande }: { commande: CommandeEmplettes }) {
           <>
             <p className="font-medium">{adresse.pointDeRepere}</p>
             <a
-              href={googleMapsSearchUrl(adresse.pointDeRepere)}
+              href={googleMapsRouteUrl(adresse.pointDeRepere)}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1 text-brand-blue hover:underline"

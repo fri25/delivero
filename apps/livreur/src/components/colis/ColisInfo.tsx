@@ -1,6 +1,6 @@
 import { ExternalLink, Phone } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { formatPrixFcfa, googleMapsSearchUrl } from '@/lib/format';
+import { formatPrixFcfa, googleMapsRouteUrl } from '@/lib/format';
 import type { CommandeColis } from '@/api/types';
 
 export function ColisInfo({ commande }: { commande: CommandeColis }) {
@@ -16,7 +16,7 @@ export function ColisInfo({ commande }: { commande: CommandeColis }) {
         <p className="font-medium">{adresseEnlevement.libelle}</p>
         <p className="text-muted-foreground">{adresseEnlevement.pointDeRepere}</p>
         <a
-          href={googleMapsSearchUrl(adresseEnlevement.pointDeRepere)}
+          href={googleMapsRouteUrl(adresseEnlevement.pointDeRepere)}
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center gap-1 text-brand-blue hover:underline"
@@ -29,7 +29,7 @@ export function ColisInfo({ commande }: { commande: CommandeColis }) {
         <p className="text-xs font-medium text-muted-foreground">Livraison</p>
         <p className="font-medium">{pointDeRepereLivraison}</p>
         <a
-          href={googleMapsSearchUrl(adresseLivraison)}
+          href={googleMapsRouteUrl(adresseLivraison)}
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center gap-1 text-brand-blue hover:underline"

@@ -1,5 +1,5 @@
 import { ExternalLink, Phone } from 'lucide-react';
-import { formatPrixFcfa, googleMapsSearchUrl } from '@/lib/format';
+import { formatPrixFcfa, googleMapsRouteUrl } from '@/lib/format';
 import type { CommandeRepas } from '@/api/types';
 
 export function CourseInfo({ commande }: { commande: CommandeRepas }) {
@@ -16,7 +16,7 @@ export function CourseInfo({ commande }: { commande: CommandeRepas }) {
           <p className="text-muted-foreground">{commande.partenaire.pointDeRepere}</p>
         )}
         <a
-          href={googleMapsSearchUrl(pickupQuery)}
+          href={googleMapsRouteUrl(pickupQuery)}
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center gap-1 text-brand-blue hover:underline"
@@ -32,7 +32,7 @@ export function CourseInfo({ commande }: { commande: CommandeRepas }) {
             <p className="font-medium">{adresse.pointDeRepere}</p>
             {dropoffQuery && (
               <a
-                href={googleMapsSearchUrl(dropoffQuery)}
+                href={googleMapsRouteUrl(dropoffQuery)}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 text-brand-blue hover:underline"
