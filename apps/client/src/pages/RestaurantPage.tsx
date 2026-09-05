@@ -90,7 +90,7 @@ export function RestaurantPage() {
           )}
           {restaurant.noteMoyenne && (
             <span className="inline-flex items-center gap-1">
-              <Star className="size-3.5 fill-brand-green text-brand-green" />
+              <Star className="size-3.5 fill-brand-blue text-brand-blue" />
               {restaurant.noteMoyenne}
             </span>
           )}

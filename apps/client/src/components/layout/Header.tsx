@@ -14,7 +14,7 @@ export function Header() {
     <header className="sticky top-0 z-20 bg-brand-navy text-white">
       <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
         <Link to="/" className="text-lg font-semibold tracking-tight text-white">
-          Chap<span className="text-brand-green">Express</span>
+          ChapExpress
         </Link>
 
         <nav className="flex items-center gap-4">
@@ -27,7 +27,7 @@ export function Header() {
           <Link to="/panier" className="relative text-white/90 hover:text-white" aria-label="Panier">
             <ShoppingCart className="size-5" />
             {itemCount > 0 && (
-              <span className="absolute -top-2 -right-2 flex size-4 items-center justify-center rounded-full bg-brand-green text-[10px] font-semibold text-white">
+              <span className="absolute -top-2 -right-2 flex size-4.5 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-brand-navy">
                 {itemCount}
               </span>
             )}
@@ -50,7 +50,7 @@ export function Header() {
               </Button>
             </div>
           ) : (
-            <Button asChild size="sm" className="bg-brand-green text-white hover:bg-brand-green/85">
+            <Button asChild size="sm">
               <Link to="/connexion">Connexion</Link>
             </Button>
           )}

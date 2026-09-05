@@ -1,4 +1,4 @@
-import { Minus, Plus, Trash2 } from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrixFcfa } from '@/lib/format';
 import type { CartItem } from '@/stores/cart-store';
@@ -22,29 +22,25 @@ export function CartItemRow({
 
       <div className="flex items-center gap-2">
         <Button
-          variant="outline"
-          size="icon-sm"
-          aria-label="Diminuer la quantité"
-          onClick={() => onUpdateQuantity(item.platId, item.quantite - 1)}
+          variant="ghost"
+          size="icon"
+          aria-label={item.quantite <= 1 ? 'Retirer du panier' : 'Diminuer la quantité'}
+          onClick={() =>
+            item.quantite <= 1
+              ? onRemove(item.platId)
+              : onUpdateQuantity(item.platId, item.quantite - 1)
+          }
         >
-          <Minus className="size-3" />
+          <Minus className="size-4" />
         </Button>
-        <span className="w-6 text-center">{item.quantite}</span>
+        <span className="w-8 text-center text-lg font-semibold">{item.quantite}</span>
         <Button
-          variant="outline"
-          size="icon-sm"
+          variant="ghost"
+          size="icon"
           aria-label="Augmenter la quantité"
           onClick={() => onUpdateQuantity(item.platId, item.quantite + 1)}
         >
-          <Plus className="size-3" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Retirer du panier"
-          onClick={() => onRemove(item.platId)}
-        >
-          <Trash2 className="size-4 text-destructive" />
+          <Plus className="size-4" />
         </Button>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { HelpCircle, History, MapPin, Tag } from 'lucide-react';
+import { History, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logo from '@/assets/logo.webp';
 import { ActiveOrderBanner } from '@/components/home/ActiveOrderBanner';
@@ -7,41 +7,23 @@ import { ColisIllustration } from '@/components/home/illustrations/ColisIllustra
 import { CoursesExpressIllustration } from '@/components/home/illustrations/CoursesExpressIllustration';
 import { EmplettesIllustration } from '@/components/home/illustrations/EmplettesIllustration';
 import { getPlatImage } from '@/data/images';
-import type { ImageVariant } from '@/data/images';
 
-// Plusieurs plats populaires du catalogue de démo, pour faire défiler de
-// vraies photos sur la tuile Repas (seul service avec de vraies photos).
-const REPAS_SLIDES: TileSlide[] = (
-  [
-    getPlatImage('Poisson tilapia braisé'),
-    getPlatImage('Poulet DG'),
-    getPlatImage('Pizza margherita'),
-  ].filter(Boolean) as ImageVariant[]
-).map((image) => ({ image }));
+// Un plat du catalogue de démo pour la tuile Repas (seul service avec de
+// vraies photos).
+const REPAS_SLIDE: TileSlide = { image: getPlatImage('Poisson tilapia braisé') };
 
 // Colis / Courses express / Emplettes n'ont aucune vraie photo (aucun
 // partenaire/livreur n'a encore fourni de visuel) : illustrations
 // vectorielles maison en attendant, à remplacer par de vraies photos plus
 // tard.
-const COLIS_SLIDES: TileSlide[] = [
-  { illustration: <ColisIllustration variant={1} /> },
-  { illustration: <ColisIllustration variant={2} /> },
-];
-const COURSES_EXPRESS_SLIDES: TileSlide[] = [
-  { illustration: <CoursesExpressIllustration variant={1} /> },
-  { illustration: <CoursesExpressIllustration variant={2} /> },
-];
-const EMPLETTES_SLIDES: TileSlide[] = [
-  { illustration: <EmplettesIllustration variant={1} /> },
-  { illustration: <EmplettesIllustration variant={2} /> },
-];
+const COLIS_SLIDE: TileSlide = { illustration: <ColisIllustration variant={1} /> };
+const COURSES_EXPRESS_SLIDE: TileSlide = {
+  illustration: <CoursesExpressIllustration variant={1} />,
+};
+const EMPLETTES_SLIDE: TileSlide = { illustration: <EmplettesIllustration variant={1} /> };
 
-const RACCOURCIS = [
-  { label: 'Historique', icon: History, to: '/commandes', disabled: false },
-  { label: 'Carnet d’adresses', icon: MapPin, to: null, disabled: true },
-  { label: 'Promotions', icon: Tag, to: null, disabled: true },
-  { label: 'Aide', icon: HelpCircle, to: null, disabled: true },
-] as const;
+// Numéro support à confirmer avant mise en production.
+const WHATSAPP_SUPPORT = 'https://wa.me/22900000000';
 
 export function ServicesHubPage() {
   return (
@@ -57,49 +39,49 @@ export function ServicesHubPage() {
       </section>
 
       <section className="grid grid-cols-2 gap-3">
-        <ServiceTile to="/repas" label="Repas" description="Restaurants et plats livrés chez vous" slides={REPAS_SLIDES} />
+        <ServiceTile
+          to="/repas"
+          label="Repas"
+          description="Restaurants et plats livrés chez vous"
+          slide={REPAS_SLIDE}
+        />
         <ServiceTile
           to="/colis"
           label="Colis"
           description="Enlèvement et livraison, point A à point B"
-          slides={COLIS_SLIDES}
+          slide={COLIS_SLIDE}
         />
         <ServiceTile
           to="/courses-express"
           label="Courses express"
           description="Démarches, dépôts et achats en votre nom"
-          slides={COURSES_EXPRESS_SLIDES}
+          slide={COURSES_EXPRESS_SLIDE}
         />
         <ServiceTile
           to="/emplettes"
           label="Emplettes"
           description="Marché, supermarché, pharmacie"
-          slides={EMPLETTES_SLIDES}
+          slide={EMPLETTES_SLIDE}
         />
       </section>
 
-      <section className="grid grid-cols-4 gap-2">
-        {RACCOURCIS.map(({ label, icon: Icon, to, disabled }) =>
-          disabled || !to ? (
-            <span
-              key={label}
-              aria-disabled="true"
-              className="flex flex-col items-center gap-1.5 rounded-xl px-2 py-2.5 text-center text-muted-foreground/50"
-            >
-              <Icon className="size-5" aria-hidden="true" />
-              <span className="text-[11px] leading-tight">{label}</span>
-            </span>
-          ) : (
-            <Link
-              key={label}
-              to={to}
-              className="flex flex-col items-center gap-1.5 rounded-xl px-2 py-2.5 text-center text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            >
-              <Icon className="size-5" aria-hidden="true" />
-              <span className="text-[11px] leading-tight">{label}</span>
-            </Link>
-          ),
-        )}
+      <section className="grid grid-cols-2 gap-2">
+        <Link
+          to="/commandes"
+          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-card px-3 text-sm font-medium text-foreground ring-1 ring-foreground/10 transition-colors hover:bg-secondary"
+        >
+          <History className="size-4 shrink-0" aria-hidden="true" />
+          Mes commandes
+        </Link>
+        <a
+          href={WHATSAPP_SUPPORT}
+          target="_blank"
+          rel="noreferrer"
+          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-card px-3 text-sm font-medium text-foreground ring-1 ring-foreground/10 transition-colors hover:bg-secondary"
+        >
+          <MessageCircle className="size-4 shrink-0" aria-hidden="true" />
+          Aide WhatsApp
+        </a>
       </section>
     </div>
   );

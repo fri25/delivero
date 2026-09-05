@@ -10,7 +10,6 @@
 @theme {
   --color-brand-navy: #002050;
   --color-brand-blue: #1070c0;
-  --color-brand-green: #40b050;
 }
 
 @theme inline {
@@ -59,10 +58,11 @@
 }
 
 /*
- * Palette dérivée des couleurs de marque (navy / blue / green) plutôt que du
- * gris neutre par défaut de shadcn : bleu en couleur d'action principale,
- * vert réservé aux états positifs (ouvert, livré, succès), fond légèrement
- * teinté au lieu d'un blanc pur.
+ * Palette dérivée des couleurs de marque plutôt que du gris neutre par défaut
+ * de shadcn : bleu en couleur d'action principale, --success pour les états
+ * positifs (ouvert, livré, succès), fond légèrement teinté au lieu d'un blanc
+ * pur. Les états positifs passent par --success et jamais par un token de
+ * marque : « c'est fait » est un état, pas une couleur d'enseigne.
  */
 :root {
   --background: #f6f8fc;

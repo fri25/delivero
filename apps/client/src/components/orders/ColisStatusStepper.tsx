@@ -48,7 +48,7 @@ export function ColisStatusStepper({
                 className={cn(
                   'flex size-7 items-center justify-center rounded-full border text-xs',
                   done
-                    ? 'border-brand-green bg-brand-green text-white'
+                    ? 'border-success bg-success text-success-foreground'
                     : 'border-border bg-background text-muted-foreground',
                 )}
               >
@@ -59,7 +59,7 @@ export function ColisStatusStepper({
               </span>
             </div>
             {!isLast && (
-              <div className={cn('mx-2 h-px flex-1', done ? 'bg-brand-green' : 'bg-border')} />
+              <div className={cn('mx-2 h-px flex-1', done ? 'bg-success' : 'bg-border')} />
             )}
           </li>
         );

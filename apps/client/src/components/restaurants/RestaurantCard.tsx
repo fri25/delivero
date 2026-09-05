@@ -36,7 +36,7 @@ export function RestaurantCard({
             variant="secondary"
             className={
               ouvert
-                ? 'absolute top-2.5 right-2.5 border-0 bg-brand-mangue text-white'
+                ? 'absolute top-2.5 right-2.5 border-0 bg-success text-success-foreground'
                 : 'absolute top-2.5 right-2.5 border-0 bg-black/55 text-white'
             }
           >
@@ -52,7 +52,7 @@ export function RestaurantCard({
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
             {restaurant.noteMoyenne && (
               <span className="inline-flex items-center gap-1 font-medium text-foreground">
-                <Star className="size-3.5 fill-brand-gingembre text-brand-gingembre" />
+                <Star className="size-3.5 fill-brand-blue text-brand-blue" />
                 {restaurant.noteMoyenne}
               </span>
             )}

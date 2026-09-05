@@ -18,7 +18,7 @@ function DisponibiliteToggle() {
     <Button
       size="sm"
       variant={livreur.disponible ? 'default' : 'outline'}
-      className={livreur.disponible ? 'bg-brand-green hover:bg-brand-green/85' : ''}
+      className={livreur.disponible ? 'bg-success hover:bg-success/85' : ''}
       disabled={toggleDisponibilite.isPending}
       onClick={() => {
         toggleDisponibilite.mutate(!livreur.disponible, {
@@ -42,7 +42,7 @@ export function Header() {
     <header className="bg-brand-navy text-white">
       <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
         <Link to="/" className="text-lg font-semibold tracking-tight text-white">
-          Chap<span className="text-brand-green">Express</span>{' '}
+          ChapExpress{' '}
           <span className="text-sm font-normal text-white/60">Livreur</span>
         </Link>
 
@@ -146,7 +146,7 @@ export function Header() {
               </Button>
             </>
           ) : (
-            <Button asChild size="sm" className="bg-brand-green text-white hover:bg-brand-green/85">
+            <Button asChild size="sm">
               <Link to="/connexion">Connexion</Link>
             </Button>
           )}
