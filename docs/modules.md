@@ -183,11 +183,17 @@ ne sert aujourd'hui que les restaurants.)*
       obligatoire à la livraison (correctif sécurité V01 du 27/08, RG-07
       imposé) ; nom du réceptionnaire reste une information complémentaire ;
       pas de photo — S3 absent)*
-- [ ] F-LIV-08 — Itinéraires multi-arrêts (ouverture dans Google Maps) — *(partiel :
-      liens Google Maps simples faits pour Repas et Colis (2 points) et pour
-      Courses express (un lien par étape) ; toujours une recherche simple
-      point par point, jamais un itinéraire multi-arrêts unique calculé —
-      aucune intégration cartographique réelle, voir CLAUDE.md [À FAIRE])*
+- [x] F-LIV-08 — Itinéraires multi-arrêts (ouverture dans Google Maps) — *(ajouté le
+      02/09 : les liens "Itinéraire" ouvrent désormais un vrai calcul d'itinéraire
+      Google Maps (origine = position GPS actuelle du livreur, via le deep-link
+      `google.com/maps/dir`) au lieu d'une simple recherche par point — voir
+      `apps/livreur/src/lib/format.ts` `googleMapsRouteUrl`. Pour Courses express,
+      un lien "Itinéraire complet" combine toutes les étapes restantes en un seul
+      trajet multi-arrêts, recalculé au fil de la progression. N'utilise aucune clé
+      API Google Maps Platform — deep-link uniquement, pas de géocodage serveur ni
+      de carte affichée in-app ; ces volets (carte à la création d'adresse F-CLI-03,
+      suivi position livreur en direct) restent à faire et nécessitent une clé
+      Maps Platform facturée que l'utilisateur doit fournir)*
 - [ ] F-LIV-09 — Portefeuille livreur (plafond d'avance, montants avancés/encaissés,
       solde à reverser) — *(partiel : les plafonds d'avance et de caisse
       (`Livreur.plafondAvance`/`plafondCaisse`) sont vérifiés à l'attribution

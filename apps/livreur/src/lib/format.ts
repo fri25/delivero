@@ -3,8 +3,14 @@ export function formatPrixFcfa(value: string | number): string {
   return `${new Intl.NumberFormat('fr-FR').format(amount)} FCFA`;
 }
 
-export function googleMapsSearchUrl(query: string): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+// Origine volontairement omise : Google Maps utilise alors la position GPS
+// actuelle du livreur comme point de départ.
+export function googleMapsRouteUrl(destination: string, waypoints: string[] = []): string {
+  const params = new URLSearchParams({ api: '1', destination, travelmode: 'driving' });
+  if (waypoints.length > 0) {
+    params.set('waypoints', waypoints.join('|'));
+  }
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
 }
 
 export function formatDateHeure(value: string | Date): string {

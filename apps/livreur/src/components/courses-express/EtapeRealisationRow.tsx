@@ -2,7 +2,7 @@ import { toast } from 'sonner';
 import { ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRealiserEtape } from '@/api/commandes-courses-express';
-import { googleMapsSearchUrl } from '@/lib/format';
+import { googleMapsRouteUrl } from '@/lib/format';
 import type { EtapeCourseExpress } from '@/api/types';
 
 export function EtapeRealisationRow({
@@ -23,7 +23,7 @@ export function EtapeRealisationRow({
           Étape {etape.ordre} — {etape.description}
         </p>
         <a
-          href={googleMapsSearchUrl(etape.adresse ?? etape.pointDeRepere)}
+          href={googleMapsRouteUrl(etape.adresse ?? etape.pointDeRepere)}
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center gap-1 text-xs text-brand-blue hover:underline"
