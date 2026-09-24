@@ -1,3 +1,4 @@
+import { EMPLETTES_ACTIF } from '@delivero/config/perimetre-v1';
 import { createBrowserRouter } from 'react-router-dom';
 import { RootLayout } from '@/layouts/RootLayout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
@@ -64,23 +65,30 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-      { path: 'emplettes', element: <EmplettesFormPage /> },
-      {
-        path: 'emplettes/commandes',
-        element: (
-          <ProtectedRoute>
-            <EmplettesOrdersPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'emplettes/commandes/:id',
-        element: (
-          <ProtectedRoute>
-            <EmplettesOrderDetailPage />
-          </ProtectedRoute>
-        ),
-      },
+      // Emplettes hors périmètre V1 : le code des écrans reste dans le dépôt,
+      // mais comme EMPLETTES_ACTIF est une constante fausse, le bundler élimine
+      // entièrement cette branche du build (voir packages/config/perimetre-v1.ts).
+      ...(EMPLETTES_ACTIF
+        ? [
+            { path: 'emplettes', element: <EmplettesFormPage /> },
+            {
+              path: 'emplettes/commandes',
+              element: (
+                <ProtectedRoute>
+                  <EmplettesOrdersPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: 'emplettes/commandes/:id',
+              element: (
+                <ProtectedRoute>
+                  <EmplettesOrderDetailPage />
+                </ProtectedRoute>
+              ),
+            },
+          ]
+        : []),
       { path: 'restaurants/:id', element: <RestaurantPage /> },
       { path: 'panier', element: <CartPage /> },
       { path: 'connexion', element: <LoginPage /> },

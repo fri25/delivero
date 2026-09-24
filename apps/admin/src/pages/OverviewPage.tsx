@@ -1,3 +1,4 @@
+import { EMPLETTES_ACTIF } from '@delivero/config/perimetre-v1';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -10,13 +11,18 @@ import type { AdminCommandeRow, TypeService } from '@/api/types';
 
 const PAGE_SIZE = 20;
 
-const SERVICES: { value: TypeService | undefined; label: string }[] = [
+const TOUS_SERVICES: { value: TypeService | undefined; label: string }[] = [
   { value: undefined, label: 'Tous' },
   { value: 'repas', label: 'Repas' },
   { value: 'colis', label: 'Colis' },
   { value: 'emplettes', label: 'Emplettes' },
   { value: 'courses_express', label: 'Courses express' },
 ];
+
+// Hors V1, plus aucune commande Emplettes n'est créée : le filtre dédié
+// disparaît. Les éventuelles commandes Emplettes antérieures restent visibles
+// via "Tous" et gardent leur libellé (SERVICE_LABELS ci-dessous est complet).
+const SERVICES = TOUS_SERVICES.filter((s) => s.value !== 'emplettes' || EMPLETTES_ACTIF);
 
 const SERVICE_LABELS: Record<TypeService, string> = {
   repas: 'Repas',

@@ -29,7 +29,10 @@ export class AdminSaisieManuelleService {
     private readonly commandesCoursesExpress: CommandesCoursesExpressService,
   ) {}
 
-  private async resoudreClient(telephone: string, nom: string): Promise<string> {
+  private async resoudreClient(
+    telephone: string,
+    nom: string,
+  ): Promise<string> {
     const clientRole = await this.prisma.role.findUniqueOrThrow({
       where: { name: CLIENT_ROLE_NAME },
     });
@@ -59,7 +62,10 @@ export class AdminSaisieManuelleService {
   }
 
   async saisirRepas(dto: SaisieManuelleRepasDto) {
-    const clientId = await this.resoudreClient(dto.clientTelephone, dto.clientNom);
+    const clientId = await this.resoudreClient(
+      dto.clientTelephone,
+      dto.clientNom,
+    );
     const adresse = await this.creerAdresse(
       clientId,
       dto.pointDeRepere,
@@ -75,7 +81,10 @@ export class AdminSaisieManuelleService {
   }
 
   async saisirColis(dto: SaisieManuelleColisDto) {
-    const clientId = await this.resoudreClient(dto.clientTelephone, dto.clientNom);
+    const clientId = await this.resoudreClient(
+      dto.clientTelephone,
+      dto.clientNom,
+    );
     const adresseEnlevement = await this.creerAdresse(
       clientId,
       dto.pointDeRepereEnlevement,
@@ -102,7 +111,10 @@ export class AdminSaisieManuelleService {
   }
 
   async saisirEmplettes(dto: SaisieManuelleEmplettesDto) {
-    const clientId = await this.resoudreClient(dto.clientTelephone, dto.clientNom);
+    const clientId = await this.resoudreClient(
+      dto.clientTelephone,
+      dto.clientNom,
+    );
     const adresse = await this.creerAdresse(
       clientId,
       dto.pointDeRepere,
@@ -121,7 +133,10 @@ export class AdminSaisieManuelleService {
   }
 
   async saisirCoursesExpress(dto: SaisieManuelleCoursesExpressDto) {
-    const clientId = await this.resoudreClient(dto.clientTelephone, dto.clientNom);
+    const clientId = await this.resoudreClient(
+      dto.clientTelephone,
+      dto.clientNom,
+    );
     return this.commandesCoursesExpress.create(clientId, {
       description: dto.description,
       zoneId: dto.zoneId,

@@ -1,3 +1,4 @@
+import { EMPLETTES_ACTIF } from '@delivero/config/perimetre-v1';
 import { History, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logo from '@/assets/logo.webp';
@@ -33,18 +34,24 @@ export function ServicesHubPage() {
       <section className="flex items-center gap-3 rounded-2xl bg-card px-3.5 py-3 ring-1 ring-foreground/10">
         <img src={logo} alt="ChapExpress" className="h-14 w-auto shrink-0" />
         <p className="text-xs leading-snug text-muted-foreground">
-          À Natitingou, ChapExpress livre vos repas, colis, courses et emplettes grâce à des
-          livreurs de confiance. Choisissez un service pour commencer.
+          À Natitingou, ChapExpress livre{' '}
+          {EMPLETTES_ACTIF ? 'vos repas, colis, courses et emplettes' : 'vos repas, colis et courses'}{' '}
+          grâce à des livreurs de confiance. Choisissez un service pour commencer.
         </p>
       </section>
 
+      {/* 4 tuiles = 2 lignes pleines. Emplettes masqué en V1, les 3 restantes
+          laisseraient un demi-emplacement vide : Repas, le service phare et le
+          seul à avoir de vraies photos, prend alors toute la largeur. */}
       <section className="grid grid-cols-2 gap-3">
-        <ServiceTile
-          to="/repas"
-          label="Repas"
-          description="Restaurants et plats livrés chez vous"
-          slide={REPAS_SLIDE}
-        />
+        <div className={EMPLETTES_ACTIF ? undefined : 'col-span-2'}>
+          <ServiceTile
+            to="/repas"
+            label="Repas"
+            description="Restaurants et plats livrés chez vous"
+            slide={REPAS_SLIDE}
+          />
+        </div>
         <ServiceTile
           to="/colis"
           label="Colis"
@@ -57,12 +64,14 @@ export function ServicesHubPage() {
           description="Démarches, dépôts et achats en votre nom"
           slide={COURSES_EXPRESS_SLIDE}
         />
-        <ServiceTile
-          to="/emplettes"
-          label="Emplettes"
-          description="Marché, supermarché, pharmacie"
-          slide={EMPLETTES_SLIDE}
-        />
+        {EMPLETTES_ACTIF && (
+          <ServiceTile
+            to="/emplettes"
+            label="Emplettes"
+            description="Marché, supermarché, pharmacie"
+            slide={EMPLETTES_SLIDE}
+          />
+        )}
       </section>
 
       <section className="grid grid-cols-2 gap-2">

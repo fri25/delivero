@@ -1,3 +1,4 @@
+import { CONTRE_REMBOURSEMENT_ACTIF, ESPECES_ACTIF } from '@delivero/config/perimetre-v1';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -42,7 +43,9 @@ export function ColisFormPage() {
   const [fragile, setFragile] = useState(false);
   const [contreRemboursement, setContreRemboursement] = useState(false);
   const [montantContreRemboursement, setMontantContreRemboursement] = useState('');
-  const [modePaiement, setModePaiement] = useState<ModePaiement>('especes');
+  const [modePaiement, setModePaiement] = useState<ModePaiement>(
+    ESPECES_ACTIF ? 'especes' : 'mobile_money',
+  );
   const [planifie, setPlanifie] = useState(false);
   const [programmationAt, setProgrammationAt] = useState('');
   const [conditionsAcceptees, setConditionsAcceptees] = useState(false);
@@ -247,30 +250,35 @@ export function ColisFormPage() {
         </div>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold">Contre-remboursement</h2>
-        <label className="flex items-center gap-2 text-sm">
-          <Checkbox
-            checked={contreRemboursement}
-            onCheckedChange={(checked) => setContreRemboursement(checked === true)}
-          />
-          Le livreur doit encaisser un montant auprès du destinataire
-        </label>
-        {contreRemboursement && (
-          <div className="space-y-1.5">
-            <Label htmlFor="montantContreRemboursement">Montant à encaisser (FCFA)</Label>
-            <Input
-              id="montantContreRemboursement"
-              type="number"
-              min={1}
-              inputMode="numeric"
-              value={montantContreRemboursement}
-              onChange={(event) => setMontantContreRemboursement(event.target.value)}
-              required
+      {/* RG-04 : le contre-remboursement suppose un encaissement en espèces
+          auprès du destinataire — retiré de la V1 avec les espèces (voir
+          packages/config/perimetre-v1.ts). */}
+      {CONTRE_REMBOURSEMENT_ACTIF && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold">Contre-remboursement</h2>
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox
+              checked={contreRemboursement}
+              onCheckedChange={(checked) => setContreRemboursement(checked === true)}
             />
-          </div>
-        )}
-      </section>
+            Le livreur doit encaisser un montant auprès du destinataire
+          </label>
+          {contreRemboursement && (
+            <div className="space-y-1.5">
+              <Label htmlFor="montantContreRemboursement">Montant à encaisser (FCFA)</Label>
+              <Input
+                id="montantContreRemboursement"
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={montantContreRemboursement}
+                onChange={(event) => setMontantContreRemboursement(event.target.value)}
+                required
+              />
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold">Enlèvement</h2>
@@ -294,15 +302,19 @@ export function ColisFormPage() {
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold">Paiement des frais de livraison</h2>
-        <Select value={modePaiement} onValueChange={(value) => setModePaiement(value as ModePaiement)}>
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="especes">Espèces à la livraison</SelectItem>
-            <SelectItem value="mobile_money">Mobile Money</SelectItem>
-          </SelectContent>
-        </Select>
+        {ESPECES_ACTIF ? (
+          <Select value={modePaiement} onValueChange={(value) => setModePaiement(value as ModePaiement)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="especes">Espèces à la livraison</SelectItem>
+              <SelectItem value="mobile_money">Mobile Money</SelectItem>
+            </SelectContent>
+          </Select>
+        ) : (
+          <p className="rounded-lg border border-border px-3 py-2 text-sm">Mobile Money</p>
+        )}
       </section>
 
       {estimation.data && (

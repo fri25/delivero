@@ -1,3 +1,4 @@
+import { EMPLETTES_ACTIF } from '@delivero/config/perimetre-v1';
 import { createBrowserRouter } from 'react-router-dom';
 import { RootLayout } from '@/layouts/RootLayout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
@@ -49,22 +50,27 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-      {
-        path: 'emplettes',
-        element: (
-          <ProtectedRoute>
-            <EmplettesDisponiblesPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'emplettes/mes-courses',
-        element: (
-          <ProtectedRoute>
-            <MesEmplettesPage />
-          </ProtectedRoute>
-        ),
-      },
+      // Emplettes hors périmètre V1 (voir packages/config/perimetre-v1.ts).
+      ...(EMPLETTES_ACTIF
+        ? [
+            {
+              path: 'emplettes',
+              element: (
+                <ProtectedRoute>
+                  <EmplettesDisponiblesPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: 'emplettes/mes-courses',
+              element: (
+                <ProtectedRoute>
+                  <MesEmplettesPage />
+                </ProtectedRoute>
+              ),
+            },
+          ]
+        : []),
       {
         path: 'courses-express',
         element: (

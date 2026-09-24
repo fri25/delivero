@@ -11,6 +11,23 @@ choix se fait au moment de la commande, sauf pour les Emplettes où le financeme
 suit une règle spécifique (voir RG-05 et
 [service-emplettes.md](service-emplettes.md)).
 
+> **Écart assumé en V1 (décidé le 23/09/2026)** — la V1 encaisse **uniquement par
+> Mobile Money** : les espèces à la livraison sont retirées de tous les parcours.
+> La règle ci-dessus reste la cible ; seul le périmètre ouvert change, via
+> `MODES_PAIEMENT_ACTIFS` côté API et `ESPECES_ACTIF` dans
+> [`packages/config/perimetre-v1.ts`](../packages/config/perimetre-v1.ts).
+>
+> ⚠️ **Conséquence à ne pas perdre de vue** : l'agrégateur FedaPay n'est pas
+> intégré (aucun module paiement ni webhook dans `apps/api`, voir F-ADM-16). Un
+> paiement Mobile Money est créé en `en_attente` et **rien ne le fait passer à
+> `reussi`**. Aucune commande n'est donc encaissable en l'état : ne pas ouvrir à
+> de vrais clients avant cette intégration.
+>
+> Conséquences en cascade sur les autres règles : RG-04 est suspendu (voir
+> ci-dessous) ; RG-02 et RG-03 (portefeuille livreur, clôture et rapprochement de
+> caisse) restent implémentés mais deviennent sans objet tant qu'aucun
+> encaissement en espèces n'a lieu.
+
 ## RG-02 — Plafond d'avance et portefeuille livreur
 
 Chaque livreur dispose d'un plafond d'avance et d'un plafond de caisse, définis par
@@ -44,6 +61,15 @@ l'ensemble des livreurs et les reverse à l'expéditeur selon une périodicité 
 (exemple cité dans le cahier des charges : hebdomadaire), avec relevé détaillé.
 **[À ARBITRER]** : périodicité exacte, et existence d'une commission ChapExpress sur
 ce flux en plus des frais de livraison. Voir [service-colis.md](service-colis.md).
+
+> **Suspendu en V1 (décidé le 23/09/2026)** — le contre-remboursement suppose un
+> encaissement en espèces auprès du destinataire. Les espèces étant retirées de la
+> V1 (voir RG-01), l'option est retirée des parcours client et de la saisie
+> manuelle admin, et l'API refuse toute nouvelle commande Colis comportant un
+> montant de contre-remboursement. Le code reste en place : les colis déjà créés
+> avec un contre-remboursement restent livrables et encaissables normalement.
+> Interrupteurs : `CONTRE_REMBOURSEMENT_ACTIF` côté API et dans
+> [`packages/config/perimetre-v1.ts`](../packages/config/perimetre-v1.ts).
 
 ## RG-05 — Budget maximum et dépassement (Emplettes, mode liste libre)
 

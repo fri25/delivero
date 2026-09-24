@@ -1,3 +1,8 @@
+import {
+  CONTRE_REMBOURSEMENT_ACTIF,
+  EMPLETTES_ACTIF,
+  ESPECES_ACTIF,
+} from '@delivero/config/perimetre-v1';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -11,14 +16,23 @@ import {
 } from '@/api/saisie-manuelle';
 import { useRestaurant, useRestaurants } from '@/api/restaurants';
 import { useZones } from '@/api/zones';
-import type { TypeService } from '@/api/types';
+import type { ModePaiement, TypeService } from '@/api/types';
 
-const SERVICES: { value: TypeService; label: string }[] = [
+const TOUS_SERVICES: { value: TypeService; label: string }[] = [
   { value: 'repas', label: 'Repas' },
   { value: 'colis', label: 'Colis' },
   { value: 'emplettes', label: 'Emplettes' },
   { value: 'courses_express', label: 'Courses express' },
 ];
+
+// Le formulaire Emplettes reste dans le fichier : seule son entrée de menu
+// disparaît hors V1 (voir packages/config/perimetre-v1.ts).
+const SERVICES = TOUS_SERVICES.filter((s) => s.value !== 'emplettes' || EMPLETTES_ACTIF);
+
+// Le dispatcher ne choisit pas le moyen de paiement : une demande reçue au
+// téléphone suit le même périmètre que le parcours client. Les espèces étant
+// retirées de la V1, l'API refuserait `especes` (voir perimetre-v1.service.ts).
+const MODE_PAIEMENT_V1: ModePaiement = ESPECES_ACTIF ? 'especes' : 'mobile_money';
 
 function ZoneSelect({
   value,
@@ -110,7 +124,7 @@ function FormRepas() {
             clientTelephone,
             pointDeRepere,
             partenaireId,
-            modePaiement: 'especes',
+            modePaiement: MODE_PAIEMENT_V1,
             lignes: lignes.filter((l) => l.platId),
           },
           {
@@ -257,7 +271,7 @@ function FormColis() {
             montantContreRemboursement: montantContreRemboursement
               ? Number(montantContreRemboursement)
               : undefined,
-            modePaiement: 'especes',
+            modePaiement: MODE_PAIEMENT_V1,
             conditionsAcceptees: true,
           },
           {
@@ -310,16 +324,20 @@ function FormColis() {
           <option value="grand">Grand</option>
         </select>
       </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="colis-cr">Contre-remboursement (FCFA, optionnel)</Label>
-        <Input
-          id="colis-cr"
-          type="number"
-          min="0"
-          value={montantContreRemboursement}
-          onChange={(e) => setMontantContreRemboursement(e.target.value)}
-        />
-      </div>
+      {/* RG-04 : retiré de la V1 avec les espèces (voir
+          packages/config/perimetre-v1.ts). */}
+      {CONTRE_REMBOURSEMENT_ACTIF && (
+        <div className="space-y-1.5">
+          <Label htmlFor="colis-cr">Contre-remboursement (FCFA, optionnel)</Label>
+          <Input
+            id="colis-cr"
+            type="number"
+            min="0"
+            value={montantContreRemboursement}
+            onChange={(e) => setMontantContreRemboursement(e.target.value)}
+          />
+        </div>
+      )}
       <div className="space-y-1.5">
         <Label htmlFor="colis-dest-nom">Nom du destinataire</Label>
         <Input
@@ -510,7 +528,7 @@ function FormCoursesExpress() {
             clientTelephone,
             description,
             zoneId,
-            modePaiement: 'especes',
+            modePaiement: MODE_PAIEMENT_V1,
             etapes,
           },
           {
@@ -604,10 +622,11 @@ export function SaisieManuellePage() {
       <div>
         <h1 className="text-xl font-semibold">Saisie manuelle</h1>
         <p className="text-sm text-muted-foreground">
-          Demande reçue par téléphone ou WhatsApp (F-ADM-04), pour les 4 services. Un compte
-          client est créé ou retrouvé par numéro de téléphone (sans mot de passe) ; le mode de
-          paiement est fixé à "espèces" ici, la tarification suit les mêmes règles que le
-          parcours client normal.
+          Demande reçue par téléphone ou WhatsApp (F-ADM-04), pour les {SERVICES.length} services
+          ouverts. Un compte client est créé ou retrouvé par numéro de téléphone (sans mot de
+          passe) ; le mode de paiement suit le périmètre de la V1 (
+          {MODE_PAIEMENT_V1 === 'mobile_money' ? 'Mobile Money' : 'espèces'}), la tarification
+          suit les mêmes règles que le parcours client normal.
         </p>
       </div>
 

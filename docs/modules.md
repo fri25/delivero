@@ -4,10 +4,31 @@ Checklist exhaustive par module, avec ID stable réutilisable en ticket. Détail
 parcours et règles : voir les fiches de service. Détail des règles métier
 transversales : [regles-gestion.md](regles-gestion.md).
 
-**Statut** (dernière mise à jour 2026-08-30, sur le code réel de `apps/` — voir aussi
+**Statut** (dernière mise à jour 2026-09-23, sur le code réel de `apps/` — voir aussi
 [decisions-arbitrage.md](decisions-arbitrage.md) pour le phasage retenu
 Repas → Colis → Emplettes → Courses express) :
 `[x]` fait · `[ ]` *(partiel : ...)* commencé mais incomplet · `[ ]` non commencé.
+
+> **Périmètre V1 (23/09/2026) — Repas, Colis, Courses express, paiement Mobile
+> Money uniquement.**
+> Les espèces à la livraison sont retirées de tous les parcours, et avec elles le
+> contre-remboursement Colis (F-CLI-18, RG-04). Écart assumé avec RG-01 —
+> ⚠️ **FedaPay n'étant pas intégré (F-ADM-16), aucune commande n'est encaissable
+> en l'état** : un paiement Mobile Money reste en `en_attente`. Ne pas ouvrir à de
+> vrais clients avant cette intégration. Détail et interrupteurs :
+> [regles-gestion.md](regles-gestion.md) RG-01 et RG-04.
+>
+> **Emplettes est masqué**, pas supprimé : le code reste intégralement en place
+> et les cases ci-dessous décrivent toujours ce qui est implémenté. Ce qui
+> change est l'exposition — points d'entrée retirés du hub client, des routes
+> client et livreur, de la navigation livreur et des sélecteurs admin, et
+> création refusée côté API. Un statut `[x]` dans la section Emplettes
+> signifie donc « développé et testé », pas « ouvert aux clients ».
+> Deux interrupteurs, à basculer ensemble pour rouvrir le service en V2 :
+> `EMPLETTES_ACTIF` dans [`packages/config/perimetre-v1.ts`](../packages/config/perimetre-v1.ts)
+> (interfaces) et `SERVICES_ACTIFS` dans l'environnement de l'API
+> (`apps/api/src/config/env.validation.ts`). L'API refuse indépendamment des
+> interfaces, car une PWA déjà installée conserve son ancien bundle en cache.
 
 ## Module Client (F-CLI)
 
@@ -19,8 +40,9 @@ Repas → Colis → Emplettes → Courses express) :
       exige le rôle `client` authentifié)*
 - [x] F-CLI-03 — Carnet d'adresses avec point de repère et localisation carte
 - [ ] F-CLI-04 — Choix du paiement (Mobile Money ou espèces à la livraison) —
-      *(partiel : mode choisi et stocké (`Paiement`), aucune intégration réelle
-      d'agrégateur — voir F-ADM-16)*
+      *(partiel : mode stocké (`Paiement`), aucune intégration réelle
+      d'agrégateur — voir F-ADM-16. **V1 : plus de choix**, Mobile Money imposé,
+      espèces retirées — voir l'encadré en tête de fichier et RG-01)*
 - [x] F-CLI-05 — Suivi en temps réel de chaque demande, statuts adaptés au service —
       *(WebSocket (Socket.IO) ajouté le 27/08 sur les 4 services : le client est
       notifié à chaque changement de statut via `commande:statut`, en plus du
@@ -50,7 +72,9 @@ Repas → Colis → Emplettes → Courses express) :
       — *(partiel : taille/valeur déclarée/fragile faits ; pas de champ "nature" ni de
       photo — aucun stockage de fichiers S3 intégré)*
 - [x] F-CLI-17 — Estimation immédiate du tarif
-- [x] F-CLI-18 — Option contre-remboursement
+- [x] F-CLI-18 — Option contre-remboursement — *(implémenté et testé, mais
+      **masqué en V1** : suppose un encaissement espèces auprès du destinataire,
+      voir RG-04)*
 - [x] F-CLI-19 — Programmation de l'enlèvement (immédiat ou planifié)
 - [x] F-CLI-20 — Rappel des objets interdits + acceptation des conditions
 - [x] F-CLI-21 — Suivi de statut Colis
@@ -93,6 +117,11 @@ backend et des écrans client/livreur, mode(s) simplifié(s) documentés dans
 chaque `api-*.md`. Le back-office (F-ADM) reste entièrement à faire.)*
 
 ### Emplettes
+
+> **Masqué en V1** (voir l'encadré en tête de fichier) : les cases cochées
+> ci-dessous décrivent du code livré et testé, aujourd'hui sans point d'entrée
+> ouvert aux clients.
+
 - [x] F-CLI-28 — Mode (a) : liste de courses libre (texte ou photo) —
       *(texte fait ; pas de photo de la liste, aucun stockage S3 intégré)*
 - [ ] F-CLI-29 — Mode (b) : catalogue partenaire (supermarché/pharmacie), montant
