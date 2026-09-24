@@ -13,6 +13,7 @@ import {
   TailleColis,
   TypeService,
 } from '@prisma/client';
+import { PerimetreV1Service } from '../config/perimetre-v1.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -94,6 +95,7 @@ export class CommandesColisService {
     private readonly prisma: PrismaService,
     private readonly portefeuille: PortefeuilleService,
     private readonly realtime: RealtimeGateway,
+    private readonly perimetre: PerimetreV1Service,
   ) {}
 
   // F-CLI-05 : voir même principe que commandes-repas.service.ts.
@@ -111,6 +113,11 @@ export class CommandesColisService {
   }
 
   async create(clientId: string, dto: CreateCommandeColisDto) {
+    this.perimetre.assertModePaiementOuvert(dto.modePaiement);
+    this.perimetre.assertContreRemboursementOuvert(
+      dto.montantContreRemboursement,
+    );
+
     const adresse = await this.prisma.adresse.findUnique({
       where: { id: dto.adresseEnlevementId },
     });

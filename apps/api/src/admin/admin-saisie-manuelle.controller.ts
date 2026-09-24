@@ -16,7 +16,9 @@ const ADMIN_ROLE_NAME = 'admin_dispatcher';
 @Roles(ADMIN_ROLE_NAME)
 @RequirePermissions('commandes.saisir_manuelle')
 export class AdminSaisieManuelleController {
-  constructor(private readonly adminSaisieManuelleService: AdminSaisieManuelleService) {}
+  constructor(
+    private readonly adminSaisieManuelleService: AdminSaisieManuelleService,
+  ) {}
 
   @Post('repas')
   repas(@Body() dto: SaisieManuelleRepasDto) {

@@ -10,6 +10,7 @@ import { CommandesCoursesExpressModule } from './commandes-courses-express/comma
 import { CommandesEmplettesModule } from './commandes-emplettes/commandes-emplettes.module';
 import { CommandesRepasModule } from './commandes-repas/commandes-repas.module';
 import { envValidationSchema } from './config/env.validation';
+import { PerimetreV1Module } from './config/perimetre-v1.module';
 import { HealthModule } from './health/health.module';
 import { LivreursModule } from './livreurs/livreurs.module';
 import { PortefeuilleModule } from './portefeuille/portefeuille.module';
@@ -29,6 +30,7 @@ import { ZonesModule } from './zones/zones.module';
     ThrottlerModule.forRoot({
       throttlers: [{ ttl: 60_000, limit: 60 }],
     }),
+    PerimetreV1Module,
     PrismaModule,
     PortefeuilleModule,
     RealtimeModule,

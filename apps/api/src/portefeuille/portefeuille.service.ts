@@ -112,7 +112,7 @@ export class PortefeuilleService {
     });
     if (clotureExistante) {
       throw new BadRequestException(
-        'La caisse a déjà été clôturée aujourd\'hui.',
+        "La caisse a déjà été clôturée aujourd'hui.",
       );
     }
 

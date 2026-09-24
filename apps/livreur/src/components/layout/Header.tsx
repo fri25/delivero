@@ -1,3 +1,4 @@
+import { EMPLETTES_ACTIF } from '@delivero/config/perimetre-v1';
 import { LogOut } from 'lucide-react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -82,23 +83,27 @@ export function Header() {
             >
               Mes colis
             </NavLink>
-            <NavLink
-              to="/emplettes"
-              end
-              className={({ isActive }) =>
-                cn('text-white/75 hover:text-white', isActive && 'font-medium text-white')
-              }
-            >
-              Emplettes disponibles
-            </NavLink>
-            <NavLink
-              to="/emplettes/mes-courses"
-              className={({ isActive }) =>
-                cn('text-white/75 hover:text-white', isActive && 'font-medium text-white')
-              }
-            >
-              Mes emplettes
-            </NavLink>
+            {EMPLETTES_ACTIF && (
+              <>
+                <NavLink
+                  to="/emplettes"
+                  end
+                  className={({ isActive }) =>
+                    cn('text-white/75 hover:text-white', isActive && 'font-medium text-white')
+                  }
+                >
+                  Emplettes disponibles
+                </NavLink>
+                <NavLink
+                  to="/emplettes/mes-courses"
+                  className={({ isActive }) =>
+                    cn('text-white/75 hover:text-white', isActive && 'font-medium text-white')
+                  }
+                >
+                  Mes emplettes
+                </NavLink>
+              </>
+            )}
             <NavLink
               to="/courses-express"
               end
@@ -181,19 +186,27 @@ export function Header() {
           >
             Mes colis
           </NavLink>
-          <NavLink
-            to="/emplettes"
-            end
-            className={({ isActive }) => cn('text-white/75', isActive && 'font-medium text-white')}
-          >
-            Emplettes disponibles
-          </NavLink>
-          <NavLink
-            to="/emplettes/mes-courses"
-            className={({ isActive }) => cn('text-white/75', isActive && 'font-medium text-white')}
-          >
-            Mes emplettes
-          </NavLink>
+          {EMPLETTES_ACTIF && (
+            <>
+              <NavLink
+                to="/emplettes"
+                end
+                className={({ isActive }) =>
+                  cn('text-white/75', isActive && 'font-medium text-white')
+                }
+              >
+                Emplettes disponibles
+              </NavLink>
+              <NavLink
+                to="/emplettes/mes-courses"
+                className={({ isActive }) =>
+                  cn('text-white/75', isActive && 'font-medium text-white')
+                }
+              >
+                Mes emplettes
+              </NavLink>
+            </>
+          )}
           <NavLink
             to="/courses-express"
             end

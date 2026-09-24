@@ -32,6 +32,15 @@ describe('Colis (e2e)', () => {
   let zoneId: string;
 
   beforeAll(async () => {
+    // Ces suites valident l'implémentation complète (encaissement espèces,
+    // portefeuille livreur, contre-remboursement), qui reste en place : le
+    // périmètre V1 est une configuration de déploiement, pas une suppression
+    // de code. On ouvre donc explicitement ce que la V1 ferme. À poser avant
+    // la construction du module : dotenv n'écrase pas une variable déjà
+    // présente dans process.env.
+    process.env.MODES_PAIEMENT_ACTIFS = 'mobile_money,especes';
+    process.env.CONTRE_REMBOURSEMENT_ACTIF = 'true';
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();

@@ -1,3 +1,4 @@
+import { ESPECES_ACTIF } from '@delivero/config/perimetre-v1';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -40,7 +41,9 @@ export function CoursesExpressFormPage() {
   const [description, setDescription] = useState('');
   const [zoneId, setZoneId] = useState<string | null>(null);
   const [etapes, setEtapes] = useState<EtapeDraft[]>([nouvelleEtape()]);
-  const [modePaiement, setModePaiement] = useState<ModePaiement>('especes');
+  const [modePaiement, setModePaiement] = useState<ModePaiement>(
+    ESPECES_ACTIF ? 'especes' : 'mobile_money',
+  );
 
   const zoneUnique = zones?.length === 1 ? zones.at(0) : undefined;
   const effectiveZoneId = zoneId ?? zoneUnique?.id ?? null;
@@ -164,15 +167,19 @@ export function CoursesExpressFormPage() {
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold">Paiement</h2>
-        <Select value={modePaiement} onValueChange={(value) => setModePaiement(value as ModePaiement)}>
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="especes">Espèces à la remise</SelectItem>
-            <SelectItem value="mobile_money">Mobile Money</SelectItem>
-          </SelectContent>
-        </Select>
+        {ESPECES_ACTIF ? (
+          <Select value={modePaiement} onValueChange={(value) => setModePaiement(value as ModePaiement)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="especes">Espèces à la remise</SelectItem>
+              <SelectItem value="mobile_money">Mobile Money</SelectItem>
+            </SelectContent>
+          </Select>
+        ) : (
+          <p className="rounded-lg border border-border px-3 py-2 text-sm">Mobile Money</p>
+        )}
       </section>
 
       {estimation.data && (

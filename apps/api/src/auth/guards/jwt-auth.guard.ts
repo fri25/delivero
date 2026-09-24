@@ -50,7 +50,9 @@ export class JwtAuthGuard implements CanActivate {
     // mais jamais lu, seul le nom du rôle comptait.
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
-      include: { role: { include: { permissions: { include: { permission: true } } } } },
+      include: {
+        role: { include: { permissions: { include: { permission: true } } } },
+      },
     });
     if (!user) {
       throw new UnauthorizedException('Compte introuvable.');

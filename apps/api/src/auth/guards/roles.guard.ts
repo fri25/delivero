@@ -41,9 +41,7 @@ export class RolesGuard implements CanActivate {
         userPermissions.includes(permission),
       );
       if (!hasAll) {
-        throw new ForbiddenException(
-          'Permission manquante pour cette action.',
-        );
+        throw new ForbiddenException('Permission manquante pour cette action.');
       }
     }
 

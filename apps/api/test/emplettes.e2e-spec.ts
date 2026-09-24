@@ -39,6 +39,13 @@ describe('Emplettes (e2e)', () => {
   let zoneId: string;
 
   beforeAll(async () => {
+    // Emplettes est hors périmètre V1 : la création est refusée tant que le
+    // service n'est pas listé dans SERVICES_ACTIFS (voir
+    // src/config/env.validation.ts). Ce test valide le service complet, il
+    // l'ouvre donc explicitement. À poser avant la construction du module :
+    // dotenv n'écrase pas une variable déjà présente dans process.env.
+    process.env.SERVICES_ACTIFS = 'repas,colis,courses_express,emplettes';
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();

@@ -1,3 +1,4 @@
+import { ESPECES_ACTIF } from '@delivero/config/perimetre-v1';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -26,7 +27,9 @@ export function CartPage() {
   const { data: restaurant } = useRestaurant(cart.restaurantId ?? undefined);
 
   const [adresseId, setAdresseId] = useState<string | null>(null);
-  const [modePaiement, setModePaiement] = useState<ModePaiement>('especes');
+  const [modePaiement, setModePaiement] = useState<ModePaiement>(
+    ESPECES_ACTIF ? 'especes' : 'mobile_money',
+  );
 
   const sousTotal = cart.items.reduce((sum, item) => sum + item.prixUnitaire * item.quantite, 0);
   // Décompte transparent (RG-08) : frais de livraison + 15 % de service,
@@ -127,15 +130,22 @@ export function CartPage() {
 
           <div>
             <h2 className="mb-2 text-sm font-semibold">Paiement</h2>
-            <Select value={modePaiement} onValueChange={(value) => setModePaiement(value as ModePaiement)}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="especes">Espèces à la livraison</SelectItem>
-                <SelectItem value="mobile_money">Mobile Money</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Espèces retirées de la V1 : plus qu'un seul moyen, on annonce
+                le paiement au lieu de simuler un choix (voir
+                packages/config/perimetre-v1.ts). */}
+            {ESPECES_ACTIF ? (
+              <Select value={modePaiement} onValueChange={(value) => setModePaiement(value as ModePaiement)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="especes">Espèces à la livraison</SelectItem>
+                  <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="rounded-lg border border-border px-3 py-2 text-sm">Mobile Money</p>
+            )}
           </div>
         </div>
       )}

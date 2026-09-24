@@ -12,6 +12,7 @@ import {
   TypePartenaire,
   TypeService,
 } from '@prisma/client';
+import { PerimetreV1Service } from '../config/perimetre-v1.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -73,6 +74,7 @@ export class CommandesRepasService {
     private readonly prisma: PrismaService,
     private readonly portefeuille: PortefeuilleService,
     private readonly realtime: RealtimeGateway,
+    private readonly perimetre: PerimetreV1Service,
   ) {}
 
   // F-CLI-05 : notifie le client d'un changement de statut, pour remplacer
@@ -87,6 +89,8 @@ export class CommandesRepasService {
   }
 
   async create(clientId: string, dto: CreateCommandeRepasDto) {
+    this.perimetre.assertModePaiementOuvert(dto.modePaiement);
+
     const partenaire = await this.prisma.partenaire.findFirst({
       where: { id: dto.partenaireId, type: TypePartenaire.restaurant },
       include: { zone: true },

@@ -1,3 +1,4 @@
+import { EMPLETTES_ACTIF } from '@delivero/config/perimetre-v1';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -54,10 +55,14 @@ function RecapJournalierCard() {
             <div className="text-muted-foreground">Encaissé aujourd'hui</div>
             <div className="font-medium">{formatPrixFcfa(recap.encaisseAujourdhui)}</div>
           </div>
-          <div>
-            <div className="text-muted-foreground">Avancé aujourd'hui (Emplettes)</div>
-            <div className="font-medium">{formatPrixFcfa(recap.avanceAujourdhui)}</div>
-          </div>
+          {/* Seul Emplettes génère une avance : hors V1, ce montant est
+              toujours nul (voir packages/config/perimetre-v1.ts). */}
+          {EMPLETTES_ACTIF && (
+            <div>
+              <div className="text-muted-foreground">Avancé aujourd'hui (Emplettes)</div>
+              <div className="font-medium">{formatPrixFcfa(recap.avanceAujourdhui)}</div>
+            </div>
+          )}
         </div>
         <p className="text-xs text-muted-foreground">
           Ne montre pas vos gains : le mode de rémunération par course n'est pas encore défini
@@ -238,20 +243,23 @@ export function PortefeuillePage() {
       <div className="space-y-1">
         <h1 className="text-xl font-semibold">Mon portefeuille</h1>
         <p className="text-sm text-muted-foreground">
-          Avance en cours (Emplettes financées par vous) et solde en espèces à reverser à
-          ChapExpress (Repas, Colis, Courses express, Emplettes). Mis à jour à chaque course
-          prise ou livrée.
+          {EMPLETTES_ACTIF
+            ? 'Avance en cours (Emplettes financées par vous) et solde en espèces à reverser à ChapExpress (Repas, Colis, Courses express, Emplettes).'
+            : 'Solde en espèces à reverser à ChapExpress (Repas, Colis, Courses express).'}{' '}
+          Mis à jour à chaque course prise ou livrée.
         </p>
       </div>
 
       <RecapJournalierCard />
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <SoldeCard
-          titre="Avance en cours"
-          montant={portefeuille.avanceEnCours}
-          plafond={portefeuille.plafondAvance}
-        />
+      <div className={EMPLETTES_ACTIF ? 'grid gap-4 sm:grid-cols-2' : 'grid gap-4'}>
+        {EMPLETTES_ACTIF && (
+          <SoldeCard
+            titre="Avance en cours"
+            montant={portefeuille.avanceEnCours}
+            plafond={portefeuille.plafondAvance}
+          />
+        )}
         <SoldeCard
           titre="Solde à reverser"
           montant={portefeuille.caisseAReverser}

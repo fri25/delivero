@@ -14,6 +14,7 @@ import {
   StatutPaiement,
   TypeService,
 } from '@prisma/client';
+import { PerimetreV1Service } from '../config/perimetre-v1.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -65,6 +66,7 @@ export class CommandesEmplettesService {
     private readonly prisma: PrismaService,
     private readonly portefeuille: PortefeuilleService,
     private readonly realtime: RealtimeGateway,
+    private readonly perimetre: PerimetreV1Service,
   ) {}
 
   // F-CLI-05 : voir même principe que commandes-repas.service.ts.
@@ -96,6 +98,8 @@ export class CommandesEmplettesService {
   }
 
   async create(clientId: string, dto: CreateCommandeEmplettesDto) {
+    this.perimetre.assertServiceOuvert(TypeService.emplettes);
+
     if (dto.mode !== ModeEmplettes.liste_libre) {
       throw new BadRequestException(
         'Le mode catalogue partenaire n’est pas encore disponible ; seul le mode liste libre est pris en charge.',
