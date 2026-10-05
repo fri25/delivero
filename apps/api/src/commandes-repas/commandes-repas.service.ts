@@ -13,6 +13,10 @@ import {
   TypeService,
 } from '@prisma/client';
 import { PerimetreV1Service } from '../config/perimetre-v1.service';
+import {
+  depuisHistoriqueLivreur,
+  HISTORIQUE_LIVREUR_MAX,
+} from '../livreurs/periode-livreur';
 import { PrismaService } from '../prisma/prisma.service';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -237,9 +241,24 @@ export class CommandesRepasService {
   async findAllForLivreur(userId: string) {
     const livreur = await this.getLivreurByUserId(userId);
     return this.prisma.commandeRepas.findMany({
-      where: { commande: { livreurId: livreur.id } },
+      where: {
+        commande: { livreurId: livreur.id },
+        OR: [
+          {
+            statut: {
+              notIn: [
+                StatutRepas.livree,
+                StatutRepas.annulee,
+                StatutRepas.refusee,
+              ],
+            },
+          },
+          { commande: { updatedAt: { gte: depuisHistoriqueLivreur() } } },
+        ],
+      },
       include: DETAIL_INCLUDE,
       orderBy: { createdAt: 'desc' },
+      take: HISTORIQUE_LIVREUR_MAX,
     });
   }
 
@@ -284,27 +303,32 @@ export class CommandesRepasService {
       );
     }
 
-    const { count } = await this.prisma.commande.updateMany({
-      where: {
-        id: commandeRepas.commandeId,
-        livreurId: null,
-        commandeRepas: {
-          statut: StatutRepas.prete,
-          partenaire: { zoneId: livreur.zoneId },
+    // Assignation et changement de statut dans une même transaction : un
+    // échec entre les deux ne doit pas laisser une course assignée mais
+    // toujours "prete" (donc plus visible par aucun livreur).
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.commande.updateMany({
+        where: {
+          id: commandeRepas.commandeId,
+          livreurId: null,
+          commandeRepas: {
+            statut: StatutRepas.prete,
+            partenaire: { zoneId: livreur.zoneId },
+          },
         },
-      },
-      data: { livreurId: livreur.id },
-    });
-    if (count === 0) {
-      throw new ConflictException(
-        'Cette course a déjà été prise en charge ou n’est plus disponible.',
-      );
-    }
+        data: { livreurId: livreur.id },
+      });
+      if (count === 0) {
+        throw new ConflictException(
+          'Cette course a déjà été prise en charge ou n’est plus disponible.',
+        );
+      }
 
-    const updated = await this.prisma.commandeRepas.update({
-      where: { id },
-      data: { statut: StatutRepas.recuperee_par_livreur },
-      include: DETAIL_INCLUDE,
+      return tx.commandeRepas.update({
+        where: { id },
+        data: { statut: StatutRepas.recuperee_par_livreur },
+        include: DETAIL_INCLUDE,
+      });
     });
     if (commandeRepas.commande.clientId) {
       this.notifierClient(

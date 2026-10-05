@@ -5,6 +5,7 @@ import {
   StatutEmplettes,
   TypeMouvementPortefeuille,
 } from '@prisma/client';
+import { debutJourneeBenin } from '../livreurs/periode-livreur';
 import { PrismaService } from '../prisma/prisma.service';
 
 // V09 / RG-02 / RG-14 : jusqu'ici plafondAvance et plafondCaisse existaient en
@@ -100,23 +101,26 @@ export class PortefeuilleService {
   // déclaré par le livreur. Ne corrige ni ne bloque rien en cas d'écart —
   // la procédure exacte reste [À ARBITRER] (docs/regles-gestion.md RG-03),
   // le rapprochement (F-ADM-12) n'est qu'une prise d'acte du dispatcher.
-  // "Journalière" est simplifié en une clôture par jour calendaire UTC (pas
-  // de fuseau propre au projet configuré) — [DÉDUIT], pas une exigence
-  // confirmée.
+  // "Journalière" est simplifié en une clôture par jour calendaire à l'heure
+  // du Bénin (UTC+1) — [DÉDUIT], pas une exigence confirmée.
   async cloturerCaisse(livreurId: string, montantDeclare: number) {
-    const debutJournee = new Date();
-    debutJournee.setUTCHours(0, 0, 0, 0);
-
-    const clotureExistante = await this.prisma.clotureCaisse.findFirst({
-      where: { livreurId, createdAt: { gte: debutJournee } },
-    });
-    if (clotureExistante) {
-      throw new BadRequestException(
-        "La caisse a déjà été clôturée aujourd'hui.",
-      );
-    }
+    const debutJournee = debutJourneeBenin();
 
     return this.prisma.$transaction(async (tx) => {
+      // Verrou par livreur, tenu jusqu'à la fin de la transaction : sans lui,
+      // deux requêtes simultanées (double clic) passent toutes deux le
+      // contrôle ci-dessous et créent deux clôtures.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${livreurId}))`;
+
+      const clotureExistante = await tx.clotureCaisse.findFirst({
+        where: { livreurId, createdAt: { gte: debutJournee } },
+      });
+      if (clotureExistante) {
+        throw new BadRequestException(
+          "La caisse a déjà été clôturée aujourd'hui.",
+        );
+      }
+
       const mouvementsOuverts = await tx.mouvementPortefeuille.findMany({
         where: {
           livreurId,

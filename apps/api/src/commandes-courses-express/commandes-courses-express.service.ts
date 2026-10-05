@@ -12,6 +12,10 @@ import {
   TypeService,
 } from '@prisma/client';
 import { PerimetreV1Service } from '../config/perimetre-v1.service';
+import {
+  depuisHistoriqueLivreur,
+  HISTORIQUE_LIVREUR_MAX,
+} from '../livreurs/periode-livreur';
 import { PrismaService } from '../prisma/prisma.service';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -168,9 +172,23 @@ export class CommandesCoursesExpressService {
   async findAllForLivreur(userId: string) {
     const livreur = await this.getLivreurByUserId(userId);
     return this.prisma.commandeCoursesExpress.findMany({
-      where: { commande: { livreurId: livreur.id } },
+      where: {
+        commande: { livreurId: livreur.id },
+        OR: [
+          {
+            statut: {
+              notIn: [
+                StatutCoursesExpress.terminee,
+                StatutCoursesExpress.annulee,
+              ],
+            },
+          },
+          { commande: { updatedAt: { gte: depuisHistoriqueLivreur() } } },
+        ],
+      },
       include: DETAIL_INCLUDE,
       orderBy: { createdAt: 'desc' },
+      take: HISTORIQUE_LIVREUR_MAX,
     });
   }
 
@@ -217,27 +235,31 @@ export class CommandesCoursesExpressService {
 
     // V02b : la zone est revalidée à l'assignation, pas seulement filtrée
     // dans la liste "disponibles".
-    const { count } = await this.prisma.commande.updateMany({
-      where: {
-        id: commandeCoursesExpress.commandeId,
-        livreurId: null,
-        commandeCoursesExpress: {
-          statut: StatutCoursesExpress.confirmee,
-          zoneId: livreur.zoneId,
+    // Assignation et changement de statut dans une même transaction (voir
+    // CommandesRepasService.prendreEnCharge).
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.commande.updateMany({
+        where: {
+          id: commandeCoursesExpress.commandeId,
+          livreurId: null,
+          commandeCoursesExpress: {
+            statut: StatutCoursesExpress.confirmee,
+            zoneId: livreur.zoneId,
+          },
         },
-      },
-      data: { livreurId: livreur.id },
-    });
-    if (count === 0) {
-      throw new ConflictException(
-        'Cette commande a déjà été prise en charge ou n’est plus disponible.',
-      );
-    }
+        data: { livreurId: livreur.id },
+      });
+      if (count === 0) {
+        throw new ConflictException(
+          'Cette commande a déjà été prise en charge ou n’est plus disponible.',
+        );
+      }
 
-    const updated = await this.prisma.commandeCoursesExpress.update({
-      where: { id },
-      data: { statut: StatutCoursesExpress.en_cours },
-      include: DETAIL_INCLUDE,
+      return tx.commandeCoursesExpress.update({
+        where: { id },
+        data: { statut: StatutCoursesExpress.en_cours },
+        include: DETAIL_INCLUDE,
+      });
     });
     if (commandeCoursesExpress.commande.clientId) {
       this.notifierClient(

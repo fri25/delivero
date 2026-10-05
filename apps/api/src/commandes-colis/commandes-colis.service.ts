@@ -14,6 +14,10 @@ import {
   TypeService,
 } from '@prisma/client';
 import { PerimetreV1Service } from '../config/perimetre-v1.service';
+import {
+  depuisHistoriqueLivreur,
+  HISTORIQUE_LIVREUR_MAX,
+} from '../livreurs/periode-livreur';
 import { PrismaService } from '../prisma/prisma.service';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -241,10 +245,19 @@ export class CommandesColisService {
   async findAllForLivreur(userId: string) {
     const livreur = await this.getLivreurByUserId(userId);
     return this.prisma.commandeColis.findMany({
-      where: { commande: { livreurId: livreur.id } },
+      where: {
+        commande: { livreurId: livreur.id },
+        OR: [
+          {
+            statut: { notIn: [StatutColis.livre, StatutColis.annulee] },
+          },
+          { commande: { updatedAt: { gte: depuisHistoriqueLivreur() } } },
+        ],
+      },
       include: DETAIL_INCLUDE,
       omit: LIVREUR_OMIT,
       orderBy: { createdAt: 'desc' },
+      take: HISTORIQUE_LIVREUR_MAX,
     });
   }
 
@@ -299,28 +312,32 @@ export class CommandesColisService {
       );
     }
 
-    const { count } = await this.prisma.commande.updateMany({
-      where: {
-        id: commandeColis.commandeId,
-        livreurId: null,
-        commandeColis: {
-          statut: StatutColis.confirmee,
-          zoneId: livreur.zoneId,
+    // Assignation et changement de statut dans une même transaction (voir
+    // CommandesRepasService.prendreEnCharge).
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.commande.updateMany({
+        where: {
+          id: commandeColis.commandeId,
+          livreurId: null,
+          commandeColis: {
+            statut: StatutColis.confirmee,
+            zoneId: livreur.zoneId,
+          },
         },
-      },
-      data: { livreurId: livreur.id },
-    });
-    if (count === 0) {
-      throw new ConflictException(
-        'Ce colis a déjà été pris en charge ou n’est plus disponible.',
-      );
-    }
+        data: { livreurId: livreur.id },
+      });
+      if (count === 0) {
+        throw new ConflictException(
+          'Ce colis a déjà été pris en charge ou n’est plus disponible.',
+        );
+      }
 
-    const updated = await this.prisma.commandeColis.update({
-      where: { id },
-      data: { statut: StatutColis.livreur_en_route_enlevement },
-      include: DETAIL_INCLUDE,
-      omit: LIVREUR_OMIT,
+      return tx.commandeColis.update({
+        where: { id },
+        data: { statut: StatutColis.livreur_en_route_enlevement },
+        include: DETAIL_INCLUDE,
+        omit: LIVREUR_OMIT,
+      });
     });
     if (commandeColis.commande.clientId) {
       this.notifierClient(

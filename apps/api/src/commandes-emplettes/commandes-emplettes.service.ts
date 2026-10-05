@@ -15,6 +15,10 @@ import {
   TypeService,
 } from '@prisma/client';
 import { PerimetreV1Service } from '../config/perimetre-v1.service';
+import {
+  depuisHistoriqueLivreur,
+  HISTORIQUE_LIVREUR_MAX,
+} from '../livreurs/periode-livreur';
 import { PrismaService } from '../prisma/prisma.service';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -211,9 +215,20 @@ export class CommandesEmplettesService {
   async findAllForLivreur(userId: string) {
     const livreur = await this.getLivreurByUserId(userId);
     return this.prisma.commandeEmplettes.findMany({
-      where: { commande: { livreurId: livreur.id } },
+      where: {
+        commande: { livreurId: livreur.id },
+        OR: [
+          {
+            statut: {
+              notIn: [StatutEmplettes.livree, StatutEmplettes.annulee],
+            },
+          },
+          { commande: { updatedAt: { gte: depuisHistoriqueLivreur() } } },
+        ],
+      },
       include: DETAIL_INCLUDE,
       orderBy: { createdAt: 'desc' },
+      take: HISTORIQUE_LIVREUR_MAX,
     });
   }
 
@@ -269,27 +284,31 @@ export class CommandesEmplettesService {
 
     // V02b : la zone est revalidée à l'assignation, pas seulement filtrée
     // dans la liste "disponibles".
-    const { count } = await this.prisma.commande.updateMany({
-      where: {
-        id: commandeEmplettes.commandeId,
-        livreurId: null,
-        commandeEmplettes: {
-          statut: StatutEmplettes.confirmee,
-          zoneId: livreur.zoneId,
+    // Assignation et changement de statut dans une même transaction (voir
+    // CommandesRepasService.prendreEnCharge).
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.commande.updateMany({
+        where: {
+          id: commandeEmplettes.commandeId,
+          livreurId: null,
+          commandeEmplettes: {
+            statut: StatutEmplettes.confirmee,
+            zoneId: livreur.zoneId,
+          },
         },
-      },
-      data: { livreurId: livreur.id },
-    });
-    if (count === 0) {
-      throw new ConflictException(
-        'Cette commande a déjà été prise en charge ou n’est plus disponible.',
-      );
-    }
+        data: { livreurId: livreur.id },
+      });
+      if (count === 0) {
+        throw new ConflictException(
+          'Cette commande a déjà été prise en charge ou n’est plus disponible.',
+        );
+      }
 
-    const updated = await this.prisma.commandeEmplettes.update({
-      where: { id },
-      data: { statut: StatutEmplettes.achats_en_cours },
-      include: DETAIL_INCLUDE,
+      return tx.commandeEmplettes.update({
+        where: { id },
+        data: { statut: StatutEmplettes.achats_en_cours },
+        include: DETAIL_INCLUDE,
+      });
     });
     if (commandeEmplettes.commande.clientId) {
       this.notifierClient(

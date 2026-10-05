@@ -10,6 +10,7 @@ import {
 } from '@prisma/client';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { debutJourneeBenin } from './periode-livreur';
 
 // F-LIV-11 : "courses par service, montants" seulement — pas de "gains".
 // Q-08 (decisions-ouvertes.md) laisse entièrement ouvert le modèle de
@@ -71,8 +72,7 @@ export class LivreursService {
 
   async getRecapJournalier(userId: string) {
     const livreur = await this.getOwn(userId);
-    const debutJournee = new Date();
-    debutJournee.setUTCHours(0, 0, 0, 0);
+    const debutJournee = debutJourneeBenin();
 
     const [commandes, encaissements, avancesEmplettes] = await Promise.all([
       this.prisma.commande.findMany({

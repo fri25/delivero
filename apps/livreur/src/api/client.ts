@@ -1,4 +1,7 @@
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
+import { toast } from 'sonner';
+import { useAuthStore } from '../stores/auth-store';
+
+const API_URL =import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
 
 interface ApiErrorBody {
   statusCode: number;
@@ -46,6 +49,18 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   }
 
   const data: unknown = await response.json();
+
+  // Jeton expiré ou révoqué : sans cela, les listes interrogées toutes les 8 s
+  // échouent en silence et le livreur reste sur un écran mort. Seulement si un
+  // jeton a été envoyé — un 401 au login (mauvais mot de passe) n'est pas une
+  // session expirée. Le logout vide le store, ProtectedRoute redirige.
+  if (response.status === 401 && token) {
+    const { logout } = useAuthStore.getState();
+    if (useAuthStore.getState().token) {
+      logout();
+      toast.error('Session expirée, reconnectez-vous.');
+    }
+  }
 
   if (!response.ok) {
     const errorBody = data as ApiErrorBody;
