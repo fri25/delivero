@@ -14,6 +14,8 @@ const DEMO_RESTAURANT = {
   nom: 'Le Baobab',
   description: 'Cuisine locale et grillades, au cœur de Natitingou.',
   horaires: 'Tous les jours, 11h–22h',
+  specialiteCuisine: 'Cuisine béninoise',
+  delaiMoyenMinutes: 35,
   plats: [
     { nom: 'Poulet braisé + attiéké', categorie: 'Plats', prix: 2500 },
     { nom: 'Riz gras', categorie: 'Plats', prix: 1500 },
@@ -349,6 +351,8 @@ async function main() {
     update: {
       description: DEMO_RESTAURANT.description,
       horaires: DEMO_RESTAURANT.horaires,
+      specialiteCuisine: DEMO_RESTAURANT.specialiteCuisine,
+      delaiMoyenMinutes: DEMO_RESTAURANT.delaiMoyenMinutes,
       tauxCommission: 15,
     },
     create: {
@@ -357,6 +361,8 @@ async function main() {
       type: TypePartenaire.restaurant,
       description: DEMO_RESTAURANT.description,
       horaires: DEMO_RESTAURANT.horaires,
+      specialiteCuisine: DEMO_RESTAURANT.specialiteCuisine,
+      delaiMoyenMinutes: DEMO_RESTAURANT.delaiMoyenMinutes,
       zoneId: zone.id,
       statutOuverture: true,
       tauxCommission: 15,

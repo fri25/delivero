@@ -38,7 +38,7 @@ Repas → Colis → Emplettes → Courses express) :
       existe en base mais aucune route d'envoi/vérification OTP)*
 - [ ] F-CLI-02 — Commande en mode invité — *(non fait : `POST /commandes/repas`
       exige le rôle `client` authentifié)*
-- [x] F-CLI-03 — Carnet d'adresses avec point de repère et localisation carte
+- [ ] F-CLI-03 — Carnet d'adresses avec point de repère et localisation carte — *(partiel : rue/adresse et quartier enregistrés, point de repère obligatoire ; aucune capture GPS ni carte intégrée à ce stade)*
 - [ ] F-CLI-04 — Choix du paiement (Mobile Money ou espèces à la livraison) —
       *(partiel : mode stocké (`Paiement`), aucune intégration réelle
       d'agrégateur — voir F-ADM-16. **V1 : plus de choix**, Mobile Money imposé,
@@ -48,20 +48,14 @@ Repas → Colis → Emplettes → Courses express) :
       notifié à chaque changement de statut via `commande:statut`, en plus du
       polling conservé comme filet de secours — voir
       `apps/api/src/realtime/realtime.gateway.ts`)*
-- [ ] F-CLI-06 — Historique unifié de toutes les commandes, tous services — *(non
-      fait : `OrdersPage` ne liste que les commandes Repas, seul service existant)*
-- [ ] F-CLI-07 — Recommander en un clic
-- [ ] F-CLI-08 — Notation du partenaire et du livreur après prestation
+- [x] F-CLI-06 — Historique unifié de toutes les commandes Repas, Colis et Courses express, avec filtres service/statut/période et liens vers les fiches de suivi.
+- [x] F-CLI-07 — Recommander / refaire une demande — *(Repas : panier restauré en un clic ; Colis et Courses express : formulaire prérempli à vérifier avant l’envoi.)*
+- [x] F-CLI-08 — Notation du partenaire et du livreur après prestation — *(avis 1–5 étoiles et commentaire facultatif ; API réservée au client propriétaire, statut terminé exigé et unicité par commande/cible en base. Moyennes partenaire/livreur recalculées.)*
 - [ ] F-CLI-09 — Notifications SMS/WhatsApp/e-mail aux étapes clés
-- [x] F-CLI-10 — Accueil présentant les 4 services et orientant vers le bon parcours
-      — *(`ServicesHubPage` est désormais la route `/`, une tuile par service ;
-      raccourcis Historique/Carnet d'adresses/Promotions/Aide présents mais tous
-      sauf Historique restent désactivés)*
+- [x] F-CLI-10 — Accueil présentant les services et orientant vers le bon parcours — *(`ServicesHubPage` est la route `/` ; seuls les raccourcis actifs Historique et Aide sont affichés. La page Aide inclut les réponses rapides et le contact WhatsApp.)*
 
 ### Repas
-- [x] F-CLI-11 — Catalogue des restaurants (recherche, filtres cuisine/prix/note/délai)
-      — *(recherche par nom + filtre "ouverts" faits ; filtres cuisine/prix/note non
-      trouvés)*
+- [x] F-CLI-11 — Catalogue des restaurants (recherche, filtres cuisine/prix/note/délai) — *(filtres ajoutés ; cuisine et délai moyen renseignés par le partenaire, budget calculé depuis les plats disponibles, note depuis les avis enregistrés.)*
 - [x] F-CLI-12 — Fiche restaurant (menu par catégories, photos, prix, délai)
 - [x] F-CLI-13 — Panier repas (plats, options, suppléments, instructions)
 - [x] F-CLI-14 — Suivi de statut Repas
@@ -78,10 +72,7 @@ Repas → Colis → Emplettes → Courses express) :
 - [x] F-CLI-19 — Programmation de l'enlèvement (immédiat ou planifié)
 - [x] F-CLI-20 — Rappel des objets interdits + acceptation des conditions
 - [x] F-CLI-21 — Suivi de statut Colis
-- [ ] F-CLI-22 — Consultation de la preuve de livraison — *(non fait : la preuve
-      côté client se limite au statut "Livré" ; ni photo (S3 absent) ni nom du
-      réceptionnaire ne sont réaffichés au client à ce stade — amélioration
-      possible sans dépendance bloquante)*
+- [x] F-CLI-22 — Consultation de la preuve de livraison — *(côté client Colis : code de remise vérifié, nom du réceptionnaire et date de remise affichés ; aucune photo, stockage S3 absent.)*
 
 *(Backend + écrans client/livreur/suivi public livrés le 2026-08-27, voir
 [api-colis.md](api-colis.md) et [service-colis.md](service-colis.md). Hors

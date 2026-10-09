@@ -91,6 +91,8 @@ model Adresse {
   userId        String   @map("user_id")
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   libelle       String
+  adresse       String?
+  quartier      String?
   pointDeRepere String   @map("point_de_repere")
   latitude      Decimal? @db.Decimal(10, 7)
   longitude     Decimal? @db.Decimal(10, 7)
@@ -141,6 +143,8 @@ model Partenaire {
   nom             String
   type            TypePartenaire
   description     String?
+  specialiteCuisine String?        @map("specialite_cuisine")
+  delaiMoyenMinutes Int?           @map("delai_moyen_minutes")
   horaires        String?
   // Point de repère textuel obligatoire, coordonnées en complément (même
   // contrainte d'adressage approximatif que pour l'Adresse client) — requis
@@ -158,6 +162,7 @@ model Partenaire {
 
   plats          Plat[]
   commandesRepas CommandeRepas[]
+  avis           AvisPartenaire[]
 
   @@map("partenaires")
 }
@@ -179,6 +184,7 @@ model Livreur {
   commandes              Commande[]
   mouvementsPortefeuille MouvementPortefeuille[]
   cloturesCaisse         ClotureCaisse[]
+  avis                   AvisLivreur[]
 
   @@map("livreurs")
 }
@@ -289,8 +295,40 @@ model Commande {
   commandeCoursesExpress CommandeCoursesExpress?
   paiement              Paiement?
   mouvementsPortefeuille MouvementPortefeuille[]
+  avisPartenaire        AvisPartenaire?
+  avisLivreur           AvisLivreur?
 
   @@map("commandes")
+}
+
+// A completed order can receive at most one client review for each eligible
+// target. Reviews are linked to the shared order so ownership is verifiable.
+model AvisPartenaire {
+  id           String    @id @default(cuid())
+  commandeId   String    @unique @map("commande_id")
+  commande     Commande  @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+  partenaireId String    @map("partenaire_id")
+  partenaire   Partenaire @relation(fields: [partenaireId], references: [id], onDelete: Cascade)
+  note         Int
+  commentaire  String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([partenaireId, createdAt])
+  @@map("avis_partenaires")
+}
+
+model AvisLivreur {
+  id          String   @id @default(cuid())
+  commandeId  String   @unique @map("commande_id")
+  commande    Commande @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+  livreurId   String   @map("livreur_id")
+  livreur     Livreur  @relation(fields: [livreurId], references: [id], onDelete: Cascade)
+  note        Int
+  commentaire String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([livreurId, createdAt])
+  @@map("avis_livreurs")
 }
 
 // --- Module Repas ---------------------------------------------------------

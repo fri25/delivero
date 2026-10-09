@@ -23,10 +23,10 @@ articles d'emplettes...) sont rattachées à la commande générique.
   `admin_dispatcher` est effectivement peuplé au lancement. Voir
   [acteurs.md](acteurs.md), [decisions-ouvertes.md](decisions-ouvertes.md) Q-09.
 - **Client** — profil client (mode invité possible sans compte persistant).
-- **Adresse** — carnet d'adresses du client : libellé, point de repère (texte
-  obligatoire), coordonnées carte, adresse par défaut.
-- **RestaurantPartenaire** — nom, description, horaires, statut d'ouverture, taux de
-  commission, note moyenne. Le champ `taux_commission` n'est plus utilisé pour
+- **Adresse** — carnet d'adresses du client : libellé, adresse/rue, quartier,
+  point de repère (texte obligatoire), coordonnées carte optionnelles, adresse par défaut.
+- **RestaurantPartenaire** — nom, description, horaires, spécialité cuisine, délai
+  moyen de préparation, statut d'ouverture, taux de commission, note moyenne. Le champ `taux_commission` n'est plus utilisé pour
   Repas depuis le 2026-08-25 (commission désormais unique et calculée côté
   commande, voir [regles-gestion.md](regles-gestion.md) RG-08) ; il reste
   pertinent pour un partenaire suivant encore le modèle par défaut sur un autre
@@ -94,7 +94,8 @@ articles d'emplettes...) sont rattachées à la commande générique.
   date, statut.
 
 ### Support
-- **Notation** — commande, cible (partenaire ou livreur), note, commentaire.
+- **Notation** — avis partenaire ou livreur rattaché à la commande, note de 1 à 5,
+  commentaire facultatif ; une seule note par commande et cible, moyenne agrégée.
 - **Notification** — utilisateur, canal (SMS / WhatsApp / e-mail / push), contenu,
   statut d'envoi, date.
 - **Promotion** — code promo, type de réduction, `type_service` (nullable si global),

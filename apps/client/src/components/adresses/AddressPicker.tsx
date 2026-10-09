@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,10 +18,18 @@ export function AddressPicker({
   onChange: (adresseId: string) => void;
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { data: adresses, isPending } = useAdresses();
+  const { data: adresses, isPending, isError, refetch } = useAdresses();
+
+  useEffect(() => {
+    if (adresses && value && !adresses.some((adresse) => adresse.id === value)) onChange('');
+  }, [adresses, onChange, value]);
 
   if (isPending) {
     return <p className="text-sm text-muted-foreground">Chargement des adresses...</p>;
+  }
+
+  if (isError) {
+    return <div role="alert" className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm"><p>Le carnet d’adresses n’a pas pu être chargé.</p><Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => void refetch()}>Réessayer</Button></div>;
   }
 
   return (
@@ -36,6 +44,7 @@ export function AddressPicker({
           }`}
         >
           <p className="font-medium">{adresse.libelle}</p>
+          {adresse.adresse && <p>{adresse.adresse}{adresse.quartier ? ` · ${adresse.quartier}` : ''}</p>}
           <p className="text-muted-foreground">{adresse.pointDeRepere}</p>
         </button>
       ))}

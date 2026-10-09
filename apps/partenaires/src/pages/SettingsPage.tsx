@@ -14,6 +14,10 @@ function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
   const [nom, setNom] = useState(restaurant.nom);
   const [description, setDescription] = useState(restaurant.description ?? '');
   const [horaires, setHoraires] = useState(restaurant.horaires ?? '');
+  const [specialiteCuisine, setSpecialiteCuisine] = useState(restaurant.specialiteCuisine ?? '');
+  const [delaiMoyenMinutes, setDelaiMoyenMinutes] = useState(
+    restaurant.delaiMoyenMinutes?.toString() ?? '',
+  );
 
   return (
     <form
@@ -21,7 +25,13 @@ function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
       onSubmit={(event) => {
         event.preventDefault();
         updateRestaurant.mutate(
-          { nom: nom.trim(), description: description.trim() || undefined, horaires: horaires.trim() || undefined },
+          {
+            nom: nom.trim(),
+            description: description.trim() || undefined,
+            horaires: horaires.trim() || undefined,
+            specialiteCuisine: specialiteCuisine.trim() || undefined,
+            delaiMoyenMinutes: delaiMoyenMinutes ? Number(delaiMoyenMinutes) : undefined,
+          },
           {
             onSuccess: () => toast.success('Fiche restaurant mise à jour.'),
             onError: (error) => toast.error(error.message),
@@ -47,6 +57,17 @@ function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
           value={horaires}
           onChange={(event) => setHoraires(event.target.value)}
         />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="specialiteCuisine">Cuisine / spécialité</Label>
+        <Input id="specialiteCuisine" value={specialiteCuisine} onChange={(event) => setSpecialiteCuisine(event.target.value)} placeholder="Cuisine béninoise, grillades…" />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="delaiMoyenMinutes">Délai moyen de préparation (minutes)</Label>
+        <Input id="delaiMoyenMinutes" type="number" min={10} max={180} step={5} value={delaiMoyenMinutes} onChange={(event) => setDelaiMoyenMinutes(event.target.value)} placeholder="Ex. 35" />
+        <p className="text-xs text-muted-foreground">Indiquez un délai moyen réaliste. Il sera affiché aux clients avant commande.</p>
       </div>
 
       <Button type="submit" disabled={updateRestaurant.isPending}>

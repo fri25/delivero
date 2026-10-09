@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { MediaFrame } from '@/components/restaurants/MediaFrame';
 import { getRestaurantImage } from '@/data/images';
 import type { RestaurantSummary } from '@/api/types';
+import { formatPrixFcfa } from '@/lib/format';
 
 export function RestaurantCard({
   restaurant,
@@ -56,6 +57,8 @@ export function RestaurantCard({
                 {restaurant.noteMoyenne}
               </span>
             )}
+            {restaurant.delaiMoyenMinutes != null && <span>{restaurant.delaiMoyenMinutes} min</span>}
+            {restaurant.prixMoyen != null && <span>Menu moyen {formatPrixFcfa(restaurant.prixMoyen)}</span>}
           </div>
         </div>
       </article>

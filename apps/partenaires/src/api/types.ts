@@ -15,6 +15,8 @@ export interface Restaurant {
   nom: string;
   type: 'restaurant' | 'commerce';
   description: string | null;
+  specialiteCuisine?: string | null;
+  delaiMoyenMinutes?: number | null;
   horaires: string | null;
   statutOuverture: boolean;
   tauxCommission: string | null;

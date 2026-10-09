@@ -14,11 +14,15 @@ export function RepasHomePage() {
   const [search, setSearch] = useState('');
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [openOnly, setOpenOnly] = useState(false);
+  const [cuisine, setCuisine] = useState('toutes');
+  const [budget, setBudget] = useState('tous');
+  const [noteMin, setNoteMin] = useState('toutes');
+  const [delaiMax, setDelaiMax] = useState('tous');
 
   // Source de suggestions : le catalogue complet, chargé une fois, filtré côté
   // client — pas d'aller-retour réseau à chaque frappe pour la liste déroulante.
   const { data: allRestaurants } = useRestaurants();
-  const { data: restaurants, isPending, isError } = useRestaurants(search || undefined);
+  const { data: restaurants, isPending, isError, refetch } = useRestaurants(search || undefined);
 
   const suggestions = useMemo(() => {
     if (!search.trim() || !allRestaurants) return [];
@@ -26,10 +30,21 @@ export function RepasHomePage() {
     return allRestaurants.filter((r) => r.nom.toLowerCase().includes(query)).slice(0, 5);
   }, [search, allRestaurants]);
 
-  const visibleRestaurants = useMemo(
-    () => (openOnly ? (restaurants ?? []).filter((r) => r.statutOuverture) : (restaurants ?? [])),
-    [restaurants, openOnly],
+  const cuisines = useMemo(
+    () => [...new Set((allRestaurants ?? []).map((restaurant) => restaurant.specialiteCuisine?.trim()).filter((value): value is string => Boolean(value)))].sort(),
+    [allRestaurants],
   );
+
+  const visibleRestaurants = useMemo(() => (restaurants ?? []).filter((restaurant) => {
+    if (openOnly && !restaurant.statutOuverture) return false;
+    if (cuisine !== 'toutes' && restaurant.specialiteCuisine !== cuisine) return false;
+    if (budget === 'accessible' && (restaurant.prixMoyen == null || restaurant.prixMoyen > 1500)) return false;
+    if (budget === 'moyen' && (restaurant.prixMoyen == null || restaurant.prixMoyen <= 1500 || restaurant.prixMoyen > 3000)) return false;
+    if (budget === 'premium' && (restaurant.prixMoyen == null || restaurant.prixMoyen <= 3000)) return false;
+    if (noteMin !== 'toutes' && (restaurant.noteMoyenne == null || Number(restaurant.noteMoyenne) < Number(noteMin))) return false;
+    if (delaiMax !== 'tous' && (restaurant.delaiMoyenMinutes == null || restaurant.delaiMoyenMinutes > Number(delaiMax))) return false;
+    return true;
+  }), [restaurants, openOnly, cuisine, budget, noteMin, delaiMax]);
 
   const ouvertsMaintenant = useMemo(
     () => (allRestaurants ?? []).filter((r) => r.statutOuverture).slice(0, 6),
@@ -43,7 +58,7 @@ export function RepasHomePage() {
           Natitingou a faim ? On s'en occupe.
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Vos restaurants préférés, livrés chez vous — payez en espèces ou en Mobile Money.
+          Choisissez votre restaurant, composez votre menu et suivez la livraison à chaque étape.
         </p>
       </div>
 
@@ -90,9 +105,28 @@ export function RepasHomePage() {
             Ouverts maintenant
           </button>
         </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <label className="sr-only" htmlFor="filtre-cuisine">Cuisine</label>
+          <select id="filtre-cuisine" value={cuisine} onChange={(event) => setCuisine(event.target.value)} className="h-11 min-w-0 rounded-xl border border-border bg-card px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <option value="toutes">Toutes les cuisines</option>{cuisines.map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+          <label className="sr-only" htmlFor="filtre-budget">Budget moyen</label>
+          <select id="filtre-budget" value={budget} onChange={(event) => setBudget(event.target.value)} className="h-11 min-w-0 rounded-xl border border-border bg-card px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <option value="tous">Tous les budgets</option><option value="accessible">Accessible · ≤ 1 500 F</option><option value="moyen">Intermédiaire · 1 501–3 000 F</option><option value="premium">Plus de 3 000 F</option>
+          </select>
+          <label className="sr-only" htmlFor="filtre-note">Note minimale</label>
+          <select id="filtre-note" value={noteMin} onChange={(event) => setNoteMin(event.target.value)} className="h-11 min-w-0 rounded-xl border border-border bg-card px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <option value="toutes">Toutes les notes</option><option value="3">3 étoiles et plus</option><option value="4">4 étoiles et plus</option>
+          </select>
+          <label className="sr-only" htmlFor="filtre-delai">Délai de préparation</label>
+          <select id="filtre-delai" value={delaiMax} onChange={(event) => setDelaiMax(event.target.value)} className="h-11 min-w-0 rounded-xl border border-border bg-card px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <option value="tous">Tous les délais</option><option value="30">≤ 30 minutes</option><option value="45">≤ 45 minutes</option><option value="60">≤ 60 minutes</option>
+          </select>
+        </div>
       </div>
 
-      {!search && ouvertsMaintenant.length > 0 && (
+      {!search && !openOnly && cuisine === 'toutes' && budget === 'tous' && noteMin === 'toutes' && delaiMax === 'tous' && ouvertsMaintenant.length > 0 && (
         <section className="space-y-2.5">
           <h2 className="font-heading text-sm font-semibold tracking-wide text-foreground uppercase">
             Ouverts maintenant
@@ -126,9 +160,10 @@ export function RepasHomePage() {
         )}
 
         {isError && (
-          <p className="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            Impossible de charger les restaurants. Vérifiez votre connexion et réessayez.
-          </p>
+          <div role="alert" className="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <p>Le catalogue n’a pas pu être chargé. Vérifiez votre connexion, puis réessayez.</p>
+            <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => void refetch()}>Réessayer</Button>
+          </div>
         )}
 
         {!isPending && !isError && visibleRestaurants.length === 0 && (
@@ -139,12 +174,16 @@ export function RepasHomePage() {
             <p className="text-sm text-muted-foreground">
               Essayez un autre nom, ou explorez tout le catalogue.
             </p>
-            {(search || openOnly) && (
+            {(search || openOnly || cuisine !== 'toutes' || budget !== 'tous' || noteMin !== 'toutes' || delaiMax !== 'tous') && (
               <Button
                 variant="outline"
                 onClick={() => {
                   setSearch('');
                   setOpenOnly(false);
+                  setCuisine('toutes');
+                  setBudget('tous');
+                  setNoteMin('toutes');
+                  setDelaiMax('tous');
                 }}
               >
                 <X /> Réinitialiser

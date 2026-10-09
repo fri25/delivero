@@ -1,6 +1,6 @@
 import { ESPECES_ACTIF } from '@delivero/config/perimetre-v1';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -34,13 +34,17 @@ function nouvelleEtape(): EtapeDraft {
 
 export function CoursesExpressFormPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const preRemplir = (location.state as { preRemplir?: {
+    description: string; zoneId: string; etapes: EtapeDraft[];
+  } } | null)?.preRemplir;
   const token = useAuthStore((state) => state.token);
   const { data: zones } = useZones();
   const createCommande = useCreateCommandeCoursesExpress();
 
-  const [description, setDescription] = useState('');
-  const [zoneId, setZoneId] = useState<string | null>(null);
-  const [etapes, setEtapes] = useState<EtapeDraft[]>([nouvelleEtape()]);
+  const [description, setDescription] = useState(preRemplir?.description ?? '');
+  const [zoneId, setZoneId] = useState<string | null>(preRemplir?.zoneId ?? null);
+  const [etapes, setEtapes] = useState<EtapeDraft[]>(preRemplir?.etapes ?? [nouvelleEtape()]);
   const [modePaiement, setModePaiement] = useState<ModePaiement>(
     ESPECES_ACTIF ? 'especes' : 'mobile_money',
   );
@@ -105,6 +109,7 @@ export function CoursesExpressFormPage() {
           Dépôt, retrait, démarche de proximité — décrivez la tâche, un livreur s'en charge.
         </p>
       </div>
+      {preRemplir && <p className="rounded-xl bg-secondary px-3 py-2 text-sm text-foreground">Les informations de votre ancienne course ont été reprises. Vérifiez chaque étape avant de confirmer.</p>}
 
       <section className="space-y-1.5">
         <Label htmlFor="description">Ce qu'il faut faire</Label>

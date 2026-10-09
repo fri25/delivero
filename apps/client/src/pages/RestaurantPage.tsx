@@ -19,7 +19,7 @@ import type { Plat } from '@/api/types';
 
 export function RestaurantPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: restaurant, isPending } = useRestaurant(id);
+  const { data: restaurant, isPending, isError, refetch } = useRestaurant(id);
   const addItem = useCartStore((state) => state.addItem);
   const hasConflict = useCartStore((state) => state.hasConflict);
   const [conflictPlat, setConflictPlat] = useState<Plat | null>(null);
@@ -50,6 +50,8 @@ export function RestaurantPage() {
       </div>
     );
   }
+
+  if (isError) return <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4"><p className="text-sm">Impossible de charger ce restaurant.</p><Button variant="outline" className="mt-3" onClick={() => void refetch()}>Réessayer</Button></div>;
 
   if (!restaurant) {
     return <p className="text-sm text-destructive">Restaurant introuvable.</p>;

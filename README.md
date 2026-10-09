@@ -134,6 +134,7 @@ Détail complet des conventions et des 8 règles métier structurantes :
 | Service Emplettes | [docs/service-emplettes.md](docs/service-emplettes.md) |
 | Statut par fonctionnalité (F-XXX-NN) | [docs/modules.md](docs/modules.md) |
 | Règles de gestion (RG-NN) | [docs/regles-gestion.md](docs/regles-gestion.md) |
+| API des avis client | [docs/api-avis.md](docs/api-avis.md) |
 | Schéma de données | [docs/modele-donnees.md](docs/modele-donnees.md) |
 | Architecture, stack, intégrations | [docs/architecture.md](docs/architecture.md) |
 | Mode hors ligne, module Livreur | [docs/pwa-offline.md](docs/pwa-offline.md) |

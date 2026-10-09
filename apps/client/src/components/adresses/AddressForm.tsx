@@ -8,6 +8,8 @@ import type { Adresse } from '@/api/types';
 
 export function AddressForm({ onCreated }: { onCreated: (adresse: Adresse) => void }) {
   const [libelle, setLibelle] = useState('');
+  const [adresse, setAdresse] = useState('');
+  const [quartier, setQuartier] = useState('');
   const [pointDeRepere, setPointDeRepere] = useState('');
   const createAdresse = useCreateAdresse();
 
@@ -17,11 +19,13 @@ export function AddressForm({ onCreated }: { onCreated: (adresse: Adresse) => vo
       onSubmit={(event) => {
         event.preventDefault();
         createAdresse.mutate(
-          { libelle, pointDeRepere, estParDefaut: true },
+          { libelle, adresse, quartier, pointDeRepere, estParDefaut: true },
           {
             onSuccess: (adresse) => {
               onCreated(adresse);
               setLibelle('');
+              setAdresse('');
+              setQuartier('');
               setPointDeRepere('');
             },
             onError: (error) => toast.error(error.message),
@@ -41,14 +45,26 @@ export function AddressForm({ onCreated }: { onCreated: (adresse: Adresse) => vo
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="pointDeRepere">Point de repère</Label>
+        <Label htmlFor="adresse">Adresse ou rue</Label>
+        <Input id="adresse" placeholder="Rue, numéro ou indication d’accès" value={adresse} onChange={(event) => setAdresse(event.target.value)} required maxLength={180} />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="quartier">Quartier</Label>
+        <Input id="quartier" placeholder="Ex. Ourbouga, Yokossi…" value={quartier} onChange={(event) => setQuartier(event.target.value)} required maxLength={100} />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="pointDeRepere">Point de repère obligatoire</Label>
         <Input
           id="pointDeRepere"
-          placeholder="Près du grand marché, portail bleu..."
+          placeholder="Près du grand marché, portail bleu…"
           value={pointDeRepere}
           onChange={(event) => setPointDeRepere(event.target.value)}
           required
+          maxLength={180}
         />
+        <p className="text-xs text-muted-foreground">Le point de repère reste obligatoire, même lorsqu’une position GPS sera renseignée.</p>
       </div>
 
       <Button type="submit" disabled={createAdresse.isPending} className="w-full">

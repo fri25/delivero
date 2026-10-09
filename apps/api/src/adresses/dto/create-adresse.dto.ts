@@ -5,12 +5,23 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  MaxLength,
 } from 'class-validator';
 
 export class CreateAdresseDto {
   @IsString()
   @IsNotEmpty()
   libelle!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(180)
+  adresse?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  quartier?: string;
 
   @IsString()
   @IsNotEmpty()

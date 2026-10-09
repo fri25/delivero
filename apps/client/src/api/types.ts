@@ -16,6 +16,9 @@ export interface RestaurantSummary {
   description: string | null;
   horaires: string | null;
   noteMoyenne: string | null;
+  specialiteCuisine?: string | null;
+  delaiMoyenMinutes?: number | null;
+  prixMoyen?: number | null;
   statutOuverture: boolean;
   /** Pas encore renvoyée par l'API — champ prévu pour de vraies photos partenaires. */
   imageUrl?: string | null;
@@ -41,6 +44,8 @@ export interface RestaurantDetail extends RestaurantSummary {
 export interface Adresse {
   id: string;
   libelle: string;
+  adresse?: string | null;
+  quartier?: string | null;
   pointDeRepere: string;
   latitude: string | null;
   longitude: string | null;

@@ -9,8 +9,8 @@ import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 export class RestaurantsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAllPublic(search?: string) {
-    return this.prisma.partenaire.findMany({
+  async findAllPublic(search?: string) {
+    const restaurants = await this.prisma.partenaire.findMany({
       where: {
         type: TypePartenaire.restaurant,
         statutOuverture: true,
@@ -25,8 +25,18 @@ export class RestaurantsService {
         horaires: true,
         noteMoyenne: true,
         statutOuverture: true,
+        specialiteCuisine: true,
+        delaiMoyenMinutes: true,
+        plats: { where: { disponible: true }, select: { prix: true } },
       },
       orderBy: { nom: 'asc' },
+    });
+    return restaurants.map((restaurant) => {
+      const { plats, ...summary } = restaurant;
+      const prixMoyen = plats.length
+        ? Math.round(plats.reduce((total, plat) => total + Number(plat.prix), 0) / plats.length)
+        : null;
+      return { ...summary, prixMoyen };
     });
   }
 
@@ -46,6 +56,8 @@ export class RestaurantsService {
         pointDeRepere: true,
         statutOuverture: true,
         noteMoyenne: true,
+        specialiteCuisine: true,
+        delaiMoyenMinutes: true,
         plats: { orderBy: [{ categorie: 'asc' }, { nom: 'asc' }] },
         zone: { select: { fraisLivraison: true } },
       },

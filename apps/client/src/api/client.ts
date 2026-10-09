@@ -35,11 +35,16 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    throw new ApiError(0, 'NETWORK_ERROR', 'Connexion interrompue. Vérifiez votre réseau puis réessayez.');
+  }
 
   if (response.status === 204) {
     return undefined as T;

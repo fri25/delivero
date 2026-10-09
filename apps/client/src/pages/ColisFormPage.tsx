@@ -1,6 +1,6 @@
 import { CONTRE_REMBOURSEMENT_ACTIF, ESPECES_ACTIF } from '@delivero/config/perimetre-v1';
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -28,19 +28,25 @@ const TAILLE_LABELS: Record<TailleColis, string> = {
 
 export function ColisFormPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const preRemplir = (location.state as { preRemplir?: {
+    adresseEnlevementId: string; zoneId: string; taille: TailleColis; destinataireNom: string;
+    destinataireTelephone: string; adresseLivraison: string; pointDeRepereLivraison: string;
+    valeurDeclaree: string | null; fragile: boolean;
+  } } | null)?.preRemplir;
   const token = useAuthStore((state) => state.token);
   const { data: zones, isPending: zonesPending } = useZones();
   const createCommande = useCreateCommandeColis();
 
-  const [adresseEnlevementId, setAdresseEnlevementId] = useState<string | null>(null);
-  const [zoneId, setZoneId] = useState<string | null>(null);
-  const [taille, setTaille] = useState<TailleColis>('petit');
-  const [destinataireNom, setDestinataireNom] = useState('');
-  const [destinataireTelephone, setDestinataireTelephone] = useState('');
-  const [adresseLivraison, setAdresseLivraison] = useState('');
-  const [pointDeRepereLivraison, setPointDeRepereLivraison] = useState('');
-  const [valeurDeclaree, setValeurDeclaree] = useState('');
-  const [fragile, setFragile] = useState(false);
+  const [adresseEnlevementId, setAdresseEnlevementId] = useState<string | null>(preRemplir?.adresseEnlevementId ?? null);
+  const [zoneId, setZoneId] = useState<string | null>(preRemplir?.zoneId ?? null);
+  const [taille, setTaille] = useState<TailleColis>(preRemplir?.taille ?? 'petit');
+  const [destinataireNom, setDestinataireNom] = useState(preRemplir?.destinataireNom ?? '');
+  const [destinataireTelephone, setDestinataireTelephone] = useState(preRemplir?.destinataireTelephone ?? '');
+  const [adresseLivraison, setAdresseLivraison] = useState(preRemplir?.adresseLivraison ?? '');
+  const [pointDeRepereLivraison, setPointDeRepereLivraison] = useState(preRemplir?.pointDeRepereLivraison ?? '');
+  const [valeurDeclaree, setValeurDeclaree] = useState(preRemplir?.valeurDeclaree ?? '');
+  const [fragile, setFragile] = useState(preRemplir?.fragile ?? false);
   const [contreRemboursement, setContreRemboursement] = useState(false);
   const [montantContreRemboursement, setMontantContreRemboursement] = useState('');
   const [modePaiement, setModePaiement] = useState<ModePaiement>(
@@ -134,6 +140,7 @@ export function ColisFormPage() {
           Enlèvement chez vous, livraison au destinataire — vous suivez chaque étape.
         </p>
       </div>
+      {preRemplir && <p className="rounded-xl bg-secondary px-3 py-2 text-sm text-foreground">Les informations de votre ancien envoi ont été reprises. Vérifiez-les avant de confirmer.</p>}
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold">Adresse d'enlèvement</h2>

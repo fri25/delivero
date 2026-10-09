@@ -7,6 +7,8 @@ interface UpdateRestaurantInput {
   nom?: string;
   description?: string;
   horaires?: string;
+  specialiteCuisine?: string;
+  delaiMoyenMinutes?: number;
 }
 
 interface CreatePlatInput {

@@ -71,7 +71,7 @@ export function EmplettesOrderDetailPage() {
           {commande.lieuAchat ?? 'Emplettes'}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Demandé le {new Date(commande.createdAt).toLocaleString('fr-FR')}
+          Demandé le {new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Porto-Novo' }).format(new Date(commande.createdAt))}
         </p>
       </div>
 

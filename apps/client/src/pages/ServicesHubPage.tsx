@@ -1,5 +1,5 @@
 import { EMPLETTES_ACTIF } from '@delivero/config/perimetre-v1';
-import { History, MessageCircle } from 'lucide-react';
+import { CircleHelp, History } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logo from '@/assets/logo.webp';
 import { ActiveOrderBanner } from '@/components/home/ActiveOrderBanner';
@@ -8,6 +8,7 @@ import { ColisIllustration } from '@/components/home/illustrations/ColisIllustra
 import { CoursesExpressIllustration } from '@/components/home/illustrations/CoursesExpressIllustration';
 import { EmplettesIllustration } from '@/components/home/illustrations/EmplettesIllustration';
 import { getPlatImage } from '@/data/images';
+import { InstallAppPrompt } from '@/components/layout/InstallAppPrompt';
 
 // Un plat du catalogue de démo pour la tuile Repas (seul service avec de
 // vraies photos).
@@ -22,9 +23,6 @@ const COURSES_EXPRESS_SLIDE: TileSlide = {
   illustration: <CoursesExpressIllustration variant={1} />,
 };
 const EMPLETTES_SLIDE: TileSlide = { illustration: <EmplettesIllustration variant={1} /> };
-
-// Numéro support à confirmer avant mise en production.
-const WHATSAPP_SUPPORT = 'https://wa.me/22900000000';
 
 export function ServicesHubPage() {
   return (
@@ -82,16 +80,12 @@ export function ServicesHubPage() {
           <History className="size-4 shrink-0" aria-hidden="true" />
           Mes commandes
         </Link>
-        <a
-          href={WHATSAPP_SUPPORT}
-          target="_blank"
-          rel="noreferrer"
-          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-card px-3 text-sm font-medium text-foreground ring-1 ring-foreground/10 transition-colors hover:bg-secondary"
-        >
-          <MessageCircle className="size-4 shrink-0" aria-hidden="true" />
-          Aide WhatsApp
-        </a>
+        <Link to="/aide" className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-card px-3 text-sm font-medium text-foreground ring-1 ring-foreground/10 transition-colors hover:bg-secondary">
+          <CircleHelp className="size-4 shrink-0" aria-hidden="true" />
+          Aide et contact
+        </Link>
       </section>
+      <InstallAppPrompt />
     </div>
   );
 }

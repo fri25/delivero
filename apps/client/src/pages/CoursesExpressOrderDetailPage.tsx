@@ -9,6 +9,8 @@ import {
 import { CoursesExpressStatusStepper } from '@/components/orders/CoursesExpressStatusStepper';
 import { formatPrixFcfa } from '@/lib/format';
 import type { EtapeCourseExpress } from '@/api/types';
+import { AvisCommandeSection } from '@/components/orders/AvisCommandeSection';
+import { LoadError } from '@/components/layout/LoadError';
 
 const MODE_PAIEMENT_LABELS: Record<string, string> = {
   especes: 'Espèces à la remise',
@@ -39,7 +41,7 @@ function EtapeRow({ etape }: { etape: EtapeCourseExpress }) {
 
 export function CoursesExpressOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: commande, isPending } = useCommandeCoursesExpress(id);
+  const { data: commande, isPending, isError, refetch } = useCommandeCoursesExpress(id);
   const annuler = useAnnulerCommandeCoursesExpress();
 
   if (isPending) {
@@ -51,6 +53,8 @@ export function CoursesExpressOrderDetailPage() {
     );
   }
 
+  if (isError) return <LoadError message="Le suivi de cette course n’a pas pu être chargé." onRetry={() => void refetch()} />;
+
   if (!commande) {
     return <p className="text-sm text-destructive">Commande introuvable.</p>;
   }
@@ -60,7 +64,7 @@ export function CoursesExpressOrderDetailPage() {
       <div>
         <h1 className="text-xl font-semibold">{commande.description}</h1>
         <p className="text-sm text-muted-foreground">
-          Demandé le {new Date(commande.createdAt).toLocaleString('fr-FR')}
+          Demandé le {new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Porto-Novo' }).format(new Date(commande.createdAt))}
         </p>
       </div>
 
@@ -86,6 +90,8 @@ export function CoursesExpressOrderDetailPage() {
           <span>{commande.commande.montantTotal ? formatPrixFcfa(commande.commande.montantTotal) : '—'}</span>
         </div>
       </div>
+
+      <AvisCommandeSection commandeId={commande.id} prestationTerminee={commande.statut === 'terminee'} />
 
       {commande.statut === 'confirmee' && (
         <Button

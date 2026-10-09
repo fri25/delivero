@@ -1,25 +1,28 @@
 import { EMPLETTES_ACTIF } from '@delivero/config/perimetre-v1';
+import { lazy } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { RootLayout } from '@/layouts/RootLayout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
-import { ServicesHubPage } from '@/pages/ServicesHubPage';
-import { RepasHomePage } from '@/pages/RepasHomePage';
-import { RestaurantPage } from '@/pages/RestaurantPage';
-import { CartPage } from '@/pages/CartPage';
-import { LoginPage } from '@/pages/LoginPage';
-import { RegisterPage } from '@/pages/RegisterPage';
-import { OrdersPage } from '@/pages/OrdersPage';
-import { OrderDetailPage } from '@/pages/OrderDetailPage';
-import { ColisFormPage } from '@/pages/ColisFormPage';
-import { ColisOrdersPage } from '@/pages/ColisOrdersPage';
-import { ColisOrderDetailPage } from '@/pages/ColisOrderDetailPage';
-import { ColisSuiviPage } from '@/pages/ColisSuiviPage';
-import { EmplettesFormPage } from '@/pages/EmplettesFormPage';
-import { EmplettesOrdersPage } from '@/pages/EmplettesOrdersPage';
-import { EmplettesOrderDetailPage } from '@/pages/EmplettesOrderDetailPage';
-import { CoursesExpressFormPage } from '@/pages/CoursesExpressFormPage';
-import { CoursesExpressOrdersPage } from '@/pages/CoursesExpressOrdersPage';
-import { CoursesExpressOrderDetailPage } from '@/pages/CoursesExpressOrderDetailPage';
+
+const ServicesHubPage = lazy(() => import('@/pages/ServicesHubPage').then((module) => ({ default: module.ServicesHubPage })));
+const RepasHomePage = lazy(() => import('@/pages/RepasHomePage').then((module) => ({ default: module.RepasHomePage })));
+const RestaurantPage = lazy(() => import('@/pages/RestaurantPage').then((module) => ({ default: module.RestaurantPage })));
+const CartPage = lazy(() => import('@/pages/CartPage').then((module) => ({ default: module.CartPage })));
+const LoginPage = lazy(() => import('@/pages/LoginPage').then((module) => ({ default: module.LoginPage })));
+const RegisterPage = lazy(() => import('@/pages/RegisterPage').then((module) => ({ default: module.RegisterPage })));
+const OrdersPage = lazy(() => import('@/pages/OrdersPage').then((module) => ({ default: module.OrdersPage })));
+const OrderDetailPage = lazy(() => import('@/pages/OrderDetailPage').then((module) => ({ default: module.OrderDetailPage })));
+const ColisFormPage = lazy(() => import('@/pages/ColisFormPage').then((module) => ({ default: module.ColisFormPage })));
+const ColisOrdersPage = lazy(() => import('@/pages/ColisOrdersPage').then((module) => ({ default: module.ColisOrdersPage })));
+const ColisOrderDetailPage = lazy(() => import('@/pages/ColisOrderDetailPage').then((module) => ({ default: module.ColisOrderDetailPage })));
+const ColisSuiviPage = lazy(() => import('@/pages/ColisSuiviPage').then((module) => ({ default: module.ColisSuiviPage })));
+const EmplettesFormPage = lazy(() => import('@/pages/EmplettesFormPage').then((module) => ({ default: module.EmplettesFormPage })));
+const EmplettesOrdersPage = lazy(() => import('@/pages/EmplettesOrdersPage').then((module) => ({ default: module.EmplettesOrdersPage })));
+const EmplettesOrderDetailPage = lazy(() => import('@/pages/EmplettesOrderDetailPage').then((module) => ({ default: module.EmplettesOrderDetailPage })));
+const CoursesExpressFormPage = lazy(() => import('@/pages/CoursesExpressFormPage').then((module) => ({ default: module.CoursesExpressFormPage })));
+const CoursesExpressOrdersPage = lazy(() => import('@/pages/CoursesExpressOrdersPage').then((module) => ({ default: module.CoursesExpressOrdersPage })));
+const CoursesExpressOrderDetailPage = lazy(() => import('@/pages/CoursesExpressOrderDetailPage').then((module) => ({ default: module.CoursesExpressOrderDetailPage })));
+const HelpPage = lazy(() => import('@/pages/HelpPage').then((module) => ({ default: module.HelpPage })));
 
 export const router = createBrowserRouter([
   {
@@ -93,6 +96,7 @@ export const router = createBrowserRouter([
       { path: 'panier', element: <CartPage /> },
       { path: 'connexion', element: <LoginPage /> },
       { path: 'inscription', element: <RegisterPage /> },
+      { path: 'aide', element: <HelpPage /> },
       {
         path: 'commandes',
         element: (

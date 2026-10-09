@@ -1,5 +1,5 @@
 import { ESPECES_ACTIF } from '@delivero/config/perimetre-v1';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -24,12 +24,13 @@ export function CartPage() {
   const token = useAuthStore((state) => state.token);
   const cart = useCartStore();
   const createCommande = useCreateCommandeRepas();
-  const { data: restaurant } = useRestaurant(cart.restaurantId ?? undefined);
+  const { data: restaurant, isError: restaurantError, refetch: refetchRestaurant } = useRestaurant(cart.restaurantId ?? undefined);
 
   const [adresseId, setAdresseId] = useState<string | null>(null);
   const [modePaiement, setModePaiement] = useState<ModePaiement>(
     ESPECES_ACTIF ? 'especes' : 'mobile_money',
   );
+  const submissionLock = useRef(false);
 
   const sousTotal = cart.items.reduce((sum, item) => sum + item.prixUnitaire * item.quantite, 0);
   // Décompte transparent (RG-08) : frais de livraison + 15 % de service,
@@ -43,7 +44,8 @@ export function CartPage() {
     return <p className="text-sm text-muted-foreground">Votre panier est vide.</p>;
   }
 
-  const commander = () => {
+  const commander = async () => {
+    if (submissionLock.current || createCommande.isPending) return;
     if (!token) {
       toast.info('Connectez-vous pour finaliser votre commande.');
       navigate('/connexion');
@@ -57,8 +59,9 @@ export function CartPage() {
       return;
     }
 
-    createCommande.mutate(
-      {
+    submissionLock.current = true;
+    try {
+      const commande = await createCommande.mutateAsync({
         partenaireId: cart.restaurantId,
         adresseId,
         modePaiement,
@@ -67,16 +70,15 @@ export function CartPage() {
           quantite: item.quantite,
           instructions: item.instructions,
         })),
-      },
-      {
-        onSuccess: (commande) => {
-          cart.clear();
-          toast.success('Commande envoyée au restaurant !');
-          navigate(`/commandes/${commande.id}`);
-        },
-        onError: (error) => toast.error(error.message),
-      },
-    );
+      });
+      cart.clear();
+      toast.success('Commande envoyée au restaurant !');
+      navigate(`/commandes/${commande.id}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'La commande n’a pas pu être envoyée. Réessayez.');
+    } finally {
+      submissionLock.current = false;
+    }
   };
 
   return (
@@ -85,6 +87,9 @@ export function CartPage() {
         <h1 className="text-xl font-semibold">Votre panier</h1>
         <p className="text-sm text-muted-foreground">{cart.restaurantNom}</p>
       </div>
+
+      {!navigator.onLine && <p role="status" className="rounded-xl bg-secondary px-3 py-2 text-sm text-foreground">Vous êtes hors ligne. Votre panier est conservé sur cet appareil ; vous pourrez commander dès le retour du réseau.</p>}
+      {restaurantError && <div role="alert" className="rounded-xl bg-destructive/10 p-3 text-sm"><p>Le tarif du restaurant n’a pas pu être chargé.</p><Button variant="outline" size="sm" className="mt-2" onClick={() => void refetchRestaurant()}>Réessayer</Button></div>}
 
       <div>
         {cart.items.map((item) => (

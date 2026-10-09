@@ -5,6 +5,8 @@ import type { Adresse } from './types';
 
 interface CreateAdresseInput {
   libelle: string;
+  adresse: string;
+  quartier: string;
   pointDeRepere: string;
   estParDefaut?: boolean;
 }
