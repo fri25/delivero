@@ -1,9 +1,11 @@
+import { contactClient } from '@/lib/contact-client';
 import { ExternalLink, Phone } from 'lucide-react';
 import { formatPrixFcfa, googleMapsRouteUrl } from '@/lib/format';
 import type { CommandeRepas } from '@/api/types';
 
 export function CourseInfo({ commande }: { commande: CommandeRepas }) {
-  const { adresse, client, paiement, montantTotal } = commande.commande;
+  const { adresse, paiement, montantTotal } = commande.commande;
+  const client = contactClient(commande.commande);
   const pickupQuery = [commande.partenaire.nom, commande.partenaire.adresse].filter(Boolean).join(', ');
   const dropoffQuery = adresse?.libelle;
 

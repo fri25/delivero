@@ -1,4 +1,10 @@
 import {
+  type Demandeur,
+  demandeurCommande,
+  estDemandeur,
+  type InfosInvite,
+} from '../invite/infos-invite';
+import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
@@ -19,7 +25,16 @@ import {
 } from '../livreurs/periode-livreur';
 import { PrismaService } from '../prisma/prisma.service';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
+import {
+  type ContactCommande,
+  NotificationsService,
+} from '../notifications/notifications.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import {
+  assertPaiementEngage,
+  marquerARembourserSiPaye,
+  PAIEMENT_ENGAGE_WHERE,
+} from '../paiements/paiement-engage';
 import { CreateCommandeRepasDto } from './dto/create-commande-repas.dto';
 
 const DETAIL_INCLUDE = {
@@ -28,6 +43,12 @@ const DETAIL_INCLUDE = {
       adresse: true,
       client: { select: { id: true, nom: true, telephone: true } },
       paiement: { select: { mode: true, statut: true } },
+      // F-CLI-08: tells the client what is left to rate.
+      notations: { select: { cible: true, note: true } },
+      // F-CLI-26: the client sees who delivers and can call them.
+      livreur: {
+        select: { user: { select: { nom: true, telephone: true } } },
+      },
     },
   },
   partenaire: {
@@ -53,6 +74,9 @@ type CommandeRepasDetail = Prisma.CommandeRepasGetPayload<{
 // (voir DETAIL_INCLUDE, utilisé par getOwnedByLivreur).
 const DISPONIBLES_INCLUDE = {
   commande: {
+    // V11 also covers guest orders (F-CLI-02): their contact lives on
+    // Commande itself, so it must be omitted explicitly here.
+    omit: { clientNomInvite: true, clientTelephoneInvite: true },
     include: {
       adresse: true,
       paiement: { select: { mode: true, statut: true } },
@@ -78,21 +102,40 @@ export class CommandesRepasService {
     private readonly prisma: PrismaService,
     private readonly portefeuille: PortefeuilleService,
     private readonly realtime: RealtimeGateway,
+    private readonly notifications: NotificationsService,
     private readonly perimetre: PerimetreV1Service,
   ) {}
 
   // F-CLI-05 : notifie le client d'un changement de statut, pour remplacer
   // le polling par un rafraîchissement immédiat côté front (le polling
   // reste en place comme filet de secours, voir realtime.gateway.ts).
-  private notifierClient(clientId: string, commandeId: string, statut: string) {
-    this.realtime.emitToUser(clientId, 'commande:statut', {
-      typeService: 'repas',
-      commandeId,
-      statut,
-    });
+  private notifierClient(
+    commande: ContactCommande,
+    commandeId: string,
+    statut: string,
+  ) {
+    // Real-time refresh only exists for signed-in clients; guests poll.
+    if (commande.clientId) {
+      this.realtime.emitToUser(commande.clientId, 'commande:statut', {
+        typeService: 'repas',
+        commandeId,
+        statut,
+      });
+    }
+    // F-CLI-09: push or WhatsApp/SMS, key steps only (guests: WhatsApp/SMS
+    // with their tracking link).
+    this.notifications.commandeModifiee(commande, 'repas', commandeId, statut);
   }
 
-  async create(clientId: string, dto: CreateCommandeRepasDto) {
+  /**
+   * `clientId` null + `invite` = guest order (F-CLI-02), created through
+   * InviteService only — never reachable with a null clientId otherwise.
+   */
+  async create(
+    clientId: string | null,
+    dto: CreateCommandeRepasDto,
+    invite?: InfosInvite,
+  ) {
     this.perimetre.assertModePaiementOuvert(dto.modePaiement);
 
     const partenaire = await this.prisma.partenaire.findFirst({
@@ -109,7 +152,7 @@ export class CommandesRepasService {
     const adresse = await this.prisma.adresse.findUnique({
       where: { id: dto.adresseId },
     });
-    if (!adresse || adresse.userId !== clientId) {
+    if (!adresse || adresse.userId !== clientId || adresse.archiveeAt) {
       throw new NotFoundException('Adresse introuvable.');
     }
 
@@ -148,7 +191,7 @@ export class CommandesRepasService {
       const commande = await tx.commande.create({
         data: {
           typeService: TypeService.repas,
-          clientId,
+          ...demandeurCommande(clientId, invite),
           adresseId: dto.adresseId,
           sousTotal,
           fraisLivraison,
@@ -190,10 +233,15 @@ export class CommandesRepasService {
 
     // F-RES-01 : alerte temps réel côté restaurant, remplace le polling sur
     // /restaurants/me/commandes.
-    this.realtime.emitToUser(partenaire.userId, 'commande:nouvelle', {
-      typeService: 'repas',
-      commandeId: commandeRepas.id,
-    });
+    // Mobile Money is paid at order time: the restaurant is alerted by
+    // PaiementsService once FedaPay confirms, not here.
+    if (dto.modePaiement === 'especes') {
+      this.realtime.emitToUser(partenaire.userId, 'commande:nouvelle', {
+        typeService: 'repas',
+        commandeId: commandeRepas.id,
+      });
+      this.notifications.nouvelleCommandeRestaurant(partenaire.userId);
+    }
 
     return commandeRepas;
   }
@@ -214,7 +262,8 @@ export class CommandesRepasService {
 
   findAllForPartenaire(partenaireId: string) {
     return this.prisma.commandeRepas.findMany({
-      where: { partenaireId },
+      // Unpaid Mobile Money orders do not reach the restaurant.
+      where: { partenaireId, commande: { paiement: PAIEMENT_ENGAGE_WHERE } },
       include: DETAIL_INCLUDE,
       orderBy: { createdAt: 'desc' },
     });
@@ -282,7 +331,9 @@ export class CommandesRepasService {
         commandeId: true,
         commande: {
           select: {
+            id: true,
             clientId: true,
+            clientTelephoneInvite: true,
             montantTotal: true,
             paiement: { select: { mode: true } },
           },
@@ -330,13 +381,11 @@ export class CommandesRepasService {
         include: DETAIL_INCLUDE,
       });
     });
-    if (commandeRepas.commande.clientId) {
-      this.notifierClient(
-        commandeRepas.commande.clientId,
-        id,
-        StatutRepas.recuperee_par_livreur,
-      );
-    }
+    this.notifierClient(
+      commandeRepas.commande,
+      id,
+      StatutRepas.recuperee_par_livreur,
+    );
     return updated;
   }
 
@@ -348,13 +397,7 @@ export class CommandesRepasService {
       data: { statut: StatutRepas.en_route },
       include: DETAIL_INCLUDE,
     });
-    if (commandeRepas.commande.clientId) {
-      this.notifierClient(
-        commandeRepas.commande.clientId,
-        id,
-        StatutRepas.en_route,
-      );
-    }
+    this.notifierClient(commandeRepas.commande, id, StatutRepas.en_route);
     return updated;
   }
 
@@ -379,49 +422,35 @@ export class CommandesRepasService {
       }
       return result;
     });
-    if (commandeRepas.commande.clientId) {
-      this.notifierClient(
-        commandeRepas.commande.clientId,
-        id,
-        StatutRepas.livree,
-      );
-    }
+    this.notifierClient(commandeRepas.commande, id, StatutRepas.livree);
     return updated;
   }
 
   async accepter(userId: string, id: string) {
     const commandeRepas = await this.getOwnedByRestaurant(userId, id);
     this.assertStatut(commandeRepas, StatutRepas.en_attente_acceptation);
+    assertPaiementEngage(commandeRepas.commande.paiement);
     const updated = await this.prisma.commandeRepas.update({
       where: { id },
       data: { statut: StatutRepas.confirmee },
       include: DETAIL_INCLUDE,
     });
-    if (commandeRepas.commande.clientId) {
-      this.notifierClient(
-        commandeRepas.commande.clientId,
-        id,
-        StatutRepas.confirmee,
-      );
-    }
+    this.notifierClient(commandeRepas.commande, id, StatutRepas.confirmee);
     return updated;
   }
 
   async refuser(userId: string, id: string, motif: string) {
     const commandeRepas = await this.getOwnedByRestaurant(userId, id);
     this.assertStatut(commandeRepas, StatutRepas.en_attente_acceptation);
-    const updated = await this.prisma.commandeRepas.update({
-      where: { id },
-      data: { statut: StatutRepas.refusee, motifRefus: motif },
-      include: DETAIL_INCLUDE,
+    const updated = await this.prisma.$transaction(async (tx) => {
+      await marquerARembourserSiPaye(tx, commandeRepas.commandeId);
+      return tx.commandeRepas.update({
+        where: { id },
+        data: { statut: StatutRepas.refusee, motifRefus: motif },
+        include: DETAIL_INCLUDE,
+      });
     });
-    if (commandeRepas.commande.clientId) {
-      this.notifierClient(
-        commandeRepas.commande.clientId,
-        id,
-        StatutRepas.refusee,
-      );
-    }
+    this.notifierClient(commandeRepas.commande, id, StatutRepas.refusee);
     return updated;
   }
 
@@ -433,13 +462,7 @@ export class CommandesRepasService {
       data: { statut: StatutRepas.en_preparation },
       include: DETAIL_INCLUDE,
     });
-    if (commandeRepas.commande.clientId) {
-      this.notifierClient(
-        commandeRepas.commande.clientId,
-        id,
-        StatutRepas.en_preparation,
-      );
-    }
+    this.notifierClient(commandeRepas.commande, id, StatutRepas.en_preparation);
     return updated;
   }
 
@@ -451,26 +474,23 @@ export class CommandesRepasService {
       data: { statut: StatutRepas.prete },
       include: DETAIL_INCLUDE,
     });
-    if (commandeRepas.commande.clientId) {
-      this.notifierClient(
-        commandeRepas.commande.clientId,
-        id,
-        StatutRepas.prete,
-      );
-    }
+    this.notifierClient(commandeRepas.commande, id, StatutRepas.prete);
     return updated;
   }
 
-  async annuler(userId: string, id: string) {
+  async annuler(demandeur: Demandeur, id: string) {
     const commandeRepas = await this.getDetail(id);
-    if (commandeRepas.commande.clientId !== userId) {
+    if (!estDemandeur(commandeRepas.commande, demandeur)) {
       throw new ForbiddenException('Cette commande ne vous appartient pas.');
     }
     this.assertStatut(commandeRepas, StatutRepas.en_attente_acceptation);
-    const updated = await this.prisma.commandeRepas.update({
-      where: { id },
-      data: { statut: StatutRepas.annulee },
-      include: DETAIL_INCLUDE,
+    const updated = await this.prisma.$transaction(async (tx) => {
+      await marquerARembourserSiPaye(tx, commandeRepas.commandeId);
+      return tx.commandeRepas.update({
+        where: { id },
+        data: { statut: StatutRepas.annulee },
+        include: DETAIL_INCLUDE,
+      });
     });
     // Notifie aussi le restaurant : la commande annulée disparaît de sa file.
     this.realtime.emitToUser(updated.partenaire.userId, 'commande:statut', {
@@ -479,6 +499,11 @@ export class CommandesRepasService {
       statut: StatutRepas.annulee,
     });
     return updated;
+  }
+
+  /** Guest tracking page (F-CLI-02); the caller has verified the link. */
+  findOneForInvite(id: string) {
+    return this.getDetail(id);
   }
 
   private async getDetail(id: string): Promise<CommandeRepasDetail> {

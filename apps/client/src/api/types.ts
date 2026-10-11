@@ -17,6 +17,11 @@ export interface RestaurantSummary {
   horaires: string | null;
   noteMoyenne: string | null;
   statutOuverture: boolean;
+  /** Values from TYPES_CUISINE (@delivero/config/types-cuisine). */
+  typesCuisine: string[];
+  delaiPreparationMin: number | null;
+  /** Average dish price in FCFA (list only), null when no priced dish. */
+  prixMoyen: number | null;
   /** Pas encore renvoyée par l'API — champ prévu pour de vraies photos partenaires. */
   imageUrl?: string | null;
 }
@@ -32,7 +37,7 @@ export interface Plat {
   disponible: boolean;
 }
 
-export interface RestaurantDetail extends RestaurantSummary {
+export interface RestaurantDetail extends Omit<RestaurantSummary, 'prixMoyen'> {
   plats: Plat[];
   /** Frais de livraison de la zone du restaurant (RG-08), en FCFA. */
   fraisLivraison: string;
@@ -48,6 +53,33 @@ export interface Adresse {
 }
 
 export type ModePaiement = 'mobile_money' | 'especes';
+
+export type StatutPaiement =
+  | 'en_attente'
+  | 'reussi'
+  | 'echoue'
+  | 'a_percevoir_livraison'
+  | 'a_rembourser'
+  | 'rembourse';
+
+export interface PaiementResume {
+  mode: ModePaiement;
+  statut: StatutPaiement;
+}
+
+export type CibleNotation = 'partenaire' | 'livreur';
+
+export interface NotationResume {
+  cible: CibleNotation;
+  note: number;
+}
+
+/** Livreur assigned to an order (F-CLI-26), null until one takes it. */
+export interface LivreurContact {
+  user: { nom: string; telephone: string };
+}
+
+export type TypeService = 'repas' | 'colis' | 'courses_express' | 'emplettes';
 
 export type StatutRepas =
   | 'en_attente_acceptation'
@@ -81,6 +113,9 @@ export interface CommandeRepas {
     commission: string | null;
     montantTotal: string | null;
     adresseId: string | null;
+    paiement: PaiementResume | null;
+    livreur: LivreurContact | null;
+    notations: NotationResume[];
   };
   partenaire: { id: string; nom: string; userId: string };
   lignes: LigneCommandeRepas[];
@@ -118,6 +153,7 @@ export interface CommandeColis {
   pointDeRepereLivraison: string;
   programmationAt: string | null;
   nomReceptionnaire: string | null;
+  photoUrl: string | null;
   motif: string | null;
   /** Uniquement présent dans la réponse au client propriétaire (voir api-colis.md). */
   codeOtp?: string;
@@ -128,7 +164,9 @@ export interface CommandeColis {
   commande: {
     id: string;
     montantTotal: string | null;
-    paiement: { mode: ModePaiement; statut: string } | null;
+    paiement: PaiementResume | null;
+    livreur: LivreurContact | null;
+    notations: NotationResume[];
   };
 }
 
@@ -194,7 +232,9 @@ export interface CommandeEmplettes {
     fraisLivraison: string | null;
     commission: string | null;
     montantTotal: string | null;
-    paiement: { mode: ModePaiement; statut: string } | null;
+    paiement: PaiementResume | null;
+    livreur: LivreurContact | null;
+    notations: NotationResume[];
   };
 }
 
@@ -221,6 +261,7 @@ export interface EtapeCourseExpress {
 export interface CommandeCoursesExpress {
   id: string;
   description: string;
+  photoUrls: string[];
   statut: StatutCoursesExpress;
   motif: string | null;
   createdAt: string;
@@ -230,6 +271,8 @@ export interface CommandeCoursesExpress {
   commande: {
     id: string;
     montantTotal: string | null;
-    paiement: { mode: ModePaiement; statut: string } | null;
+    paiement: PaiementResume | null;
+    livreur: LivreurContact | null;
+    notations: NotationResume[];
   };
 }

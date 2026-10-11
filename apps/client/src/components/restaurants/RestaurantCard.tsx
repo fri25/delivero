@@ -1,4 +1,4 @@
-import { Star } from 'lucide-react';
+import { Clock, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { MediaFrame } from '@/components/restaurants/MediaFrame';
@@ -55,6 +55,15 @@ export function RestaurantCard({
                 <Star className="size-3.5 fill-brand-blue text-brand-blue" />
                 {restaurant.noteMoyenne}
               </span>
+            )}
+            {restaurant.delaiPreparationMin !== null && (
+              <span className="inline-flex items-center gap-1">
+                <Clock className="size-3.5" aria-hidden="true" />
+                {restaurant.delaiPreparationMin} min
+              </span>
+            )}
+            {restaurant.typesCuisine.length > 0 && (
+              <span className="line-clamp-1">{restaurant.typesCuisine.join(' · ')}</span>
             )}
           </div>
         </div>

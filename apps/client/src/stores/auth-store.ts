@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '../api/types';
+import { queryClient } from '../lib/query-client';
 
 interface AuthState {
   token: string | null;
@@ -14,8 +15,16 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       token: null,
       user: null,
-      login: (token, user) => set({ token, user }),
-      logout: () => set({ token: null, user: null }),
+      // Cache cleared on both transitions: the previous account's addresses
+      // and orders must never be shown to the next one.
+      login: (token, user) => {
+        queryClient.clear();
+        set({ token, user });
+      },
+      logout: () => {
+        queryClient.clear();
+        set({ token: null, user: null });
+      },
     }),
     { name: 'delivero-auth' },
   ),

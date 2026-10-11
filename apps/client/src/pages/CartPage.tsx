@@ -1,6 +1,5 @@
 import { ESPECES_ACTIF } from '@delivero/config/perimetre-v1';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,18 +14,36 @@ import { AddressPicker } from '@/components/adresses/AddressPicker';
 import { useAuthStore } from '@/stores/auth-store';
 import { useCartStore } from '@/stores/cart-store';
 import { useCreateCommandeRepas } from '@/api/commandes-repas';
+import { useApresCreationCommande } from '@/api/paiements';
 import { useRestaurant } from '@/api/restaurants';
+import {
+  useApresCreationInvite,
+  useCreerCommandeInvite,
+  type AdresseInvite,
+  type CommandeRepasInviteInput,
+  type ContactInvite,
+} from '@/api/invite';
+import { AdresseInviteFields } from '@/components/invite/AdresseInviteFields';
+import { ChoixCompteInvite } from '@/components/invite/ChoixCompteInvite';
+import { ContactInviteFields } from '@/components/invite/ContactInviteFields';
 import { formatPrixFcfa } from '@/lib/format';
 import type { ModePaiement } from '@/api/types';
 
 export function CartPage() {
-  const navigate = useNavigate();
   const token = useAuthStore((state) => state.token);
   const cart = useCartStore();
   const createCommande = useCreateCommandeRepas();
+  const apresCreation = useApresCreationCommande();
+  const creerInvite = useCreerCommandeInvite<CommandeRepasInviteInput>('repas');
+  const apresCreationInvite = useApresCreationInvite();
+  const envoiEnCours = createCommande.isPending || apresCreation.isPending || creerInvite.isPending;
   const { data: restaurant } = useRestaurant(cart.restaurantId ?? undefined);
 
   const [adresseId, setAdresseId] = useState<string | null>(null);
+  // F-CLI-02 : commande sans compte.
+  const [sansCompte, setSansCompte] = useState(false);
+  const [contact, setContact] = useState<ContactInvite>({ nom: '', telephone: '' });
+  const [adresseInvite, setAdresseInvite] = useState<AdresseInvite>({ pointDeRepere: '' });
   const [modePaiement, setModePaiement] = useState<ModePaiement>(
     ESPECES_ACTIF ? 'especes' : 'mobile_money',
   );
@@ -43,10 +60,33 @@ export function CartPage() {
     return <p className="text-sm text-muted-foreground">Votre panier est vide.</p>;
   }
 
+  const lignes = cart.items.map((item) => ({
+    platId: item.platId,
+    quantite: item.quantite,
+    instructions: item.instructions,
+  }));
+
+  const commanderSansCompte = () => {
+    if (!cart.restaurantId) return;
+    if (!contact.nom.trim() || !contact.telephone.trim() || !adresseInvite.pointDeRepere.trim()) {
+      toast.error('Indiquez votre nom, votre téléphone et un point de repère.');
+      return;
+    }
+    creerInvite.mutate(
+      { invite: contact, adresse: adresseInvite, partenaireId: cart.restaurantId, modePaiement, lignes },
+      {
+        onSuccess: (creee) => {
+          cart.clear();
+          void apresCreationInvite(creee, { mode: modePaiement, statut: 'en_attente' });
+        },
+        onError: (error) => toast.error(error.message),
+      },
+    );
+  };
+
   const commander = () => {
     if (!token) {
-      toast.info('Connectez-vous pour finaliser votre commande.');
-      navigate('/connexion');
+      commanderSansCompte();
       return;
     }
     if (!adresseId) {
@@ -62,17 +102,12 @@ export function CartPage() {
         partenaireId: cart.restaurantId,
         adresseId,
         modePaiement,
-        lignes: cart.items.map((item) => ({
-          platId: item.platId,
-          quantite: item.quantite,
-          instructions: item.instructions,
-        })),
+        lignes,
       },
       {
         onSuccess: (commande) => {
           cart.clear();
-          toast.success('Commande envoyée au restaurant !');
-          navigate(`/commandes/${commande.id}`);
+          apresCreation.continuer(commande, `/commandes/${commande.id}`, 'Commande envoyée au restaurant !');
         },
         onError: (error) => toast.error(error.message),
       },
@@ -121,12 +156,27 @@ export function CartPage() {
         </div>
       </div>
 
-      {token && (
+      {!token && !sansCompte && <ChoixCompteInvite onSansCompte={() => setSansCompte(true)} />}
+
+      {(token || sansCompte) && (
         <div className="space-y-4">
-          <div>
-            <h2 className="mb-2 text-sm font-semibold">Adresse de livraison</h2>
-            <AddressPicker value={adresseId} onChange={setAdresseId} />
-          </div>
+          {token ? (
+            <div>
+              <h2 className="mb-2 text-sm font-semibold">Adresse de livraison</h2>
+              <AddressPicker value={adresseId} onChange={setAdresseId} />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold">Vos coordonnées</h2>
+              <ContactInviteFields value={contact} onChange={setContact} />
+              <AdresseInviteFields
+                id="adresse-livraison-invite"
+                label="Point de repère pour la livraison"
+                value={adresseInvite}
+                onChange={setAdresseInvite}
+              />
+            </div>
+          )}
 
           <div>
             <h2 className="mb-2 text-sm font-semibold">Paiement</h2>
@@ -150,9 +200,11 @@ export function CartPage() {
         </div>
       )}
 
-      <Button className="w-full" disabled={createCommande.isPending} onClick={commander}>
-        {createCommande.isPending ? 'Envoi...' : token ? 'Commander' : 'Se connecter pour commander'}
-      </Button>
+      {(token || sansCompte) && (
+        <Button className="w-full" disabled={envoiEnCours} onClick={commander}>
+          {envoiEnCours ? 'Envoi...' : ESPECES_ACTIF ? 'Commander' : 'Commander et payer'}
+        </Button>
+      )}
     </div>
   );
 }

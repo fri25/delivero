@@ -12,6 +12,7 @@ interface CreateEtapeInput {
 
 interface CreateCommandeCoursesExpressInput {
   description: string;
+  photoUrls?: string[];
   zoneId: string;
   modePaiement: ModePaiement;
   etapes: CreateEtapeInput[];

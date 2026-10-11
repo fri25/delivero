@@ -72,6 +72,9 @@ interface PilotRestaurant {
   adresse: string;
   pointDeRepere: string;
   horaires: string;
+  // Cuisine types are real (annexe A §A.2); preparation times are FICTIF.
+  typesCuisine: string[];
+  delaiPreparationMin: number;
   plats: PilotPlat[];
 }
 
@@ -84,6 +87,8 @@ const PILOT_RESTAURANTS: PilotRestaurant[] = [
     adresse: 'Quartier Yimporima, près du carrefour du marché central, Natitingou',
     pointDeRepere: 'En face de la station-service, immeuble à façade jaune',
     horaires: 'Lundi–samedi 6h30–19h00 ; dimanche 7h00–13h00',
+    typesCuisine: ['Pâtisserie', 'Petit-déjeuner'],
+    delaiPreparationMin: 10,
     plats: [
       { nom: 'Croissant', categorie: 'Viennoiseries & pâtisseries', prix: 300 },
       { nom: 'Pain au chocolat', categorie: 'Viennoiseries & pâtisseries', prix: 350 },
@@ -107,6 +112,8 @@ const PILOT_RESTAURANTS: PilotRestaurant[] = [
     adresse: 'Route de Kouandé, quartier Peporiyakou, Natitingou',
     pointDeRepere: 'À 200 m après le pont, côté droit en venant du centre',
     horaires: 'Tous les jours 11h00–22h30',
+    typesCuisine: ['Cuisine locale', 'Grillades'],
+    delaiPreparationMin: 30,
     plats: [
       { nom: 'Agouti braisé', categorie: 'Grillades', prix: 3500 },
       { nom: 'Biche sauce arachide', categorie: 'Grillades', prix: 4000 },
@@ -128,6 +135,8 @@ const PILOT_RESTAURANTS: PilotRestaurant[] = [
     adresse: "Avenue de l'Indépendance, centre-ville de Natitingou",
     pointDeRepere: 'À côté de la pharmacie, terrasse bleue',
     horaires: 'Lundi–samedi 6h00–20h00 ; dimanche fermé',
+    typesCuisine: ['Café & boissons', 'Petit-déjeuner', 'Sandwichs & chawarma'],
+    delaiPreparationMin: 12,
     plats: [
       { nom: 'Café moringa', categorie: 'Boissons chaudes', prix: 700 },
       { nom: 'Thé moringa-citron', categorie: 'Boissons chaudes', prix: 600 },
@@ -153,6 +162,8 @@ const PILOT_RESTAURANTS: PilotRestaurant[] = [
     adresse: 'Quartier Tchirimina, Natitingou',
     pointDeRepere: 'Près du stade municipal, enseigne rouge',
     horaires: 'Tous les jours 10h00–23h00',
+    typesCuisine: ['Cuisine locale', 'Fast-food', 'Pizza'],
+    delaiPreparationMin: 25,
     plats: [
       { nom: 'Igname pilée sauce arachide + fromage peul', categorie: 'Cuisine locale', prix: 2500 },
       {
@@ -184,6 +195,8 @@ const PILOT_RESTAURANTS: PilotRestaurant[] = [
     adresse: 'Quartier Santa, Natitingou',
     pointDeRepere: 'Carrefour Santa, sous les manguiers',
     horaires: 'Mardi–dimanche 17h00–00h00 ; lundi fermé',
+    typesCuisine: ['Grillades', 'Cuisine locale', 'Fast-food'],
+    delaiPreparationMin: 35,
     plats: [
       { nom: 'Demi-poulet braisé', categorie: 'Grillades', prix: 2800 },
       { nom: 'Poulet entier braisé', categorie: 'Grillades', prix: 5000 },
@@ -209,6 +222,8 @@ const PILOT_RESTAURANTS: PilotRestaurant[] = [
     adresse: 'Route de la Chute de Kota, sortie sud de Natitingou',
     pointDeRepere: "Grand portail vert, 500 m après l'hôtel",
     horaires: 'Tous les jours 11h00–23h00',
+    typesCuisine: ['Cuisine locale', 'Grillades', 'Fast-food'],
+    delaiPreparationMin: 30,
     plats: [
       { nom: 'Poulet DG', categorie: 'Plats principaux', prix: 3500 },
       { nom: 'Riz sauté aux crevettes', categorie: 'Plats principaux', prix: 3000 },
@@ -234,6 +249,8 @@ const PILOT_RESTAURANTS: PilotRestaurant[] = [
     adresse: 'Quartier Ourbouga, Natitingou',
     pointDeRepere: 'À 100 m du collège, kiosque bleu et blanc',
     horaires: 'Lundi–samedi 10h00–21h00 ; dimanche 12h00–20h00',
+    typesCuisine: ['Cuisine locale', 'Fast-food', 'Sandwichs & chawarma'],
+    delaiPreparationMin: 20,
     plats: [
       { nom: 'Riz sauce tomate + viande', categorie: 'Riz & pâtes', prix: 1500 },
       { nom: 'Riz gras', categorie: 'Riz & pâtes', prix: 1800 },
@@ -390,6 +407,8 @@ async function main() {
       adresse: restaurant.adresse,
       pointDeRepere: restaurant.pointDeRepere,
       horaires: restaurant.horaires,
+      typesCuisine: restaurant.typesCuisine,
+      delaiPreparationMin: restaurant.delaiPreparationMin,
       tauxCommission: 15,
     };
     const partenaire = await prisma.partenaire.upsert({

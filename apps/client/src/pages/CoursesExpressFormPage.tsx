@@ -1,6 +1,6 @@
 import { ESPECES_ACTIF } from '@delivero/config/perimetre-v1';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -19,8 +19,19 @@ import {
   useCreateCommandeCoursesExpress,
   useEstimationCoursesExpress,
 } from '@/api/commandes-courses-express';
+import { useApresCreationCommande } from '@/api/paiements';
 import { formatPrixFcfa } from '@/lib/format';
 import type { ModePaiement } from '@/api/types';
+import { lireModele, type ModeleCoursesExpress } from '@/lib/recommander';
+import { PhotoPicker } from '@/components/medias/PhotoPicker';
+import {
+  useApresCreationInvite,
+  useCreerCommandeInvite,
+  type CommandeCoursesExpressInviteInput,
+  type ContactInvite,
+} from '@/api/invite';
+import { ChoixCompteInvite } from '@/components/invite/ChoixCompteInvite';
+import { ContactInviteFields } from '@/components/invite/ContactInviteFields';
 
 interface EtapeDraft {
   description: string;
@@ -33,14 +44,24 @@ function nouvelleEtape(): EtapeDraft {
 }
 
 export function CoursesExpressFormPage() {
-  const navigate = useNavigate();
+  // F-CLI-07 : modèle passé par « Refaire cette course ».
+  const modele = lireModele<ModeleCoursesExpress>(useLocation().state);
   const token = useAuthStore((state) => state.token);
   const { data: zones } = useZones();
   const createCommande = useCreateCommandeCoursesExpress();
+  const apresCreation = useApresCreationCommande();
 
-  const [description, setDescription] = useState('');
-  const [zoneId, setZoneId] = useState<string | null>(null);
-  const [etapes, setEtapes] = useState<EtapeDraft[]>([nouvelleEtape()]);
+  const [description, setDescription] = useState(modele?.description ?? '');
+  const [photos, setPhotos] = useState<string[]>([]);
+  // F-CLI-02 : course sans compte.
+  const [sansCompte, setSansCompte] = useState(false);
+  const [contact, setContact] = useState<ContactInvite>({ nom: '', telephone: '' });
+  const creerInvite = useCreerCommandeInvite<CommandeCoursesExpressInviteInput>('courses_express');
+  const apresCreationInvite = useApresCreationInvite();
+  const envoiEnCours = createCommande.isPending || apresCreation.isPending || creerInvite.isPending;
+  const [photoEnCours, setPhotoEnCours] = useState(false);
+  const [zoneId, setZoneId] = useState<string | null>(modele?.zoneId ?? null);
+  const [etapes, setEtapes] = useState<EtapeDraft[]>(modele?.etapes.length ? modele.etapes : [nouvelleEtape()]);
   const [modePaiement, setModePaiement] = useState<ModePaiement>(
     ESPECES_ACTIF ? 'especes' : 'mobile_money',
   );
@@ -57,38 +78,50 @@ export function CoursesExpressFormPage() {
   );
 
   const peutConfirmer =
-    Boolean(effectiveZoneId) && description.trim().length > 0 && etapesValides.length > 0;
+    Boolean(effectiveZoneId) &&
+    description.trim().length > 0 &&
+    etapesValides.length > 0 &&
+    !photoEnCours &&
+    (Boolean(token) || (sansCompte && contact.nom.trim().length > 0 && contact.telephone.trim().length > 0));
 
   const majEtape = (index: number, patch: Partial<EtapeDraft>) => {
     setEtapes((current) => current.map((etape, i) => (i === index ? { ...etape, ...patch } : etape)));
   };
 
   const envoyer = () => {
-    if (!token) {
-      toast.info('Connectez-vous pour envoyer une demande de course.');
-      navigate('/connexion');
-      return;
-    }
     if (!effectiveZoneId) {
       toast.error('Choisissez une zone.');
       return;
     }
 
+    const course = {
+      description: description.trim(),
+      photoUrls: photos,
+      zoneId: effectiveZoneId,
+      modePaiement,
+      etapes: etapesValides.map((etape) => ({
+        description: etape.description.trim(),
+        pointDeRepere: etape.pointDeRepere.trim(),
+        adresse: etape.adresse.trim() || undefined,
+      })),
+    };
+
+    if (!token) {
+      creerInvite.mutate(
+        { ...course, invite: contact },
+        {
+          onSuccess: (creee) => void apresCreationInvite(creee, { mode: modePaiement, statut: 'en_attente' }),
+          onError: (error) => toast.error(error.message),
+        },
+      );
+      return;
+    }
+
     createCommande.mutate(
-      {
-        description: description.trim(),
-        zoneId: effectiveZoneId,
-        modePaiement,
-        etapes: etapesValides.map((etape) => ({
-          description: etape.description.trim(),
-          pointDeRepere: etape.pointDeRepere.trim(),
-          adresse: etape.adresse.trim() || undefined,
-        })),
-      },
+      course,
       {
         onSuccess: (commande) => {
-          toast.success('Course envoyée !');
-          navigate(`/courses-express/commandes/${commande.id}`);
+          apresCreation.continuer(commande, `/courses-express/commandes/${commande.id}`, 'Course envoyée !');
         },
         onError: (error) => toast.error(error.message),
       },
@@ -116,6 +149,15 @@ export function CoursesExpressFormPage() {
           required
         />
       </section>
+
+      <PhotoPicker
+        usage="courses"
+        max={3}
+        label="Photos utiles (document, article, lieu)"
+        value={photos}
+        onChange={setPhotos}
+        onEnvoiChange={setPhotoEnCours}
+      />
 
       {zones && zones.length > 1 && (
         <section className="space-y-2">
@@ -192,12 +234,18 @@ export function CoursesExpressFormPage() {
         </div>
       )}
 
-      <Button
-        className="w-full"
-        disabled={!peutConfirmer || createCommande.isPending}
-        onClick={envoyer}
-      >
-        {createCommande.isPending ? 'Envoi...' : token ? 'Confirmer la demande' : 'Se connecter pour confirmer'}
+      {!token &&
+        (sansCompte ? (
+          <section className="space-y-2">
+            <h2 className="text-sm font-semibold">Vos coordonnées</h2>
+            <ContactInviteFields value={contact} onChange={setContact} />
+          </section>
+        ) : (
+          <ChoixCompteInvite onSansCompte={() => setSansCompte(true)} />
+        ))}
+
+      <Button className="w-full" disabled={!peutConfirmer || envoiEnCours} onClick={envoyer}>
+        {envoiEnCours ? 'Envoi...' : 'Confirmer la demande'}
       </Button>
     </div>
   );

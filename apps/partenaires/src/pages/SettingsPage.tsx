@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { TYPES_CUISINE } from '@delivero/config/types-cuisine';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,8 @@ function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
   const [nom, setNom] = useState(restaurant.nom);
   const [description, setDescription] = useState(restaurant.description ?? '');
   const [horaires, setHoraires] = useState(restaurant.horaires ?? '');
+  const [typesCuisine, setTypesCuisine] = useState<string[]>(restaurant.typesCuisine);
+  const [delai, setDelai] = useState(restaurant.delaiPreparationMin?.toString() ?? '');
 
   return (
     <form
@@ -21,7 +24,13 @@ function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
       onSubmit={(event) => {
         event.preventDefault();
         updateRestaurant.mutate(
-          { nom: nom.trim(), description: description.trim() || undefined, horaires: horaires.trim() || undefined },
+          {
+            nom: nom.trim(),
+            description: description.trim() || undefined,
+            horaires: horaires.trim() || undefined,
+            typesCuisine,
+            delaiPreparationMin: delai ? Number(delai) : undefined,
+          },
           {
             onSuccess: () => toast.success('Fiche restaurant mise à jour.'),
             onError: (error) => toast.error(error.message),
@@ -46,6 +55,46 @@ function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
           placeholder="ex. Tous les jours 11h00–22h30"
           value={horaires}
           onChange={(event) => setHoraires(event.target.value)}
+        />
+      </div>
+
+      {/* Filtres du catalogue client (F-CLI-11). */}
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium">Types de cuisine</legend>
+        <div className="flex flex-wrap gap-2">
+          {TYPES_CUISINE.map((cuisine) => {
+            const coche = typesCuisine.includes(cuisine);
+            return (
+              <button
+                key={cuisine}
+                type="button"
+                aria-pressed={coche}
+                onClick={() =>
+                  setTypesCuisine(coche ? typesCuisine.filter((t) => t !== cuisine) : [...typesCuisine, cuisine])
+                }
+                className={
+                  coche
+                    ? 'h-9 rounded-full bg-primary px-3.5 text-sm font-medium text-primary-foreground'
+                    : 'h-9 rounded-full bg-secondary px-3.5 text-sm font-medium text-secondary-foreground'
+                }
+              >
+                {cuisine}
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="delai">Délai de préparation moyen (minutes)</Label>
+        <Input
+          id="delai"
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={240}
+          value={delai}
+          onChange={(event) => setDelai(event.target.value)}
         />
       </div>
 

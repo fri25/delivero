@@ -80,6 +80,9 @@ export interface CommandeRepas {
     adresseId: string | null;
     adresse: { libelle: string; pointDeRepere: string } | null;
     client: { nom: string; telephone: string } | null;
+    /** Guest orders (F-CLI-02): contact given at order time, client is null. */
+    clientNomInvite?: string | null;
+    clientTelephoneInvite?: string | null;
     paiement: { mode: ModePaiement; statut: string } | null;
   };
   partenaire: {
@@ -112,6 +115,7 @@ export interface CommandeColis {
   statut: StatutColis;
   taille: TailleColis;
   fragile: boolean;
+  photoUrl: string | null;
   valeurDeclaree: string | null;
   montantContreRemboursement: string | null;
   montantEncaisse: string | null;
@@ -130,6 +134,9 @@ export interface CommandeColis {
     id: string;
     montantTotal: string | null;
     client: { id: string; nom: string; telephone: string } | null;
+    /** Guest orders (F-CLI-02): contact given at order time, client is null. */
+    clientNomInvite?: string | null;
+    clientTelephoneInvite?: string | null;
   };
 }
 
@@ -181,6 +188,9 @@ export interface CommandeEmplettes {
     adresse: { libelle: string; pointDeRepere: string } | null;
     montantTotal: string | null;
     client: { id: string; nom: string; telephone: string } | null;
+    /** Guest orders (F-CLI-02): contact given at order time, client is null. */
+    clientNomInvite?: string | null;
+    clientTelephoneInvite?: string | null;
   };
 }
 
@@ -207,6 +217,7 @@ export interface EtapeCourseExpress {
 export interface CommandeCoursesExpress {
   id: string;
   description: string;
+  photoUrls: string[];
   statut: StatutCoursesExpress;
   motif: string | null;
   createdAt: string;
@@ -217,5 +228,8 @@ export interface CommandeCoursesExpress {
     id: string;
     montantTotal: string | null;
     client: { id: string; nom: string; telephone: string } | null;
+    /** Guest orders (F-CLI-02): contact given at order time, client is null. */
+    clientNomInvite?: string | null;
+    clientTelephoneInvite?: string | null;
   };
 }

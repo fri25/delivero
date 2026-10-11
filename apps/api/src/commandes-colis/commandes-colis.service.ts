@@ -1,4 +1,10 @@
 import {
+  type Demandeur,
+  demandeurCommande,
+  estDemandeur,
+  type InfosInvite,
+} from '../invite/infos-invite';
+import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
@@ -20,7 +26,16 @@ import {
 } from '../livreurs/periode-livreur';
 import { PrismaService } from '../prisma/prisma.service';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
+import { MediasService } from '../medias/medias.service';
+import {
+  type ContactCommande,
+  NotificationsService,
+} from '../notifications/notifications.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import {
+  marquerARembourserSiPaye,
+  PAIEMENT_ENGAGE_WHERE,
+} from '../paiements/paiement-engage';
 import { CreateCommandeColisDto } from './dto/create-commande-colis.dto';
 import { DeclarerLitigeColisDto } from './dto/declarer-litige-colis.dto';
 import { LivrerColisDto } from './dto/livrer-colis.dto';
@@ -31,6 +46,12 @@ const DETAIL_INCLUDE = {
       adresse: true,
       client: { select: { id: true, nom: true, telephone: true } },
       paiement: { select: { mode: true, statut: true } },
+      // F-CLI-08: tells the client what is left to rate.
+      notations: { select: { cible: true, note: true } },
+      // F-CLI-26: the client sees who delivers and can call them.
+      livreur: {
+        select: { user: { select: { nom: true, telephone: true } } },
+      },
     },
   },
   adresseEnlevement: true,
@@ -54,6 +75,9 @@ const LIVREUR_OMIT = { codeOtp: true } satisfies Prisma.CommandeColisOmit;
 // + LIVREUR_OMIT, utilisés par getOwnedByLivreur).
 const DISPONIBLES_INCLUDE = {
   commande: {
+    // V11 also covers guest orders (F-CLI-02): their contact lives on
+    // Commande itself, so it must be omitted explicitly here.
+    omit: { clientNomInvite: true, clientTelephoneInvite: true },
     include: {
       adresse: true,
       paiement: { select: { mode: true, statut: true } },
@@ -99,16 +123,28 @@ export class CommandesColisService {
     private readonly prisma: PrismaService,
     private readonly portefeuille: PortefeuilleService,
     private readonly realtime: RealtimeGateway,
+    private readonly notifications: NotificationsService,
+    private readonly medias: MediasService,
     private readonly perimetre: PerimetreV1Service,
   ) {}
 
   // F-CLI-05 : voir même principe que commandes-repas.service.ts.
-  private notifierClient(clientId: string, commandeId: string, statut: string) {
-    this.realtime.emitToUser(clientId, 'commande:statut', {
-      typeService: 'colis',
-      commandeId,
-      statut,
-    });
+  private notifierClient(
+    commande: ContactCommande,
+    commandeId: string,
+    statut: string,
+  ) {
+    // Real-time refresh only exists for signed-in clients; guests poll.
+    if (commande.clientId) {
+      this.realtime.emitToUser(commande.clientId, 'commande:statut', {
+        typeService: 'colis',
+        commandeId,
+        statut,
+      });
+    }
+    // F-CLI-09: push or WhatsApp/SMS, key steps only (guests: WhatsApp/SMS
+    // with their tracking link).
+    this.notifications.commandeModifiee(commande, 'colis', commandeId, statut);
   }
 
   async estimer(zoneId: string, taille: TailleColis) {
@@ -116,16 +152,29 @@ export class CommandesColisService {
     return { zoneId, taille, tarif };
   }
 
-  async create(clientId: string, dto: CreateCommandeColisDto) {
+  /**
+   * `clientId` null + `invite` = guest order (F-CLI-02), created through
+   * InviteService only — never reachable with a null clientId otherwise.
+   */
+  async create(
+    clientId: string | null,
+    dto: CreateCommandeColisDto,
+    invite?: InfosInvite,
+  ) {
     this.perimetre.assertModePaiementOuvert(dto.modePaiement);
     this.perimetre.assertContreRemboursementOuvert(
       dto.montantContreRemboursement,
     );
 
+    this.medias.assertUrlsAutorisees(
+      dto.photoUrl ? [dto.photoUrl] : undefined,
+      'colis',
+    );
+
     const adresse = await this.prisma.adresse.findUnique({
       where: { id: dto.adresseEnlevementId },
     });
-    if (!adresse || adresse.userId !== clientId) {
+    if (!adresse || adresse.userId !== clientId || adresse.archiveeAt) {
       throw new NotFoundException('Adresse d’enlèvement introuvable.');
     }
 
@@ -147,7 +196,7 @@ export class CommandesColisService {
       const commande = await tx.commande.create({
         data: {
           typeService: TypeService.colis,
-          clientId,
+          ...demandeurCommande(clientId, invite),
           montantTotal: tarif,
         },
       });
@@ -182,6 +231,7 @@ export class CommandesColisService {
           longitudeLivraison: dto.longitudeLivraison,
           valeurDeclaree: dto.valeurDeclaree,
           fragile: dto.fragile ?? false,
+          photoUrl: dto.photoUrl,
           montantContreRemboursement: dto.montantContreRemboursement,
           conditionsAcceptees: dto.conditionsAcceptees,
           programmationAt: dto.programmationAt
@@ -229,7 +279,8 @@ export class CommandesColisService {
     return this.prisma.commandeColis.findMany({
       where: {
         statut: StatutColis.confirmee,
-        commande: { livreurId: null },
+        // Unpaid Mobile Money orders are not offered to livreurs.
+        commande: { livreurId: null, paiement: PAIEMENT_ENGAGE_WHERE },
         zoneId: livreur.zoneId,
         OR: [
           { programmationAt: null },
@@ -286,7 +337,9 @@ export class CommandesColisService {
         montantContreRemboursement: true,
         commande: {
           select: {
+            id: true,
             clientId: true,
+            clientTelephoneInvite: true,
             montantTotal: true,
             paiement: { select: { mode: true } },
           },
@@ -319,6 +372,7 @@ export class CommandesColisService {
         where: {
           id: commandeColis.commandeId,
           livreurId: null,
+          paiement: PAIEMENT_ENGAGE_WHERE,
           commandeColis: {
             statut: StatutColis.confirmee,
             zoneId: livreur.zoneId,
@@ -339,13 +393,11 @@ export class CommandesColisService {
         omit: LIVREUR_OMIT,
       });
     });
-    if (commandeColis.commande.clientId) {
-      this.notifierClient(
-        commandeColis.commande.clientId,
-        id,
-        StatutColis.livreur_en_route_enlevement,
-      );
-    }
+    this.notifierClient(
+      commandeColis.commande,
+      id,
+      StatutColis.livreur_en_route_enlevement,
+    );
     return updated;
   }
 
@@ -360,13 +412,7 @@ export class CommandesColisService {
       include: DETAIL_INCLUDE,
       omit: LIVREUR_OMIT,
     });
-    if (commandeColis.commande.clientId) {
-      this.notifierClient(
-        commandeColis.commande.clientId,
-        id,
-        StatutColis.colis_recupere,
-      );
-    }
+    this.notifierClient(commandeColis.commande, id, StatutColis.colis_recupere);
     return updated;
   }
 
@@ -379,13 +425,7 @@ export class CommandesColisService {
       include: DETAIL_INCLUDE,
       omit: LIVREUR_OMIT,
     });
-    if (commandeColis.commande.clientId) {
-      this.notifierClient(
-        commandeColis.commande.clientId,
-        id,
-        StatutColis.en_route,
-      );
-    }
+    this.notifierClient(commandeColis.commande, id, StatutColis.en_route);
     return updated;
   }
 
@@ -428,13 +468,7 @@ export class CommandesColisService {
       );
       return result;
     });
-    if (commandeColis.commande.clientId) {
-      this.notifierClient(
-        commandeColis.commande.clientId,
-        id,
-        StatutColis.livre,
-      );
-    }
+    this.notifierClient(commandeColis.commande, id, StatutColis.livre);
     return updated;
   }
 
@@ -461,28 +495,25 @@ export class CommandesColisService {
       include: DETAIL_INCLUDE,
       omit: LIVREUR_OMIT,
     });
-    if (commandeColis.commande.clientId) {
-      this.notifierClient(
-        commandeColis.commande.clientId,
-        id,
-        StatutColis.litige,
-      );
-    }
+    this.notifierClient(commandeColis.commande, id, StatutColis.litige);
     return updated;
   }
 
   // Annulation possible uniquement avant l'enlèvement (depuis confirmee),
   // conforme à la machine à états de docs/service-colis.md.
-  async annuler(userId: string, id: string) {
+  async annuler(demandeur: Demandeur, id: string) {
     const commandeColis = await this.getDetail(id);
-    if (commandeColis.commande.clientId !== userId) {
+    if (!estDemandeur(commandeColis.commande, demandeur)) {
       throw new ForbiddenException('Cette commande ne vous appartient pas.');
     }
     this.assertStatut(commandeColis, StatutColis.confirmee);
-    return this.prisma.commandeColis.update({
-      where: { id },
-      data: { statut: StatutColis.annulee },
-      include: DETAIL_INCLUDE,
+    return this.prisma.$transaction(async (tx) => {
+      await marquerARembourserSiPaye(tx, commandeColis.commandeId);
+      return tx.commandeColis.update({
+        where: { id },
+        data: { statut: StatutColis.annulee },
+        include: DETAIL_INCLUDE,
+      });
     });
   }
 
@@ -507,6 +538,11 @@ export class CommandesColisService {
       );
     }
     return Math.round(Number(grille.tarifBase) * MAJORATION_TAILLE[taille]);
+  }
+
+  /** Guest tracking page (F-CLI-02); the caller has verified the link. */
+  findOneForInvite(id: string) {
+    return this.getDetail(id);
   }
 
   private async getDetail(id: string): Promise<CommandeColisDetail> {

@@ -22,3 +22,23 @@ export function useRegister() {
     mutationFn: (dto: RegisterInput) => apiFetch<AuthResponse>('/auth/register', { method: 'POST', body: dto }),
   });
 }
+
+export interface OtpDemande {
+  telephone: string;
+  nouveauCompte: boolean;
+  expireDansSecondes: number;
+}
+
+export function useDemanderOtp() {
+  return useMutation({
+    mutationFn: (telephone: string) =>
+      apiFetch<OtpDemande>('/auth/otp/demander', { method: 'POST', body: { telephone } }),
+  });
+}
+
+export function useVerifierOtp() {
+  return useMutation({
+    mutationFn: (dto: { telephone: string; code: string; nom?: string }) =>
+      apiFetch<AuthResponse>('/auth/otp/verifier', { method: 'POST', body: dto }),
+  });
+}

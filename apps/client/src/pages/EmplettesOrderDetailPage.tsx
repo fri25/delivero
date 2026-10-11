@@ -8,6 +8,8 @@ import {
   useCommandeEmplettes,
   useValiderDepassement,
 } from '@/api/commandes-emplettes';
+import { LivreurCard } from '@/components/orders/LivreurCard';
+import { isStatutEmplettesActif } from '@/lib/statut-emplettes';
 import { EmplettesStatusStepper } from '@/components/orders/EmplettesStatusStepper';
 import { formatPrixFcfa } from '@/lib/format';
 import type { ArticleEmplette, StatutArticleEmplette } from '@/api/types';
@@ -76,6 +78,8 @@ export function EmplettesOrderDetailPage() {
       </div>
 
       <EmplettesStatusStepper statut={commande.statut} motif={commande.motif} />
+
+      <LivreurCard livreur={commande.commande.livreur} actif={isStatutEmplettesActif(commande.statut)} />
 
       {commande.statut === 'validation_depassement' && (
         <div className="space-y-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">

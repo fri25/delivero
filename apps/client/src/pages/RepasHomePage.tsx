@@ -1,3 +1,4 @@
+import { ESPECES_ACTIF } from '@delivero/config/perimetre-v1';
 import { useMemo, useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -8,12 +9,18 @@ import { RestaurantCard } from '@/components/restaurants/RestaurantCard';
 import { RestaurantCardSkeleton } from '@/components/restaurants/RestaurantCardSkeleton';
 import { getRestaurantImage } from '@/data/images';
 import { MediaFrame } from '@/components/restaurants/MediaFrame';
-import { cn } from '@/lib/utils';
+import { CatalogueFilters } from '@/components/restaurants/CatalogueFilters';
+import {
+  FILTRES_VIDES,
+  filtrerRestaurants,
+  filtresActifs,
+  type FiltresCatalogue,
+} from '@/lib/filtres-catalogue';
 
 export function RepasHomePage() {
   const [search, setSearch] = useState('');
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
-  const [openOnly, setOpenOnly] = useState(false);
+  const [filtres, setFiltres] = useState<FiltresCatalogue>(FILTRES_VIDES);
 
   // Source de suggestions : le catalogue complet, chargé une fois, filtré côté
   // client — pas d'aller-retour réseau à chaque frappe pour la liste déroulante.
@@ -27,8 +34,8 @@ export function RepasHomePage() {
   }, [search, allRestaurants]);
 
   const visibleRestaurants = useMemo(
-    () => (openOnly ? (restaurants ?? []).filter((r) => r.statutOuverture) : (restaurants ?? [])),
-    [restaurants, openOnly],
+    () => filtrerRestaurants(restaurants ?? [], filtres),
+    [restaurants, filtres],
   );
 
   const ouvertsMaintenant = useMemo(
@@ -43,7 +50,8 @@ export function RepasHomePage() {
           Natitingou a faim ? On s'en occupe.
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Vos restaurants préférés, livrés chez vous — payez en espèces ou en Mobile Money.
+          Vos restaurants préférés, livrés chez vous — payez{' '}
+          {ESPECES_ACTIF ? 'en espèces ou en Mobile Money' : 'par Mobile Money'}.
         </p>
       </div>
 
@@ -75,24 +83,10 @@ export function RepasHomePage() {
           )}
         </div>
 
-        <div className="mt-2.5 flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none]">
-          <button
-            type="button"
-            aria-pressed={openOnly}
-            onClick={() => setOpenOnly((v) => !v)}
-            className={cn(
-              'h-8 shrink-0 rounded-full px-3.5 text-sm font-medium whitespace-nowrap transition-colors',
-              openOnly
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-secondary-foreground hover:bg-secondary/70',
-            )}
-          >
-            Ouverts maintenant
-          </button>
-        </div>
+        <CatalogueFilters filtres={filtres} onChange={setFiltres} />
       </div>
 
-      {!search && ouvertsMaintenant.length > 0 && (
+      {!search && !filtresActifs(filtres) && ouvertsMaintenant.length > 0 && (
         <section className="space-y-2.5">
           <h2 className="font-heading text-sm font-semibold tracking-wide text-foreground uppercase">
             Ouverts maintenant
@@ -114,7 +108,7 @@ export function RepasHomePage() {
 
       <section className="space-y-3">
         <h2 className="font-heading text-sm font-semibold tracking-wide text-foreground uppercase">
-          {search ? `Résultats pour « ${search} »` : 'Tous les restaurants'}
+          {search ? `Résultats pour « ${search} »` : filtresActifs(filtres) ? 'Résultats filtrés' : 'Tous les restaurants'}
         </h2>
 
         {isPending && (
@@ -134,17 +128,21 @@ export function RepasHomePage() {
         {!isPending && !isError && visibleRestaurants.length === 0 && (
           <div className="flex flex-col items-center gap-3 rounded-2xl bg-secondary/60 px-6 py-10 text-center">
             <p className="text-sm font-medium text-foreground">
-              {search ? `Aucun restaurant ne correspond à « ${search} ».` : 'Aucun restaurant ouvert pour le moment.'}
+              {search
+                ? `Aucun restaurant ne correspond à « ${search} ».`
+                : filtresActifs(filtres)
+                  ? 'Aucun restaurant ne correspond à ces filtres.'
+                  : 'Aucun restaurant ouvert pour le moment.'}
             </p>
             <p className="text-sm text-muted-foreground">
               Essayez un autre nom, ou explorez tout le catalogue.
             </p>
-            {(search || openOnly) && (
+            {(search || filtresActifs(filtres)) && (
               <Button
                 variant="outline"
                 onClick={() => {
                   setSearch('');
-                  setOpenOnly(false);
+                  setFiltres(FILTRES_VIDES);
                 }}
               >
                 <X /> Réinitialiser

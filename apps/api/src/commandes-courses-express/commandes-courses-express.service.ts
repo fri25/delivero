@@ -1,4 +1,10 @@
 import {
+  type Demandeur,
+  demandeurCommande,
+  estDemandeur,
+  type InfosInvite,
+} from '../invite/infos-invite';
+import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
@@ -18,7 +24,16 @@ import {
 } from '../livreurs/periode-livreur';
 import { PrismaService } from '../prisma/prisma.service';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
+import { MediasService } from '../medias/medias.service';
+import {
+  type ContactCommande,
+  NotificationsService,
+} from '../notifications/notifications.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import {
+  marquerARembourserSiPaye,
+  PAIEMENT_ENGAGE_WHERE,
+} from '../paiements/paiement-engage';
 import { CreateCommandeCoursesExpressDto } from './dto/create-commande-courses-express.dto';
 import { DeclarerLitigeCoursesExpressDto } from './dto/declarer-litige-courses-express.dto';
 
@@ -27,6 +42,12 @@ const DETAIL_INCLUDE = {
     include: {
       client: { select: { id: true, nom: true, telephone: true } },
       paiement: { select: { mode: true, statut: true } },
+      // F-CLI-08: tells the client what is left to rate.
+      notations: { select: { cible: true, note: true } },
+      // F-CLI-26: the client sees who delivers and can call them.
+      livreur: {
+        select: { user: { select: { nom: true, telephone: true } } },
+      },
     },
   },
   etapes: { orderBy: { ordre: 'asc' } },
@@ -42,6 +63,9 @@ type CommandeCoursesExpressDetail = Prisma.CommandeCoursesExpressGetPayload<{
 // les termes de la course elle-même, pas une donnée personnelle du client.
 const DISPONIBLES_INCLUDE = {
   commande: {
+    // V11 also covers guest orders (F-CLI-02): their contact lives on
+    // Commande itself, so it must be omitted explicitly here.
+    omit: { clientNomInvite: true, clientTelephoneInvite: true },
     include: {
       paiement: { select: { mode: true, statut: true } },
     },
@@ -63,16 +87,33 @@ export class CommandesCoursesExpressService {
     private readonly prisma: PrismaService,
     private readonly portefeuille: PortefeuilleService,
     private readonly realtime: RealtimeGateway,
+    private readonly notifications: NotificationsService,
+    private readonly medias: MediasService,
     private readonly perimetre: PerimetreV1Service,
   ) {}
 
   // F-CLI-05 : voir même principe que commandes-repas.service.ts.
-  private notifierClient(clientId: string, commandeId: string, statut: string) {
-    this.realtime.emitToUser(clientId, 'commande:statut', {
-      typeService: 'courses_express',
+  private notifierClient(
+    commande: ContactCommande,
+    commandeId: string,
+    statut: string,
+  ) {
+    // Real-time refresh only exists for signed-in clients; guests poll.
+    if (commande.clientId) {
+      this.realtime.emitToUser(commande.clientId, 'commande:statut', {
+        typeService: 'courses_express',
+        commandeId,
+        statut,
+      });
+    }
+    // F-CLI-09: push or WhatsApp/SMS, key steps only (guests: WhatsApp/SMS
+    // with their tracking link).
+    this.notifications.commandeModifiee(
+      commande,
+      'courses_express',
       commandeId,
       statut,
-    });
+    );
   }
 
   async estimer(zoneId: string, nombreEtapes: number) {
@@ -80,8 +121,17 @@ export class CommandesCoursesExpressService {
     return { zoneId, nombreEtapes, tarif };
   }
 
-  async create(clientId: string, dto: CreateCommandeCoursesExpressDto) {
+  /**
+   * `clientId` null + `invite` = guest order (F-CLI-02), created through
+   * InviteService only — never reachable with a null clientId otherwise.
+   */
+  async create(
+    clientId: string | null,
+    dto: CreateCommandeCoursesExpressDto,
+    invite?: InfosInvite,
+  ) {
     this.perimetre.assertModePaiementOuvert(dto.modePaiement);
+    this.medias.assertUrlsAutorisees(dto.photoUrls, 'courses');
 
     const zone = await this.prisma.zone.findUnique({
       where: { id: dto.zoneId },
@@ -99,7 +149,7 @@ export class CommandesCoursesExpressService {
         const commande = await tx.commande.create({
           data: {
             typeService: TypeService.courses_express,
-            clientId,
+            ...demandeurCommande(clientId, invite),
             montantTotal: tarif,
           },
         });
@@ -123,6 +173,7 @@ export class CommandesCoursesExpressService {
             commandeId: commande.id,
             description: dto.description,
             zoneId: dto.zoneId,
+            photoUrls: dto.photoUrls ?? [],
             etapes: {
               create: dto.etapes.map((etape, index) => ({
                 ordre: index + 1,
@@ -161,7 +212,8 @@ export class CommandesCoursesExpressService {
     return this.prisma.commandeCoursesExpress.findMany({
       where: {
         statut: StatutCoursesExpress.confirmee,
-        commande: { livreurId: null },
+        // Unpaid Mobile Money orders are not offered to livreurs.
+        commande: { livreurId: null, paiement: PAIEMENT_ENGAGE_WHERE },
         zoneId: livreur.zoneId,
       },
       include: DISPONIBLES_INCLUDE,
@@ -210,7 +262,9 @@ export class CommandesCoursesExpressService {
           commandeId: true,
           commande: {
             select: {
+              id: true,
               clientId: true,
+              clientTelephoneInvite: true,
               montantTotal: true,
               paiement: { select: { mode: true } },
             },
@@ -242,6 +296,7 @@ export class CommandesCoursesExpressService {
         where: {
           id: commandeCoursesExpress.commandeId,
           livreurId: null,
+          paiement: PAIEMENT_ENGAGE_WHERE,
           commandeCoursesExpress: {
             statut: StatutCoursesExpress.confirmee,
             zoneId: livreur.zoneId,
@@ -261,13 +316,11 @@ export class CommandesCoursesExpressService {
         include: DETAIL_INCLUDE,
       });
     });
-    if (commandeCoursesExpress.commande.clientId) {
-      this.notifierClient(
-        commandeCoursesExpress.commande.clientId,
-        id,
-        StatutCoursesExpress.en_cours,
-      );
-    }
+    this.notifierClient(
+      commandeCoursesExpress.commande,
+      id,
+      StatutCoursesExpress.en_cours,
+    );
     return updated;
   }
 
@@ -322,9 +375,7 @@ export class CommandesCoursesExpressService {
       }
       return result;
     });
-    if (commande.commande.clientId) {
-      this.notifierClient(commande.commande.clientId, id, nouveauStatut);
-    }
+    this.notifierClient(commande.commande, id, nouveauStatut);
     return updated;
   }
 
@@ -344,28 +395,25 @@ export class CommandesCoursesExpressService {
       data: { statut: StatutCoursesExpress.litige, motif: dto.motif },
       include: DETAIL_INCLUDE,
     });
-    if (commande.commande.clientId) {
-      this.notifierClient(
-        commande.commande.clientId,
-        id,
-        StatutCoursesExpress.litige,
-      );
-    }
+    this.notifierClient(commande.commande, id, StatutCoursesExpress.litige);
     return updated;
   }
 
   // Annulation possible uniquement avant l'attribution (confirmee), conforme
   // à la machine à états de docs/service-courses-express.md.
-  async annuler(userId: string, id: string) {
+  async annuler(demandeur: Demandeur, id: string) {
     const commande = await this.getDetail(id);
-    if (commande.commande.clientId !== userId) {
+    if (!estDemandeur(commande.commande, demandeur)) {
       throw new ForbiddenException('Cette commande ne vous appartient pas.');
     }
     this.assertStatut(commande, StatutCoursesExpress.confirmee);
-    return this.prisma.commandeCoursesExpress.update({
-      where: { id },
-      data: { statut: StatutCoursesExpress.annulee },
-      include: DETAIL_INCLUDE,
+    return this.prisma.$transaction(async (tx) => {
+      await marquerARembourserSiPaye(tx, commande.commandeId);
+      return tx.commandeCoursesExpress.update({
+        where: { id },
+        data: { statut: StatutCoursesExpress.annulee },
+        include: DETAIL_INCLUDE,
+      });
     });
   }
 
@@ -383,6 +431,11 @@ export class CommandesCoursesExpressService {
       Math.round(Number(grille.tarifBase)) +
       arretsSupplementaires * MAJORATION_PAR_ARRET_SUPPLEMENTAIRE
     );
+  }
+
+  /** Guest tracking page (F-CLI-02); the caller has verified the link. */
+  findOneForInvite(id: string) {
+    return this.getDetail(id);
   }
 
   private async getDetail(id: string): Promise<CommandeCoursesExpressDetail> {

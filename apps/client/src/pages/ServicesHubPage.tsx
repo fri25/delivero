@@ -1,8 +1,10 @@
 import { EMPLETTES_ACTIF } from '@delivero/config/perimetre-v1';
-import { History, MessageCircle } from 'lucide-react';
+import { History, MapPin, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logo from '@/assets/logo.webp';
 import { ActiveOrderBanner } from '@/components/home/ActiveOrderBanner';
+import { ActiverNotificationsCard } from '@/components/home/ActiverNotificationsCard';
+import { CommandesInviteCard } from '@/components/home/CommandesInviteCard';
 import { ServiceTile, type TileSlide } from '@/components/home/ServiceTile';
 import { ColisIllustration } from '@/components/home/illustrations/ColisIllustration';
 import { CoursesExpressIllustration } from '@/components/home/illustrations/CoursesExpressIllustration';
@@ -23,13 +25,16 @@ const COURSES_EXPRESS_SLIDE: TileSlide = {
 };
 const EMPLETTES_SLIDE: TileSlide = { illustration: <EmplettesIllustration variant={1} /> };
 
-// Numéro support à confirmer avant mise en production.
-const WHATSAPP_SUPPORT = 'https://wa.me/22900000000';
+// Support ChapExpress : 01 57 86 69 59 (format béninois à 10 chiffres, le 01
+// fait partie du numéro et reste après l'indicatif +229).
+const WHATSAPP_SUPPORT = 'https://wa.me/2290157866959';
 
 export function ServicesHubPage() {
   return (
     <div className="space-y-4">
       <ActiveOrderBanner />
+      <ActiverNotificationsCard />
+      <CommandesInviteCard />
 
       <section className="flex items-center gap-3 rounded-2xl bg-card px-3.5 py-3 ring-1 ring-foreground/10">
         <img src={logo} alt="ChapExpress" className="h-14 w-auto shrink-0" />
@@ -74,19 +79,26 @@ export function ServicesHubPage() {
         )}
       </section>
 
-      <section className="grid grid-cols-2 gap-2">
+      <section className="grid grid-cols-3 gap-2">
         <Link
           to="/commandes"
-          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-card px-3 text-sm font-medium text-foreground ring-1 ring-foreground/10 transition-colors hover:bg-secondary"
+          className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl bg-card px-2 py-2 text-center text-xs font-medium text-foreground ring-1 ring-foreground/10 transition-colors hover:bg-secondary"
         >
           <History className="size-4 shrink-0" aria-hidden="true" />
           Mes commandes
+        </Link>
+        <Link
+          to="/adresses"
+          className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl bg-card px-2 py-2 text-center text-xs font-medium text-foreground ring-1 ring-foreground/10 transition-colors hover:bg-secondary"
+        >
+          <MapPin className="size-4 shrink-0" aria-hidden="true" />
+          Mes adresses
         </Link>
         <a
           href={WHATSAPP_SUPPORT}
           target="_blank"
           rel="noreferrer"
-          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-card px-3 text-sm font-medium text-foreground ring-1 ring-foreground/10 transition-colors hover:bg-secondary"
+          className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl bg-card px-2 py-2 text-center text-xs font-medium text-foreground ring-1 ring-foreground/10 transition-colors hover:bg-secondary"
         >
           <MessageCircle className="size-4 shrink-0" aria-hidden="true" />
           Aide WhatsApp

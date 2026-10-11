@@ -37,12 +37,19 @@ Choix tranchés (voir [docs/decisions-arbitrage.md](docs/decisions-arbitrage.md)
   (F-CLI-05, 4 services) et l'alerte nouvelle commande restaurant (F-RES-01) —
   voir `apps/api/src/realtime/`. Le polling reste en place comme filet de
   secours (reconnexion, 3G instable) ; livreur et back-office non couverts.
-- Push : Web Push (VAPID) + fallback WhatsApp/SMS obligatoire — **[À FAIRE]**.
-- Paiement : agrégateur Mobile Money, FedaPay (choisi, non intégré — le mode de
-  paiement est aujourd'hui seulement enregistré, aucun appel réel à un
-  agrégateur).
+- Push : Web Push (VAPID) + fallback WhatsApp/SMS obligatoire — en place côté
+  client depuis le 05/10 (`apps/api/src/notifications/`), mais **fournisseur
+  WhatsApp/SMS non choisi** : pilote `console` (messages et codes OTP écrits
+  dans les logs). Push non proposé dans partenaires/livreur.
+- Paiement : agrégateur Mobile Money, FedaPay — intégré le 05/10 (page de
+  paiement hébergée + webhook signé, `apps/api/src/paiements/`), **pas encore
+  validé en sandbox**. Paiement à la commande : une commande Mobile Money non
+  payée n'est transmise ni au restaurant ni aux livreurs. Remboursements
+  manuels (statut `a_rembourser`), sans écran back-office à ce jour.
 - Cartographie : Google Maps Platform — **[À FAIRE]**.
-- Fichiers : stockage objet compatible S3 — **[À FAIRE]**.
+- Fichiers : photos sur Cloudinary (choisi le 06/10, `apps/api/src/medias/`,
+  upload direct signé). Clés à renseigner ; preuve photo livreur et pièces
+  d'identité livreur pas encore branchées.
 
 Détail et arbitrages : [docs/architecture.md](docs/architecture.md).
 
@@ -75,8 +82,9 @@ pnpm --filter @delivero/api prisma:migrate  # migration Prisma en dev
 pnpm --filter @delivero/api prisma:studio   # Prisma Studio
 ```
 
-Les 4 apps front (`client`, `partenaires`, `livreur`, `admin`) n'ont pas de script
-`test` défini à ce jour — aucune suite de tests front n'existe encore.
+`apps/client` a une suite Vitest + Testing Library (`pnpm --filter
+@delivero/client test`, depuis le 06/10). Les 3 autres apps front
+(`partenaires`, `livreur`, `admin`) n'ont toujours aucun test.
 
 ## Conventions
 

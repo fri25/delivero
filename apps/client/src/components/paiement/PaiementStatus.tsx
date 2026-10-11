@@ -1,0 +1,69 @@
+import { Smartphone } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { useInitierPaiement } from '@/api/paiements';
+import type { PaiementResume } from '@/api/types';
+import { formatPrixFcfa } from '@/lib/format';
+import { doitEtrePaye, STATUT_PAIEMENT_LABELS } from '@/lib/paiement';
+
+export function PaiementStatus({
+  commandeId,
+  paiement,
+  montantTotal,
+  commandeClose,
+  payer,
+}: {
+  /** Generic order id (`commande.commande.id`). */
+  commandeId: string;
+  paiement: PaiementResume | null;
+  montantTotal: string | null;
+  /** Order cancelled or refused: nothing left to pay. */
+  commandeClose: boolean;
+  /** Guest orders (F-CLI-02) pay through their tracking link instead. */
+  payer?: { lancer: () => void; enCours: boolean };
+}) {
+  const initier = useInitierPaiement();
+
+  if (!paiement) return null;
+
+  if (!doitEtrePaye(paiement) || commandeClose) {
+    return (
+      <p className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
+        <span className="text-muted-foreground">Paiement</span>
+        <span className="font-medium">{STATUT_PAIEMENT_LABELS[paiement.statut]}</span>
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+      <div className="space-y-1">
+        <p className="font-semibold">
+          {paiement.statut === 'echoue' ? 'Le paiement n’a pas abouti' : 'Paiement en attente'}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Votre commande sera transmise dès réception du paiement Mobile Money (MTN, Moov, Celtiis).
+        </p>
+      </div>
+      <Button
+        className="w-full"
+        disabled={payer ? payer.enCours : initier.isPending}
+        onClick={() =>
+          payer
+            ? payer.lancer()
+            : initier.mutate(commandeId, {
+                onSuccess: (etat) => {
+                  if (!etat.url) toast.success('Cette commande est déjà payée.');
+                },
+                onError: (error) => toast.error(error.message),
+              })
+        }
+      >
+        <Smartphone className="size-4" aria-hidden="true" />
+        {(payer ? payer.enCours : initier.isPending)
+          ? 'Ouverture du paiement...'
+          : `Payer${montantTotal ? ` ${formatPrixFcfa(montantTotal)}` : ''} par Mobile Money`}
+      </Button>
+    </div>
+  );
+}

@@ -4,12 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAnnulerCommande, useCommandeRepas } from '@/api/commandes-repas';
 import { OrderStatusStepper } from '@/components/orders/OrderStatusStepper';
+import { PaiementStatus } from '@/components/paiement/PaiementStatus';
+import { LivreurCard } from '@/components/orders/LivreurCard';
+import { NotationCard } from '@/components/orders/NotationCard';
+import { useNoterCommande } from '@/api/notations';
+import { RotateCcw } from 'lucide-react';
+import { useRecommanderRepas } from '@/lib/recommander';
+import { isStatutRepasActif } from '@/lib/statut-repas';
 import { formatPrixFcfa } from '@/lib/format';
 
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: commande, isPending } = useCommandeRepas(id);
   const annuler = useAnnulerCommande();
+  const noter = useNoterCommande(['commande-repas', id]);
+  const { recommander, enCours: recommandationEnCours } = useRecommanderRepas();
 
   if (isPending) {
     return (
@@ -34,6 +43,28 @@ export function OrderDetailPage() {
       </div>
 
       <OrderStatusStepper statut={commande.statut} motifRefus={commande.motifRefus} />
+
+      <PaiementStatus
+        commandeId={commande.commande.id}
+        paiement={commande.commande.paiement}
+        montantTotal={commande.commande.montantTotal}
+        commandeClose={commande.statut === 'annulee' || commande.statut === 'refusee'}
+      />
+
+      <LivreurCard livreur={commande.commande.livreur} actif={isStatutRepasActif(commande.statut)} />
+
+      <NotationCard
+        livree={commande.statut === 'livree'}
+        cibles={[
+            { cible: 'partenaire' as const, libelle: `Le restaurant ${commande.partenaire.nom}` },
+          ...(commande.commande.livreur
+            ? [{ cible: 'livreur' as const, libelle: `Votre livreur, ${commande.commande.livreur.user.nom}` }]
+            : []),
+        ]}
+        notations={commande.commande.notations}
+        enCours={noter.isPending}
+        onNoter={(notes, callbacks) => noter.mutate({ commandeId: commande.commande.id, notes }, callbacks)}
+      />
 
       <div>
         {commande.lignes.map((ligne) => (
@@ -71,6 +102,13 @@ export function OrderDetailPage() {
           </span>
         </div>
       </div>
+
+      {!isStatutRepasActif(commande.statut) && (
+        <Button className="w-full" disabled={recommandationEnCours} onClick={() => void recommander(commande)}>
+          <RotateCcw className="size-4" aria-hidden="true" />
+          {recommandationEnCours ? 'Préparation du panier...' : 'Recommander'}
+        </Button>
+      )}
 
       {commande.statut === 'en_attente_acceptation' && (
         <Button

@@ -5,12 +5,29 @@ import { CreatePlatDto } from './dto/create-plat.dto';
 import { UpdatePlatDto } from './dto/update-plat.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 
+// [DÉDUIT] "Price" filter (F-CLI-11): no price level is defined per
+// restaurant, so it is derived from the menu — average price of available
+// dishes, drinks and add-ons excluded (they would drag every menu down).
+const CATEGORIES_HORS_PRIX = /boisson|supplément|accompagnement/i;
+
+function prixMoyenRepas(
+  plats: { prix: { toString(): string }; categorie: string | null }[],
+): number | null {
+  const prix = plats
+    .filter((plat) => !CATEGORIES_HORS_PRIX.test(plat.categorie ?? ''))
+    .map((plat) => Number(plat.prix.toString()));
+  if (prix.length === 0) {
+    return null;
+  }
+  return Math.round(prix.reduce((total, p) => total + p, 0) / prix.length);
+}
+
 @Injectable()
 export class RestaurantsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAllPublic(search?: string) {
-    return this.prisma.partenaire.findMany({
+  async findAllPublic(search?: string) {
+    const restaurants = await this.prisma.partenaire.findMany({
       where: {
         type: TypePartenaire.restaurant,
         statutOuverture: true,
@@ -25,9 +42,19 @@ export class RestaurantsService {
         horaires: true,
         noteMoyenne: true,
         statutOuverture: true,
+        typesCuisine: true,
+        delaiPreparationMin: true,
+        plats: {
+          where: { disponible: true },
+          select: { prix: true, categorie: true },
+        },
       },
       orderBy: { nom: 'asc' },
     });
+    return restaurants.map(({ plats, ...restaurant }) => ({
+      ...restaurant,
+      prixMoyen: prixMoyenRepas(plats),
+    }));
   }
 
   // V06 : projection en liste blanche — un `include` sans `select` renvoyait
@@ -46,6 +73,8 @@ export class RestaurantsService {
         pointDeRepere: true,
         statutOuverture: true,
         noteMoyenne: true,
+        typesCuisine: true,
+        delaiPreparationMin: true,
         plats: { orderBy: [{ categorie: 'asc' }, { nom: 'asc' }] },
         zone: { select: { fraisLivraison: true } },
       },

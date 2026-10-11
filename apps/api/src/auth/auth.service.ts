@@ -72,7 +72,8 @@ export class AuthService {
     return this.toProfile(user);
   }
 
-  private buildAuthResponse(user: UserWithRole) {
+  // Also used by OtpService once a code is verified.
+  buildAuthResponse(user: UserWithRole) {
     const accessToken = this.jwtService.sign({
       sub: user.id,
       role: user.role.name,

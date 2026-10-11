@@ -1,4 +1,6 @@
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import { RotateCcw } from 'lucide-react';
+import { modeleColis } from '@/lib/recommander';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -6,7 +8,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAnnulerCommandeColis, useCommandeColis } from '@/api/commandes-colis';
 import { ColisStatusStepper } from '@/components/orders/ColisStatusStepper';
 import { CopyableValue } from '@/components/colis/CopyableValue';
+import { PaiementStatus } from '@/components/paiement/PaiementStatus';
+import { LivreurCard } from '@/components/orders/LivreurCard';
+import { NotationCard } from '@/components/orders/NotationCard';
+import { useNoterCommande } from '@/api/notations';
+import { isStatutColisActif } from '@/lib/statut-colis';
 import { formatPrixFcfa } from '@/lib/format';
+import { miniature } from '@/lib/medias';
 
 const MODE_PAIEMENT_LABELS: Record<string, string> = {
   especes: 'Espèces à la livraison',
@@ -17,6 +25,7 @@ export function ColisOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: commande, isPending } = useCommandeColis(id);
   const annuler = useAnnulerCommandeColis();
+  const noter = useNoterCommande(['commande-colis', id]);
 
   if (isPending) {
     return (
@@ -47,6 +56,55 @@ export function ColisOrderDetailPage() {
 
       <ColisStatusStepper statut={commande.statut} motif={commande.motif} />
 
+      {commande.photoUrl && (
+        <div className="flex flex-wrap gap-2">
+          {[commande.photoUrl].map((url) => (
+            <a key={url} href={url} target="_blank" rel="noreferrer">
+              <img
+                src={miniature(url)}
+                alt="Photo du colis"
+                loading="lazy"
+                className="size-24 rounded-lg object-cover ring-1 ring-foreground/10"
+              />
+            </a>
+          ))}
+        </div>
+      )}
+
+      <PaiementStatus
+        commandeId={commande.commande.id}
+        paiement={commande.commande.paiement}
+        montantTotal={commande.commande.montantTotal}
+        commandeClose={commande.statut === 'annulee'}
+      />
+
+      {/* F-CLI-22 : preuve de remise. Le code de remise est obligatoire à la
+          livraison (RG-07) ; pas de photo tant que le stockage S3 manque. */}
+      {commande.statut === 'livre' && (
+        <div className="space-y-1 rounded-lg border border-border p-3 text-sm">
+          <p className="font-medium">Preuve de livraison</p>
+          <p className="text-muted-foreground">
+            Remis le {new Date(commande.updatedAt).toLocaleString('fr-FR')}
+            {commande.nomReceptionnaire ? ` à ${commande.nomReceptionnaire}` : ''}.
+          </p>
+          <p className="text-muted-foreground">Remise confirmée par le code de remise du destinataire.</p>
+        </div>
+      )}
+
+      <LivreurCard livreur={commande.commande.livreur} actif={isStatutColisActif(commande.statut)} />
+
+      <NotationCard
+        livree={commande.statut === 'livre'}
+        cibles={[
+          ...(commande.commande.livreur
+            ? [{ cible: 'livreur' as const, libelle: `Votre livreur, ${commande.commande.livreur.user.nom}` }]
+            : []),
+        ]}
+        notations={commande.commande.notations}
+        enCours={noter.isPending}
+        onNoter={(notes, callbacks) => noter.mutate({ commandeId: commande.commande.id, notes }, callbacks)}
+      />
+
       <div className="space-y-1 border-t border-border pt-3 text-sm">
         <div className="flex items-center justify-between text-muted-foreground">
           <span>Adresse d'enlèvement</span>
@@ -74,7 +132,7 @@ export function ColisOrderDetailPage() {
         )}
         {commande.commande.paiement && (
           <div className="flex items-center justify-between text-muted-foreground">
-            <span>Frais de livraison</span>
+            <span>Mode de paiement</span>
             <span>{MODE_PAIEMENT_LABELS[commande.commande.paiement.mode] ?? commande.commande.paiement.mode}</span>
           </div>
         )}
@@ -93,6 +151,15 @@ export function ColisOrderDetailPage() {
           <CopyableValue label="Code de remise" value={commande.codeOtp} />
           <CopyableValue label="Lien de suivi à transmettre au destinataire" value={lienSuivi} />
         </div>
+      )}
+
+      {!isStatutColisActif(commande.statut) && (
+        <Button asChild className="w-full">
+          <Link to="/colis" state={{ modele: modeleColis(commande) }}>
+            <RotateCcw className="size-4" aria-hidden="true" />
+            Envoyer un colis similaire
+          </Link>
+        </Button>
       )}
 
       {commande.statut === 'confirmee' && (

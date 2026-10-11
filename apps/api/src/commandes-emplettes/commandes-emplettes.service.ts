@@ -21,7 +21,15 @@ import {
 } from '../livreurs/periode-livreur';
 import { PrismaService } from '../prisma/prisma.service';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
+import {
+  type ContactCommande,
+  NotificationsService,
+} from '../notifications/notifications.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import {
+  marquerARembourserSiPaye,
+  PAIEMENT_ENGAGE_WHERE,
+} from '../paiements/paiement-engage';
 import { CreateCommandeEmplettesDto } from './dto/create-commande-emplettes.dto';
 import { DeclarerLitigeEmplettesDto } from './dto/declarer-litige-emplettes.dto';
 import { PointerArticleDto } from './dto/pointer-article.dto';
@@ -34,6 +42,12 @@ const DETAIL_INCLUDE = {
       adresse: true,
       client: { select: { id: true, nom: true, telephone: true } },
       paiement: { select: { mode: true, statut: true } },
+      // F-CLI-08: tells the client what is left to rate.
+      notations: { select: { cible: true, note: true } },
+      // F-CLI-26: the client sees who delivers and can call them.
+      livreur: {
+        select: { user: { select: { nom: true, telephone: true } } },
+      },
     },
   },
   articles: { orderBy: { createdAt: 'asc' } },
@@ -48,6 +62,9 @@ type CommandeEmplettesDetail = Prisma.CommandeEmplettesGetPayload<{
 // dans commandes-repas.service.ts).
 const DISPONIBLES_INCLUDE = {
   commande: {
+    // V11 also covers guest orders (F-CLI-02): their contact lives on
+    // Commande itself, so it must be omitted explicitly here.
+    omit: { clientNomInvite: true, clientTelephoneInvite: true },
     include: {
       adresse: true,
       paiement: { select: { mode: true, statut: true } },
@@ -70,16 +87,32 @@ export class CommandesEmplettesService {
     private readonly prisma: PrismaService,
     private readonly portefeuille: PortefeuilleService,
     private readonly realtime: RealtimeGateway,
+    private readonly notifications: NotificationsService,
     private readonly perimetre: PerimetreV1Service,
   ) {}
 
   // F-CLI-05 : voir même principe que commandes-repas.service.ts.
-  private notifierClient(clientId: string, commandeId: string, statut: string) {
-    this.realtime.emitToUser(clientId, 'commande:statut', {
-      typeService: 'emplettes',
+  private notifierClient(
+    commande: ContactCommande,
+    commandeId: string,
+    statut: string,
+  ) {
+    // Real-time refresh only exists for signed-in clients; guests poll.
+    if (commande.clientId) {
+      this.realtime.emitToUser(commande.clientId, 'commande:statut', {
+        typeService: 'emplettes',
+        commandeId,
+        statut,
+      });
+    }
+    // F-CLI-09: push or WhatsApp/SMS, key steps only (guests: WhatsApp/SMS
+    // with their tracking link).
+    this.notifications.commandeModifiee(
+      commande,
+      'emplettes',
       commandeId,
       statut,
-    });
+    );
   }
 
   async estimer(zoneId: string, budgetMax: number) {
@@ -113,7 +146,7 @@ export class CommandesEmplettesService {
     const adresse = await this.prisma.adresse.findUnique({
       where: { id: dto.adresseId },
     });
-    if (!adresse || adresse.userId !== clientId) {
+    if (!adresse || adresse.userId !== clientId || adresse.archiveeAt) {
       throw new NotFoundException('Adresse introuvable.');
     }
 
@@ -204,7 +237,8 @@ export class CommandesEmplettesService {
     return this.prisma.commandeEmplettes.findMany({
       where: {
         statut: StatutEmplettes.confirmee,
-        commande: { livreurId: null },
+        // Unpaid Mobile Money orders are not offered to livreurs.
+        commande: { livreurId: null, paiement: PAIEMENT_ENGAGE_WHERE },
         zoneId: livreur.zoneId,
       },
       include: DISPONIBLES_INCLUDE,
@@ -251,7 +285,14 @@ export class CommandesEmplettesService {
         commandeId: true,
         modeFinancement: true,
         budgetMax: true,
-        commande: { select: { clientId: true, montantTotal: true } },
+        commande: {
+          select: {
+            id: true,
+            clientId: true,
+            clientTelephoneInvite: true,
+            montantTotal: true,
+          },
+        },
       },
     });
     if (!commandeEmplettes) {
@@ -291,6 +332,7 @@ export class CommandesEmplettesService {
         where: {
           id: commandeEmplettes.commandeId,
           livreurId: null,
+          paiement: PAIEMENT_ENGAGE_WHERE,
           commandeEmplettes: {
             statut: StatutEmplettes.confirmee,
             zoneId: livreur.zoneId,
@@ -310,13 +352,11 @@ export class CommandesEmplettesService {
         include: DETAIL_INCLUDE,
       });
     });
-    if (commandeEmplettes.commande.clientId) {
-      this.notifierClient(
-        commandeEmplettes.commande.clientId,
-        id,
-        StatutEmplettes.achats_en_cours,
-      );
-    }
+    this.notifierClient(
+      commandeEmplettes.commande,
+      id,
+      StatutEmplettes.achats_en_cours,
+    );
     return updated;
   }
 
@@ -389,9 +429,9 @@ export class CommandesEmplettesService {
       include: DETAIL_INCLUDE,
     });
     // Le client doit valider explicitement (RG-05) : notification prioritaire.
-    if (nouveauDepassement && commande.commande.clientId) {
+    if (nouveauDepassement) {
       this.notifierClient(
-        commande.commande.clientId,
+        commande.commande,
         id,
         StatutEmplettes.validation_depassement,
       );
@@ -459,13 +499,7 @@ export class CommandesEmplettesService {
         include: DETAIL_INCLUDE,
       });
     });
-    if (commande.commande.clientId) {
-      this.notifierClient(
-        commande.commande.clientId,
-        id,
-        StatutEmplettes.achats_termines,
-      );
-    }
+    this.notifierClient(commande.commande, id, StatutEmplettes.achats_termines);
     return updated;
   }
 
@@ -477,13 +511,7 @@ export class CommandesEmplettesService {
       data: { statut: StatutEmplettes.en_route },
       include: DETAIL_INCLUDE,
     });
-    if (commande.commande.clientId) {
-      this.notifierClient(
-        commande.commande.clientId,
-        id,
-        StatutEmplettes.en_route,
-      );
-    }
+    this.notifierClient(commande.commande, id, StatutEmplettes.en_route);
     return updated;
   }
 
@@ -511,13 +539,7 @@ export class CommandesEmplettesService {
       }
       return result;
     });
-    if (commande.commande.clientId) {
-      this.notifierClient(
-        commande.commande.clientId,
-        id,
-        StatutEmplettes.livree,
-      );
-    }
+    this.notifierClient(commande.commande, id, StatutEmplettes.livree);
     return updated;
   }
 
@@ -537,13 +559,7 @@ export class CommandesEmplettesService {
       data: { statut: StatutEmplettes.litige, motif: dto.motif },
       include: DETAIL_INCLUDE,
     });
-    if (commande.commande.clientId) {
-      this.notifierClient(
-        commande.commande.clientId,
-        id,
-        StatutEmplettes.litige,
-      );
-    }
+    this.notifierClient(commande.commande, id, StatutEmplettes.litige);
     return updated;
   }
 
@@ -555,10 +571,13 @@ export class CommandesEmplettesService {
       throw new ForbiddenException('Cette commande ne vous appartient pas.');
     }
     this.assertStatut(commande, StatutEmplettes.confirmee);
-    return this.prisma.commandeEmplettes.update({
-      where: { id },
-      data: { statut: StatutEmplettes.annulee },
-      include: DETAIL_INCLUDE,
+    return this.prisma.$transaction(async (tx) => {
+      await marquerARembourserSiPaye(tx, commande.commandeId);
+      return tx.commandeEmplettes.update({
+        where: { id },
+        data: { statut: StatutEmplettes.annulee },
+        include: DETAIL_INCLUDE,
+      });
     });
   }
 

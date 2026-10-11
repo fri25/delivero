@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,6 +19,14 @@ export function AddressPicker({
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { data: adresses, isPending } = useAdresses();
+
+  // Preselect the default address so most orders need no tap here — also
+  // when a pre-filled value (reorder) points to an address deleted since.
+  const adresseParDefaut = adresses?.find((adresse) => adresse.estParDefaut) ?? adresses?.at(0);
+  const valeurConnue = Boolean(value && adresses?.some((adresse) => adresse.id === value));
+  useEffect(() => {
+    if (adresses && !valeurConnue && adresseParDefaut) onChange(adresseParDefaut.id);
+  }, [adresses, valeurConnue, adresseParDefaut, onChange]);
 
   if (isPending) {
     return <p className="text-sm text-muted-foreground">Chargement des adresses...</p>;
@@ -54,7 +62,7 @@ export function AddressPicker({
             <DialogTitle>Nouvelle adresse</DialogTitle>
           </DialogHeader>
           <AddressForm
-            onCreated={(adresse) => {
+            onSaved={(adresse) => {
               onChange(adresse.id);
               setDialogOpen(false);
             }}

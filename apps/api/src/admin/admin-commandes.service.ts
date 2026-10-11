@@ -13,6 +13,7 @@ import {
   TypeService,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { assertPaiementEngage } from '../paiements/paiement-engage';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
 import { AttribuerCommandeDto } from './dto/attribuer-commande.dto';
 import { ListCommandesDto } from './dto/list-commandes.dto';
@@ -28,7 +29,10 @@ const OVERVIEW_SELECT = {
   montantTotal: true,
   livreurId: true,
   client: { select: { nom: true, telephone: true } },
+  clientNomInvite: true,
+  clientTelephoneInvite: true,
   livreur: { select: { user: { select: { nom: true, telephone: true } } } },
+  paiement: { select: { mode: true, statut: true } },
   commandeRepas: { select: { statut: true } },
   commandeColis: { select: { statut: true } },
   commandeEmplettes: { select: { statut: true } },
@@ -48,6 +52,7 @@ export interface AdminCommandeRow {
   livreurId: string | null;
   client: { nom: string; telephone: string } | null;
   livreur: { nom: string; telephone: string } | null;
+  paiement: { mode: string; statut: string } | null;
 }
 
 // Détail nécessaire à l'attribution (F-ADM-02/03) : zone, statut brut et
@@ -57,7 +62,7 @@ const ATTRIBUTION_SELECT = {
   typeService: true,
   livreurId: true,
   montantTotal: true,
-  paiement: { select: { mode: true } },
+  paiement: { select: { mode: true, statut: true } },
   commandeRepas: {
     select: { statut: true, partenaire: { select: { zoneId: true } } },
   },
@@ -144,6 +149,9 @@ export class AdminCommandesService {
         `Impossible de (ré)attribuer une commande au statut « ${statut} ».`,
       );
     }
+    // Paid at order time: an unpaid Mobile Money order is not dispatched,
+    // manual reassignment included.
+    assertPaiementEngage(commande.paiement);
 
     const livreur = dto.livreurId
       ? await this.getLivreurOrThrow(dto.livreurId)
@@ -311,8 +319,17 @@ export class AdminCommandesService {
       createdAt: row.createdAt,
       montantTotal: row.montantTotal?.toString() ?? null,
       livreurId: row.livreurId,
-      client: row.client,
+      // Guest orders (F-CLI-02) have no account: show the contact they gave.
+      client:
+        row.client ??
+        (row.clientTelephoneInvite
+          ? {
+              nom: `${row.clientNomInvite ?? 'Client'} (sans compte)`,
+              telephone: row.clientTelephoneInvite,
+            }
+          : null),
       livreur: row.livreur?.user ?? null,
+      paiement: row.paiement,
     };
   }
 }

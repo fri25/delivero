@@ -8,6 +8,8 @@ import {
   IsOptional,
   IsPositive,
   IsString,
+  IsUrl,
+  MaxLength,
   Min,
 } from 'class-validator';
 import { ModePaiement, TailleColis } from '@prisma/client';
@@ -61,6 +63,12 @@ export class CreateCommandeColisDto {
   @IsNumber()
   @IsPositive()
   montantContreRemboursement?: number;
+
+  /** Cloudinary URL from POST /medias/signature + direct upload. */
+  @IsOptional()
+  @IsUrl({ protocols: ['https'] })
+  @MaxLength(500)
+  photoUrl?: string;
 
   @IsEnum(ModePaiement)
   modePaiement!: ModePaiement;

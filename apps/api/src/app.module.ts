@@ -12,7 +12,12 @@ import { CommandesRepasModule } from './commandes-repas/commandes-repas.module';
 import { envValidationSchema } from './config/env.validation';
 import { PerimetreV1Module } from './config/perimetre-v1.module';
 import { HealthModule } from './health/health.module';
+import { InviteModule } from './invite/invite.module';
 import { LivreursModule } from './livreurs/livreurs.module';
+import { MediasModule } from './medias/medias.module';
+import { NotationsModule } from './notations/notations.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { PaiementsModule } from './paiements/paiements.module';
 import { PortefeuilleModule } from './portefeuille/portefeuille.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RealtimeModule } from './realtime/realtime.module';
@@ -34,6 +39,8 @@ import { ZonesModule } from './zones/zones.module';
     PrismaModule,
     PortefeuilleModule,
     RealtimeModule,
+    NotificationsModule,
+    MediasModule,
     AuthModule,
     HealthModule,
     AdressesModule,
@@ -43,6 +50,9 @@ import { ZonesModule } from './zones/zones.module';
     CommandesEmplettesModule,
     CommandesCoursesExpressModule,
     LivreursModule,
+    PaiementsModule,
+    NotationsModule,
+    InviteModule,
     ZonesModule,
     AdminModule,
   ],

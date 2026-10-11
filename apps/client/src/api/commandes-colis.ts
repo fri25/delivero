@@ -14,6 +14,7 @@ interface CreateCommandeColisInput {
   pointDeRepereLivraison: string;
   valeurDeclaree?: number;
   fragile?: boolean;
+  photoUrl?: string;
   montantContreRemboursement?: number;
   modePaiement: ModePaiement;
   programmationAt?: string;

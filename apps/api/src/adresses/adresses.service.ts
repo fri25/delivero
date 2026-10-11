@@ -9,14 +9,19 @@ export class AdressesService {
 
   findAllForUser(userId: string) {
     return this.prisma.adresse.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
+      where: { userId, archiveeAt: null },
+      orderBy: [{ estParDefaut: 'desc' }, { createdAt: 'desc' }],
     });
   }
 
   create(userId: string, dto: CreateAdresseDto) {
     return this.prisma.$transaction(async (tx) => {
-      if (dto.estParDefaut) {
+      // The first address of an account is its default one.
+      const existantes = await tx.adresse.count({
+        where: { userId, archiveeAt: null },
+      });
+      const estParDefaut = dto.estParDefaut === true || existantes === 0;
+      if (estParDefaut) {
         await tx.adresse.updateMany({
           where: { userId },
           data: { estParDefaut: false },
@@ -29,7 +34,7 @@ export class AdressesService {
           pointDeRepere: dto.pointDeRepere,
           latitude: dto.latitude,
           longitude: dto.longitude,
-          estParDefaut: dto.estParDefaut ?? false,
+          estParDefaut,
         },
       });
     });
@@ -48,9 +53,29 @@ export class AdressesService {
     });
   }
 
+  // Archived, not deleted (see Adresse.archiveeAt). If it was the default,
+  // the most recent remaining address takes over.
   async remove(userId: string, id: string) {
-    await this.findOwned(userId, id);
-    await this.prisma.adresse.delete({ where: { id } });
+    const adresse = await this.findOwned(userId, id);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.adresse.update({
+        where: { id },
+        data: { archiveeAt: new Date(), estParDefaut: false },
+      });
+      if (!adresse.estParDefaut) {
+        return;
+      }
+      const suivante = await tx.adresse.findFirst({
+        where: { userId, archiveeAt: null },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (suivante) {
+        await tx.adresse.update({
+          where: { id: suivante.id },
+          data: { estParDefaut: true },
+        });
+      }
+    });
   }
 
   async setDefault(userId: string, id: string) {
@@ -66,7 +91,7 @@ export class AdressesService {
 
   async findOwned(userId: string, id: string) {
     const adresse = await this.prisma.adresse.findUnique({ where: { id } });
-    if (!adresse || adresse.userId !== userId) {
+    if (!adresse || adresse.userId !== userId || adresse.archiveeAt) {
       throw new NotFoundException('Adresse introuvable.');
     }
     return adresse;

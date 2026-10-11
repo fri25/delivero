@@ -59,11 +59,57 @@ model User {
   adresses            Adresse[]
   livreur             Livreur?
   partenaire          Partenaire?
-  commandesClient     Commande[]      @relation("CommandeClient")
+  commandesClient     Commande[]       @relation("CommandeClient")
   otpCodes            OtpCode[]
+  abonnementsPush     AbonnementPush[]
   cloturesRapprochees ClotureCaisse[]
 
   @@map("users")
+}
+
+// --- Notation (F-CLI-08) --------------------------------------------------------
+// One rating per target per order, after delivery. Feeds noteMoyenne on
+// Partenaire / Livreur (recomputed on each new rating).
+
+enum CibleNotation {
+  partenaire
+  livreur
+}
+
+model Notation {
+  id           String        @id @default(cuid())
+  commandeId   String        @map("commande_id")
+  commande     Commande      @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+  cible        CibleNotation
+  partenaireId String?       @map("partenaire_id")
+  partenaire   Partenaire?   @relation(fields: [partenaireId], references: [id], onDelete: Cascade)
+  livreurId    String?       @map("livreur_id")
+  livreur      Livreur?      @relation(fields: [livreurId], references: [id], onDelete: Cascade)
+  note         Int
+  commentaire  String?
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  @@unique([commandeId, cible])
+  @@index([partenaireId])
+  @@index([livreurId])
+  @@map("notations")
+}
+
+// --- Notifications -----------------------------------------------------------
+// Web Push subscription of one browser/PWA install (a user may have several).
+// WhatsApp/SMS fallback needs no table: it targets User.telephone.
+
+model AbonnementPush {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("abonnements_push")
 }
 
 // --- Authentification par OTP ----------------------------------------------
@@ -76,6 +122,8 @@ model OtpCode {
   user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt  DateTime  @map("expires_at")
   consumedAt DateTime? @map("consumed_at")
+  // Wrong guesses on this code; past the limit it is burnt (brute force).
+  tentatives Int       @default(0)
   createdAt  DateTime  @default(now()) @map("created_at")
 
   @@index([telephone])
@@ -87,15 +135,20 @@ model OtpCode {
 // jamais l'inverse (contrainte locale, voir CLAUDE.md).
 
 model Adresse {
-  id            String   @id @default(cuid())
-  userId        String   @map("user_id")
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String    @id @default(cuid())
+  // Null for a guest order address (F-CLI-02): it belongs to no account.
+  userId        String?   @map("user_id")
+  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   libelle       String
-  pointDeRepere String   @map("point_de_repere")
-  latitude      Decimal? @db.Decimal(10, 7)
-  longitude     Decimal? @db.Decimal(10, 7)
-  estParDefaut  Boolean  @default(false) @map("est_par_defaut")
-  createdAt     DateTime @default(now()) @map("created_at")
+  pointDeRepere String    @map("point_de_repere")
+  latitude      Decimal?  @db.Decimal(10, 7)
+  longitude     Decimal?  @db.Decimal(10, 7)
+  estParDefaut  Boolean   @default(false) @map("est_par_defaut")
+  // Soft delete: orders keep pointing at the address they were delivered to
+  // (Colis references it with RESTRICT, Commande with SET NULL — a hard
+  // delete would fail or erase the delivery point of an order in progress).
+  archiveeAt    DateTime? @map("archivee_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
 
   commandes                Commande[]
   commandesColisEnlevement CommandeColis[]
@@ -118,13 +171,13 @@ model Zone {
   fraisLivraison Decimal  @default(500) @map("frais_livraison") @db.Decimal(10, 2)
   createdAt      DateTime @default(now()) @map("created_at")
 
-  partenaires          Partenaire[]
-  livreurs             Livreur[]
-  grilleTarifaireColis         GrilleTarifaireColis?
+  partenaires                   Partenaire[]
+  livreurs                      Livreur[]
+  grilleTarifaireColis          GrilleTarifaireColis?
   grilleTarifaireCoursesExpress GrilleTarifaireCoursesExpress?
-  commandesColis               CommandeColis[]
-  commandesEmplettes           CommandeEmplettes[]
-  commandesCoursesExpress      CommandeCoursesExpress[]
+  commandesColis                CommandeColis[]
+  commandesEmplettes            CommandeEmplettes[]
+  commandesCoursesExpress       CommandeCoursesExpress[]
 
   @@map("zones")
 }
@@ -135,29 +188,34 @@ enum TypePartenaire {
 }
 
 model Partenaire {
-  id              String         @id @default(cuid())
-  userId          String         @unique @map("user_id")
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  nom             String
-  type            TypePartenaire
-  description     String?
-  horaires        String?
+  id                  String         @id @default(cuid())
+  userId              String         @unique @map("user_id")
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nom                 String
+  type                TypePartenaire
+  description         String?
+  horaires            String?
   // Point de repère textuel obligatoire, coordonnées en complément (même
   // contrainte d'adressage approximatif que pour l'Adresse client) — requis
   // pour que le livreur sache où récupérer la commande.
-  adresse         String?
-  pointDeRepere   String?        @map("point_de_repere")
-  latitude        Decimal?       @db.Decimal(10, 7)
-  longitude       Decimal?       @db.Decimal(10, 7)
-  zoneId          String         @map("zone_id")
-  zone            Zone           @relation(fields: [zoneId], references: [id])
-  statutOuverture Boolean        @default(true) @map("statut_ouverture")
-  tauxCommission  Decimal?       @map("taux_commission") @db.Decimal(5, 2)
-  noteMoyenne     Decimal?       @map("note_moyenne") @db.Decimal(3, 2)
-  createdAt       DateTime       @default(now()) @map("created_at")
+  adresse             String?
+  pointDeRepere       String?        @map("point_de_repere")
+  latitude            Decimal?       @db.Decimal(10, 7)
+  longitude           Decimal?       @db.Decimal(10, 7)
+  zoneId              String         @map("zone_id")
+  zone                Zone           @relation(fields: [zoneId], references: [id])
+  statutOuverture     Boolean        @default(true) @map("statut_ouverture")
+  tauxCommission      Decimal?       @map("taux_commission") @db.Decimal(5, 2)
+  noteMoyenne         Decimal?       @map("note_moyenne") @db.Decimal(3, 2)
+  // Catalogue filters (F-CLI-11). Values from TYPES_CUISINE
+  // (src/restaurants/types-cuisine.ts), checked by the DTO.
+  typesCuisine        String[]       @default([]) @map("types_cuisine")
+  delaiPreparationMin Int?           @map("delai_preparation_min")
+  createdAt           DateTime       @default(now()) @map("created_at")
 
   plats          Plat[]
   commandesRepas CommandeRepas[]
+  notations      Notation[]
 
   @@map("partenaires")
 }
@@ -165,18 +223,19 @@ model Partenaire {
 // --- Livreur -------------------------------------------------------------
 
 model Livreur {
-  id             String   @id @default(cuid())
-  userId         String   @unique @map("user_id")
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  zoneId         String   @map("zone_id")
-  zone           Zone     @relation(fields: [zoneId], references: [id])
-  plafondAvance  Decimal  @map("plafond_avance") @db.Decimal(12, 2)
-  plafondCaisse  Decimal  @map("plafond_caisse") @db.Decimal(12, 2)
-  disponible     Boolean  @default(false)
-  noteMoyenne    Decimal? @map("note_moyenne") @db.Decimal(3, 2)
-  createdAt      DateTime @default(now()) @map("created_at")
+  id            String   @id @default(cuid())
+  userId        String   @unique @map("user_id")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  zoneId        String   @map("zone_id")
+  zone          Zone     @relation(fields: [zoneId], references: [id])
+  plafondAvance Decimal  @map("plafond_avance") @db.Decimal(12, 2)
+  plafondCaisse Decimal  @map("plafond_caisse") @db.Decimal(12, 2)
+  disponible    Boolean  @default(false)
+  noteMoyenne   Decimal? @map("note_moyenne") @db.Decimal(3, 2)
+  createdAt     DateTime @default(now()) @map("created_at")
 
   commandes              Commande[]
+  notations              Notation[]
   mouvementsPortefeuille MouvementPortefeuille[]
   cloturesCaisse         ClotureCaisse[]
 
@@ -258,10 +317,10 @@ model Commande {
   id          String      @id @default(cuid())
   typeService TypeService @map("type_service")
 
-  clientId              String?  @map("client_id")
-  client                User?    @relation("CommandeClient", fields: [clientId], references: [id])
-  clientNomInvite       String?  @map("client_nom_invite")
-  clientTelephoneInvite String?  @map("client_telephone_invite")
+  clientId              String? @map("client_id")
+  client                User?   @relation("CommandeClient", fields: [clientId], references: [id])
+  clientNomInvite       String? @map("client_nom_invite")
+  clientTelephoneInvite String? @map("client_telephone_invite")
 
   adresseId String?  @map("adresse_id")
   adresse   Adresse? @relation(fields: [adresseId], references: [id])
@@ -283,11 +342,12 @@ model Commande {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  commandeRepas         CommandeRepas?
-  commandeColis         CommandeColis?
-  commandeEmplettes     CommandeEmplettes?
+  commandeRepas          CommandeRepas?
+  commandeColis          CommandeColis?
+  commandeEmplettes      CommandeEmplettes?
   commandeCoursesExpress CommandeCoursesExpress?
-  paiement              Paiement?
+  paiement               Paiement?
+  notations              Notation[]
   mouvementsPortefeuille MouvementPortefeuille[]
 
   @@map("commandes")
@@ -313,17 +373,17 @@ enum StatutRepas {
 }
 
 model Plat {
-  id           String   @id @default(cuid())
-  partenaireId String   @map("partenaire_id")
+  id           String     @id @default(cuid())
+  partenaireId String     @map("partenaire_id")
   partenaire   Partenaire @relation(fields: [partenaireId], references: [id], onDelete: Cascade)
   nom          String
   categorie    String?
   description  String?
-  prix         Decimal  @db.Decimal(10, 2)
-  photoUrl     String?  @map("photo_url")
-  disponible   Boolean  @default(true)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  prix         Decimal    @db.Decimal(10, 2)
+  photoUrl     String?    @map("photo_url")
+  disponible   Boolean    @default(true)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
 
   lignes LigneCommandeRepas[]
 
@@ -374,6 +434,11 @@ enum StatutPaiement {
   reussi
   echoue
   a_percevoir_livraison
+  // Mobile Money collected, then the order was refused or cancelled: refunded
+  // by hand from the back-office (decision of 2026-10-05), which then moves
+  // the payment to `rembourse`.
+  a_rembourser
+  rembourse
 }
 
 model Paiement {
@@ -383,7 +448,9 @@ model Paiement {
   montant              Decimal        @db.Decimal(12, 2)
   mode                 ModePaiement
   statut               StatutPaiement @default(en_attente)
-  referenceTransaction String?        @map("reference_transaction")
+  // Current FedaPay transaction id for this payment (replaced when the client
+  // retries a failed payment): the webhook matches on it.
+  referenceTransaction String?        @unique @map("reference_transaction")
   createdAt            DateTime       @default(now()) @map("created_at")
 
   @@map("paiements")
@@ -458,12 +525,14 @@ model CommandeColis {
 
   valeurDeclaree             Decimal? @map("valeur_declaree") @db.Decimal(12, 2)
   fragile                    Boolean  @default(false)
+  // F-CLI-16: Cloudinary URL of the parcel photo (see src/medias).
+  photoUrl                   String?  @map("photo_url")
   montantContreRemboursement Decimal? @map("montant_contre_remboursement") @db.Decimal(12, 2)
   // Montant réellement encaissé par le livreur à la livraison (RG-04). Simple
   // traçabilité sur la commande à ce stade : le reversement périodique à
   // l'expéditeur et le portefeuille livreur consolidé (F-LIV-09) sont des
   // chantiers séparés, non couverts ici.
-  montantEncaisse Decimal? @map("montant_encaisse") @db.Decimal(12, 2)
+  montantEncaisse            Decimal? @map("montant_encaisse") @db.Decimal(12, 2)
 
   conditionsAcceptees Boolean   @default(false) @map("conditions_acceptees")
   programmationAt     DateTime? @map("programmation_at")
@@ -637,14 +706,15 @@ model CommandeCoursesExpress {
   commande   Commande @relation(fields: [commandeId], references: [id], onDelete: Cascade)
 
   // Description libre obligatoire de la commission (quoi faire, où aller,
-  // quoi récupérer/déposer) ; pas de pièces jointes/photos, aucun stockage
-  // S3 intégré.
+  // quoi récupérer/déposer). Photos jointes : photoUrls ci-dessous.
   description String
 
+  // F-CLI-23: Cloudinary URLs of attached photos (see src/medias).
+  photoUrls String[] @default([]) @map("photo_urls")
   // Zone transmise explicitement à la création, même simplification que
   // Colis/Emplettes (Adresse n'a pas de zoneId).
-  zoneId String @map("zone_id")
-  zone   Zone   @relation(fields: [zoneId], references: [id])
+  zoneId    String   @map("zone_id")
+  zone      Zone     @relation(fields: [zoneId], references: [id])
 
   // `litige` atteignable dans cette itération, déclaré par le livreur, sans
   // validation dispatcher (aucun back-office) — même principe que Colis et

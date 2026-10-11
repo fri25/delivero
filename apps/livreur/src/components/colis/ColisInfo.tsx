@@ -1,5 +1,6 @@
 import { ExternalLink, Phone } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { PhotosCommande } from '@/components/medias/PhotosCommande';
 import { formatPrixFcfa, googleMapsRouteUrl } from '@/lib/format';
 import type { CommandeColis } from '@/api/types';
 
@@ -10,6 +11,7 @@ export function ColisInfo({ commande }: { commande: CommandeColis }) {
   return (
     <div className="space-y-2 text-sm">
       {commande.fragile && <Badge variant="outline">Fragile</Badge>}
+      <PhotosCommande urls={commande.photoUrl ? [commande.photoUrl] : []} />
 
       <div>
         <p className="text-xs font-medium text-muted-foreground">Enlèvement</p>

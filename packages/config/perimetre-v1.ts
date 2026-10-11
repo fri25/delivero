@@ -7,9 +7,11 @@
 // que les interfaces, et une PWA déjà installée conserve son ancien bundle en
 // cache — le serveur doit donc refuser de son côté.
 //
-// Comme ces constantes sont littérales, le bundler élimine entièrement les
-// branches masquées du build (vérifié : 0 occurrence d'Emplettes dans le
-// bundle client). Elles sont annotées `boolean` pour que TypeScript ne réduise
+// Comme ces constantes sont littérales, le bundler élimine les branches
+// masquées du build : aucune route Emplettes n'est déclarée côté client. Les
+// pages Emplettes, chargées à la demande, restent émises en chunks isolés mais
+// inatteignables et exclues du précache (apps/client/vite.config.ts).
+// Elles sont annotées `boolean` pour que TypeScript ne réduise
 // pas le type au littéral et ne signale pas les branches de réouverture comme
 // inatteignables.
 
@@ -30,10 +32,8 @@ export const EMPLETTES_ACTIF: boolean = false;
 // espèces à la livraison sont retirées. Écart assumé avec RG-01, qui prévoit
 // les deux moyens sur les 4 services (voir docs/regles-gestion.md).
 //
-// ⚠️ Tant que l'agrégateur FedaPay n'est pas intégré (aucun module paiement ni
-// webhook dans apps/api), un paiement Mobile Money reste en `en_attente` et
-// n'est jamais encaissé. Aucune commande n'est donc encaissable en l'état :
-// ne pas ouvrir à de vrais clients avant cette intégration.
+// Mobile Money is paid through FedaPay at order time (apps/api/src/paiements):
+// an unpaid order reaches neither the restaurant nor the livreurs.
 export const ESPECES_ACTIF: boolean = false;
 
 // Contre-remboursement Colis (F-CLI-18, RG-04) : le livreur encaisse le

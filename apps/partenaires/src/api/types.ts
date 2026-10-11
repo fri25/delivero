@@ -19,6 +19,8 @@ export interface Restaurant {
   statutOuverture: boolean;
   tauxCommission: string | null;
   noteMoyenne: string | null;
+  typesCuisine: string[];
+  delaiPreparationMin: number | null;
 }
 
 export interface Plat {

@@ -1,6 +1,6 @@
 import { CONTRE_REMBOURSEMENT_ACTIF, ESPECES_ACTIF } from '@delivero/config/perimetre-v1';
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -14,11 +14,24 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { AddressPicker } from '@/components/adresses/AddressPicker';
+import { PhotoPicker } from '@/components/medias/PhotoPicker';
+import {
+  useApresCreationInvite,
+  useCreerCommandeInvite,
+  type AdresseInvite,
+  type CommandeColisInviteInput,
+  type ContactInvite,
+} from '@/api/invite';
+import { AdresseInviteFields } from '@/components/invite/AdresseInviteFields';
+import { ChoixCompteInvite } from '@/components/invite/ChoixCompteInvite';
+import { ContactInviteFields } from '@/components/invite/ContactInviteFields';
 import { useAuthStore } from '@/stores/auth-store';
 import { useZones } from '@/api/zones';
 import { useCreateCommandeColis, useEstimationColis } from '@/api/commandes-colis';
+import { useApresCreationCommande } from '@/api/paiements';
 import { formatPrixFcfa } from '@/lib/format';
 import type { ModePaiement, TailleColis } from '@/api/types';
+import { lireModele, type ModeleColis } from '@/lib/recommander';
 
 const TAILLE_LABELS: Record<TailleColis, string> = {
   petit: 'Petit (pli, petit colis)',
@@ -27,20 +40,22 @@ const TAILLE_LABELS: Record<TailleColis, string> = {
 };
 
 export function ColisFormPage() {
-  const navigate = useNavigate();
+  // F-CLI-07 : modèle passé par « Envoyer un colis similaire ».
+  const modele = lireModele<ModeleColis>(useLocation().state);
   const token = useAuthStore((state) => state.token);
   const { data: zones, isPending: zonesPending } = useZones();
   const createCommande = useCreateCommandeColis();
+  const apresCreation = useApresCreationCommande();
 
-  const [adresseEnlevementId, setAdresseEnlevementId] = useState<string | null>(null);
-  const [zoneId, setZoneId] = useState<string | null>(null);
-  const [taille, setTaille] = useState<TailleColis>('petit');
-  const [destinataireNom, setDestinataireNom] = useState('');
-  const [destinataireTelephone, setDestinataireTelephone] = useState('');
-  const [adresseLivraison, setAdresseLivraison] = useState('');
-  const [pointDeRepereLivraison, setPointDeRepereLivraison] = useState('');
-  const [valeurDeclaree, setValeurDeclaree] = useState('');
-  const [fragile, setFragile] = useState(false);
+  const [adresseEnlevementId, setAdresseEnlevementId] = useState<string | null>(modele?.adresseEnlevementId ?? null);
+  const [zoneId, setZoneId] = useState<string | null>(modele?.zoneId ?? null);
+  const [taille, setTaille] = useState<TailleColis>(modele?.taille ?? 'petit');
+  const [destinataireNom, setDestinataireNom] = useState(modele?.destinataireNom ?? '');
+  const [destinataireTelephone, setDestinataireTelephone] = useState(modele?.destinataireTelephone ?? '');
+  const [adresseLivraison, setAdresseLivraison] = useState(modele?.adresseLivraison ?? '');
+  const [pointDeRepereLivraison, setPointDeRepereLivraison] = useState(modele?.pointDeRepereLivraison ?? '');
+  const [valeurDeclaree, setValeurDeclaree] = useState(modele?.valeurDeclaree ?? '');
+  const [fragile, setFragile] = useState(modele?.fragile ?? false);
   const [contreRemboursement, setContreRemboursement] = useState(false);
   const [montantContreRemboursement, setMontantContreRemboursement] = useState('');
   const [modePaiement, setModePaiement] = useState<ModePaiement>(
@@ -49,6 +64,15 @@ export function ColisFormPage() {
   const [planifie, setPlanifie] = useState(false);
   const [programmationAt, setProgrammationAt] = useState('');
   const [conditionsAcceptees, setConditionsAcceptees] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  // F-CLI-02 : envoi sans compte.
+  const [sansCompte, setSansCompte] = useState(false);
+  const [contact, setContact] = useState<ContactInvite>({ nom: '', telephone: '' });
+  const [enlevementInvite, setEnlevementInvite] = useState<AdresseInvite>({ pointDeRepere: '' });
+  const creerInvite = useCreerCommandeInvite<CommandeColisInviteInput>('colis');
+  const apresCreationInvite = useApresCreationInvite();
+  const envoiEnCours = createCommande.isPending || apresCreation.isPending || creerInvite.isPending;
+  const [photoEnCours, setPhotoEnCours] = useState(false);
 
   // Une seule zone de collecte existe à ce jour (voir prisma/seed.ts) : pas
   // besoin d'imposer un choix à l'utilisateur pour un unique cas possible,
@@ -63,8 +87,15 @@ export function ColisFormPage() {
     return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
   }, [montantContreRemboursement]);
 
+  const expediteurRenseigne = token
+    ? Boolean(adresseEnlevementId)
+    : sansCompte &&
+      contact.nom.trim().length > 0 &&
+      contact.telephone.trim().length > 0 &&
+      enlevementInvite.pointDeRepere.trim().length > 0;
+
   const peutConfirmer =
-    Boolean(adresseEnlevementId) &&
+    expediteurRenseigne &&
     Boolean(effectiveZoneId) &&
     destinataireNom.trim().length > 0 &&
     destinataireTelephone.trim().length > 0 &&
@@ -72,12 +103,33 @@ export function ColisFormPage() {
     pointDeRepereLivraison.trim().length > 0 &&
     (!contreRemboursement || montantContreRembourseNombre !== undefined) &&
     (!planifie || programmationAt.length > 0) &&
-    conditionsAcceptees;
+    conditionsAcceptees &&
+    !photoEnCours;
 
   const envoyer = () => {
+    const champsCommuns = {
+      taille,
+      destinataireNom: destinataireNom.trim(),
+      destinataireTelephone: destinataireTelephone.trim(),
+      adresseLivraison: adresseLivraison.trim(),
+      pointDeRepereLivraison: pointDeRepereLivraison.trim(),
+      valeurDeclaree: valeurDeclaree ? Number(valeurDeclaree) : undefined,
+      fragile,
+      photoUrl: photos[0],
+      modePaiement,
+      programmationAt: planifie && programmationAt ? new Date(programmationAt).toISOString() : undefined,
+      conditionsAcceptees,
+    };
+
     if (!token) {
-      toast.info('Connectez-vous pour envoyer une demande de colis.');
-      navigate('/connexion');
+      if (!effectiveZoneId) return;
+      creerInvite.mutate(
+        { ...champsCommuns, invite: contact, adresseEnlevement: enlevementInvite, zoneId: effectiveZoneId },
+        {
+          onSuccess: (creee) => void apresCreationInvite(creee, { mode: modePaiement, statut: 'en_attente' }),
+          onError: (error) => toast.error(error.message),
+        },
+      );
       return;
     }
     if (!adresseEnlevementId || !effectiveZoneId) {
@@ -98,6 +150,7 @@ export function ColisFormPage() {
         pointDeRepereLivraison: pointDeRepereLivraison.trim(),
         valeurDeclaree: valeurDeclaree ? Number(valeurDeclaree) : undefined,
         fragile,
+        photoUrl: photos[0],
         montantContreRemboursement: contreRemboursement ? montantContreRembourseNombre : undefined,
         modePaiement,
         programmationAt: planifie && programmationAt ? new Date(programmationAt).toISOString() : undefined,
@@ -114,10 +167,8 @@ export function ColisFormPage() {
             toast.info(
               `Tarif confirmé : ${formatPrixFcfa(tarifConfirme)} (estimation initiale : ${formatPrixFcfa(estimationAvant)}).`,
             );
-          } else {
-            toast.success('Demande de colis envoyée !');
           }
-          navigate(`/colis/commandes/${commande.id}`);
+          apresCreation.continuer(commande, `/colis/commandes/${commande.id}`, 'Demande de colis envoyée !');
         },
         onError: (error) => toast.error(error.message),
       },
@@ -139,8 +190,18 @@ export function ColisFormPage() {
         <h2 className="text-sm font-semibold">Adresse d'enlèvement</h2>
         {token ? (
           <AddressPicker value={adresseEnlevementId} onChange={setAdresseEnlevementId} />
+        ) : sansCompte ? (
+          <div className="space-y-3">
+            <ContactInviteFields value={contact} onChange={setContact} />
+            <AdresseInviteFields
+              id="enlevement-invite"
+              label="Point de repère pour l'enlèvement"
+              value={enlevementInvite}
+              onChange={setEnlevementInvite}
+            />
+          </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Connectez-vous pour choisir une adresse.</p>
+          <ChoixCompteInvite onSansCompte={() => setSansCompte(true)} />
         )}
       </section>
 
@@ -202,6 +263,15 @@ export function ColisFormPage() {
           <Checkbox checked={fragile} onCheckedChange={(checked) => setFragile(checked === true)} />
           Colis fragile
         </label>
+
+        <PhotoPicker
+          usage="colis"
+          max={1}
+          label="Photo du colis"
+          value={photos}
+          onChange={setPhotos}
+          onEnvoiChange={setPhotoEnCours}
+        />
       </section>
 
       <section className="space-y-3">
@@ -340,10 +410,10 @@ export function ColisFormPage() {
 
       <Button
         className="w-full"
-        disabled={!peutConfirmer || createCommande.isPending}
+        disabled={!peutConfirmer || envoiEnCours}
         onClick={envoyer}
       >
-        {createCommande.isPending ? 'Envoi...' : token ? 'Confirmer la demande' : 'Se connecter pour confirmer'}
+        {envoiEnCours ? 'Envoi...' : 'Confirmer la demande'}
       </Button>
     </div>
   );

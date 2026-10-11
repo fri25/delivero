@@ -24,10 +24,29 @@ export const envValidationSchema = Joi.object({
   // Moyens de paiement acceptés à la création. Décision du 23/09/2026 : la V1
   // encaisse uniquement par Mobile Money, les espèces à la livraison sont
   // retirées — écart assumé avec RG-01, qui prévoit les deux.
-  // ⚠️ L'agrégateur FedaPay n'étant pas intégré, un paiement Mobile Money
-  // reste en `en_attente` et n'est jamais encaissé : aucune commande n'est
-  // encaissable tant que ce chantier n'est pas livré (F-ADM-16).
+  // Mobile Money goes through FedaPay (FEDAPAY_* variables below).
   MODES_PAIEMENT_ACTIFS: Joi.string().default('mobile_money'),
+  // FedaPay (F-ADM-16). No secret key => payment unavailable: orders can
+  // still be created but reach nobody until paid. Never committed: .env only.
+  FEDAPAY_ENVIRONMENT: Joi.string().valid('sandbox', 'live').default('sandbox'),
+  FEDAPAY_SECRET_KEY: Joi.string().allow('').default(''),
+  // Webhook endpoint secret, given by the FedaPay dashboard when the webhook
+  // is created (distinct from the secret key).
+  FEDAPAY_WEBHOOK_SECRET: Joi.string().allow('').default(''),
+  // Public URL of the client app: FedaPay redirects the client there.
+  CLIENT_APP_URL: Joi.string().uri().default('http://localhost:5173'),
+  // Web Push (VAPID). Generate once with `npx web-push generate-vapid-keys`.
+  // Missing keys => push disabled, every alert goes through WhatsApp/SMS.
+  VAPID_PUBLIC_KEY: Joi.string().allow('').default(''),
+  VAPID_PRIVATE_KEY: Joi.string().allow('').default(''),
+  VAPID_SUBJECT: Joi.string().default('mailto:contact@chapexpress.bj'),
+  // WhatsApp/SMS provider (fallback for every alert + OTP codes). Only
+  // "console" exists for now: messages are written to the API logs.
+  MESSAGERIE_FOURNISSEUR: Joi.string().valid('console').default('console'),
+  // Cloudinary (photos colis / courses). Missing => photo fields hidden.
+  CLOUDINARY_CLOUD_NAME: Joi.string().allow('').default(''),
+  CLOUDINARY_API_KEY: Joi.string().allow('').default(''),
+  CLOUDINARY_API_SECRET: Joi.string().allow('').default(''),
   // RG-04 : le contre-remboursement Colis suppose un encaissement en espèces
   // auprès du destinataire — retiré de la V1 avec les espèces.
   CONTRE_REMBOURSEMENT_ACTIF: Joi.boolean().default(false),

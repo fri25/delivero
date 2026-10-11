@@ -17,11 +17,12 @@ suit une règle spécifique (voir RG-05 et
 > `MODES_PAIEMENT_ACTIFS` côté API et `ESPECES_ACTIF` dans
 > [`packages/config/perimetre-v1.ts`](../packages/config/perimetre-v1.ts).
 >
-> ⚠️ **Conséquence à ne pas perdre de vue** : l'agrégateur FedaPay n'est pas
-> intégré (aucun module paiement ni webhook dans `apps/api`, voir F-ADM-16). Un
-> paiement Mobile Money est créé en `en_attente` et **rien ne le fait passer à
-> `reussi`**. Aucune commande n'est donc encaissable en l'état : ne pas ouvrir à
-> de vrais clients avant cette intégration.
+> **Paiement à la commande (décidé le 05/10/2026)** : le client paie via FedaPay
+> dès la validation (F-ADM-16). Tant que le paiement n'est pas `reussi`, la
+> commande n'est transmise ni au restaurant ni aux livreurs. Une commande payée
+> puis refusée ou annulée passe en `a_rembourser` : **remboursement manuel** par
+> le back-office. Intégration pas encore validée en sandbox : ne pas ouvrir à de
+> vrais clients avant ce test.
 >
 > Conséquences en cascade sur les autres règles : RG-04 est suspendu (voir
 > ci-dessous) ; RG-02 et RG-03 (portefeuille livreur, clôture et rapprochement de

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { io, type Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 import {
   COMMANDE_QUERY_KEYS,
   REALTIME_URL,
@@ -21,22 +21,32 @@ export function useRealtimeCommandeUpdates() {
       return;
     }
 
-    const socket: Socket = io(REALTIME_URL, {
-      auth: { token },
-      transports: ['websocket'],
-    });
-
-    socket.on('commande:statut', (payload: CommandeStatutPayload) => {
-      const keys = COMMANDE_QUERY_KEYS[payload.typeService];
-      if (!keys) {
+    // socket.io-client is only needed once signed in: loaded on demand to
+    // keep it out of the entry bundle (anonymous visitors never pay for it).
+    let socket: Socket | null = null;
+    let annule = false;
+    void import('socket.io-client').then(({ io }) => {
+      if (annule) {
         return;
       }
-      queryClient.invalidateQueries({ queryKey: [keys.detail, payload.commandeId] });
-      queryClient.invalidateQueries({ queryKey: [keys.liste] });
+      socket = io(REALTIME_URL, {
+        auth: { token },
+        transports: ['websocket'],
+      });
+
+      socket.on('commande:statut', (payload: CommandeStatutPayload) => {
+        const keys = COMMANDE_QUERY_KEYS[payload.typeService];
+        if (!keys) {
+          return;
+        }
+        queryClient.invalidateQueries({ queryKey: [keys.detail, payload.commandeId] });
+        queryClient.invalidateQueries({ queryKey: [keys.liste] });
+      });
     });
 
     return () => {
-      socket.disconnect();
+      annule = true;
+      socket?.disconnect();
     };
   }, [token, queryClient]);
 }

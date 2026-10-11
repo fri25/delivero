@@ -1,4 +1,15 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  ArrayUnique,
+  IsArray,
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
+import { TYPES_CUISINE } from '../types-cuisine';
 
 export class UpdateRestaurantDto {
   @IsOptional()
@@ -21,4 +32,17 @@ export class UpdateRestaurantDto {
   @IsOptional()
   @IsString()
   pointDeRepere?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsIn(TYPES_CUISINE, { each: true })
+  typesCuisine?: string[];
+
+  /** Average preparation time, in minutes (catalogue "délai" filter). */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(240)
+  delaiPreparationMin?: number;
 }

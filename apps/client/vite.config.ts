@@ -15,11 +15,20 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        // Emplettes is hidden in V1 (packages/config/perimetre-v1.ts): its
+        // lazy chunks are unreachable, do not make every client download them.
+        globIgnores: ['**/node_modules/**/*', 'sw.js', 'workbox-*.js', '**/Emplettes*.js'],
+        // Web Push handlers (public/push-sw.js).
+        importScripts: ['/push-sw.js'],
+      },
       manifest: {
         lang: 'fr',
         name: 'ChapExpress Client',
         short_name: 'ChapExpress',
-        description: 'Repas, colis, courses express et emplettes a Natitingou',
+        // Emplettes is hidden in V1 (packages/config/perimetre-v1.ts): add it back
+        // here when the service reopens.
+        description: 'Repas, colis et courses express à Natitingou',
         theme_color: '#002050',
         background_color: '#f6f8fc',
         display: 'standalone',

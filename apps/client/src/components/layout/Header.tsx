@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/auth-store';
 import { useCartStore } from '@/stores/cart-store';
+import { desactiverPush } from '@/lib/push';
 
 export function Header() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
   const logout = useAuthStore((state) => state.logout);
   const itemCount = useCartStore((state) => state.items.reduce((total, item) => total + item.quantite, 0));
 
@@ -42,6 +44,7 @@ export function Header() {
                 aria-label="Déconnexion"
                 className="text-white/90 hover:bg-white/10 hover:text-white"
                 onClick={() => {
+                  if (token) void desactiverPush(token);
                   logout();
                   navigate('/');
                 }}

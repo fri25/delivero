@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -43,6 +44,7 @@ export class AdressesController {
   }
 
   @Delete(':id')
+  @HttpCode(204)
   remove(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     return this.adressesService.remove(user.id, id);
   }
