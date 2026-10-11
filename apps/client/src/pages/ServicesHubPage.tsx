@@ -1,5 +1,5 @@
 import { EMPLETTES_ACTIF } from '@delivero/config/perimetre-v1';
-import { History, MapPin, MessageCircle } from 'lucide-react';
+import { CircleHelp, History, MapPin, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logo from '@/assets/logo.webp';
 import { ActiveOrderBanner } from '@/components/home/ActiveOrderBanner';
@@ -10,6 +10,7 @@ import { ColisIllustration } from '@/components/home/illustrations/ColisIllustra
 import { CoursesExpressIllustration } from '@/components/home/illustrations/CoursesExpressIllustration';
 import { EmplettesIllustration } from '@/components/home/illustrations/EmplettesIllustration';
 import { getPlatImage } from '@/data/images';
+import { InstallAppPrompt } from '@/components/layout/InstallAppPrompt';
 
 // Un plat du catalogue de démo pour la tuile Repas (seul service avec de
 // vraies photos).
@@ -79,7 +80,7 @@ export function ServicesHubPage() {
         )}
       </section>
 
-      <section className="grid grid-cols-3 gap-2">
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Link
           to="/commandes"
           className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl bg-card px-2 py-2 text-center text-xs font-medium text-foreground ring-1 ring-foreground/10 transition-colors hover:bg-secondary"
@@ -94,6 +95,13 @@ export function ServicesHubPage() {
           <MapPin className="size-4 shrink-0" aria-hidden="true" />
           Mes adresses
         </Link>
+        <Link
+          to="/aide"
+          className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl bg-card px-2 py-2 text-center text-xs font-medium text-foreground ring-1 ring-foreground/10 transition-colors hover:bg-secondary"
+        >
+          <CircleHelp className="size-4 shrink-0" aria-hidden="true" />
+          Aide et contact
+        </Link>
         <a
           href={WHATSAPP_SUPPORT}
           target="_blank"
@@ -104,6 +112,7 @@ export function ServicesHubPage() {
           Aide WhatsApp
         </a>
       </section>
+      <InstallAppPrompt />
     </div>
   );
 }

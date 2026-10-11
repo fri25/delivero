@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useCreateAdresse, useUpdateAdresse } from '@/api/adresses';
+import { useCreateAdresse, useUpdateAdresse, type AdresseInput } from '@/api/adresses';
 import type { Adresse } from '@/api/types';
 import { lienGoogleMaps, lirePositionGps } from '@/lib/geolocalisation';
 
@@ -24,16 +24,21 @@ function coordonneesInitiales(adresse?: Adresse): Coordonnees | null {
  * mandatory; the GPS position is only a complement (local addressing rule).
  */
 export function AddressForm({
-  adresse,
+  adresse: adresseInitiale,
   onSaved,
+  onCreated,
 }: {
   adresse?: Adresse;
-  onSaved: (adresse: Adresse) => void;
+  onSaved?: (adresse: Adresse) => void;
+  onCreated?: (adresse: Adresse) => void;
 }) {
-  const [libelle, setLibelle] = useState(adresse?.libelle ?? '');
-  const [pointDeRepere, setPointDeRepere] = useState(adresse?.pointDeRepere ?? '');
-  const [position, setPosition] = useState<Coordonnees | null>(() => coordonneesInitiales(adresse));
+  const [libelle, setLibelle] = useState(adresseInitiale?.libelle ?? '');
+  const [rue, setRue] = useState(adresseInitiale?.adresse ?? '');
+  const [quartier, setQuartier] = useState(adresseInitiale?.quartier ?? '');
+  const [pointDeRepere, setPointDeRepere] = useState(adresseInitiale?.pointDeRepere ?? '');
+  const [position, setPosition] = useState<Coordonnees | null>(() => coordonneesInitiales(adresseInitiale));
   const [localisationEnCours, setLocalisationEnCours] = useState(false);
+
   const createAdresse = useCreateAdresse();
   const updateAdresse = useUpdateAdresse();
   const enregistrement = createAdresse.isPending || updateAdresse.isPending;
@@ -54,20 +59,26 @@ export function AddressForm({
       className="space-y-3"
       onSubmit={(event) => {
         event.preventDefault();
-        const dto = {
+        const dto: AdresseInput = {
           libelle,
+          adresse: rue,
+          quartier,
           pointDeRepere,
           latitude: position?.latitude ?? null,
           longitude: position?.longitude ?? null,
+          estParDefaut: true,
         };
         const options = {
           onSuccess: (saved: Adresse | void) => {
-            if (saved) onSaved(saved);
+            if (saved) {
+              onSaved?.(saved);
+              onCreated?.(saved);
+            }
           },
           onError: (error: Error) => toast.error(error.message),
         };
-        if (adresse) {
-          updateAdresse.mutate({ id: adresse.id, ...dto }, options);
+        if (adresseInitiale) {
+          updateAdresse.mutate({ id: adresseInitiale.id, ...dto }, options);
         } else {
           createAdresse.mutate(dto, options);
         }
@@ -85,14 +96,40 @@ export function AddressForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="pointDeRepere">Point de repère</Label>
+        <Label htmlFor="adresse">Adresse ou rue</Label>
+        <Input
+          id="adresse"
+          placeholder="Rue, numéro ou indication d’accès"
+          value={rue}
+          onChange={(event) => setRue(event.target.value)}
+          maxLength={180}
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="quartier">Quartier</Label>
+        <Input
+          id="quartier"
+          placeholder="Ex. Ourbouga, Yokossi…"
+          value={quartier}
+          onChange={(event) => setQuartier(event.target.value)}
+          maxLength={100}
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="pointDeRepere">Point de repère obligatoire</Label>
         <Input
           id="pointDeRepere"
-          placeholder="Près du grand marché, portail bleu..."
+          placeholder="Près du grand marché, portail bleu…"
           value={pointDeRepere}
           onChange={(event) => setPointDeRepere(event.target.value)}
           required
+          maxLength={180}
         />
+        <p className="text-xs text-muted-foreground">
+          Le point de repère reste obligatoire, même lorsqu’une position GPS sera renseignée.
+        </p>
       </div>
 
       <div className="space-y-1.5">
@@ -142,7 +179,7 @@ export function AddressForm({
       </div>
 
       <Button type="submit" disabled={enregistrement} className="w-full">
-        {enregistrement ? 'Enregistrement...' : adresse ? 'Enregistrer' : "Ajouter l'adresse"}
+        {enregistrement ? 'Enregistrement...' : adresseInitiale ? 'Enregistrer' : "Ajouter l'adresse"}
       </Button>
     </form>
   );

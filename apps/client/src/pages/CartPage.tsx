@@ -1,5 +1,5 @@
 import { ESPECES_ACTIF } from '@delivero/config/perimetre-v1';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,7 +37,7 @@ export function CartPage() {
   const creerInvite = useCreerCommandeInvite<CommandeRepasInviteInput>('repas');
   const apresCreationInvite = useApresCreationInvite();
   const envoiEnCours = createCommande.isPending || apresCreation.isPending || creerInvite.isPending;
-  const { data: restaurant } = useRestaurant(cart.restaurantId ?? undefined);
+  const { data: restaurant, isError: restaurantError, refetch: refetchRestaurant } = useRestaurant(cart.restaurantId ?? undefined);
 
   const [adresseId, setAdresseId] = useState<string | null>(null);
   // F-CLI-02 : commande sans compte.
@@ -47,6 +47,7 @@ export function CartPage() {
   const [modePaiement, setModePaiement] = useState<ModePaiement>(
     ESPECES_ACTIF ? 'especes' : 'mobile_money',
   );
+  const submissionLock = useRef(false);
 
   const sousTotal = cart.items.reduce((sum, item) => sum + item.prixUnitaire * item.quantite, 0);
   // Décompte transparent (RG-08) : frais de livraison + 15 % de service,
@@ -67,11 +68,13 @@ export function CartPage() {
   }));
 
   const commanderSansCompte = () => {
+    if (submissionLock.current || envoiEnCours) return;
     if (!cart.restaurantId) return;
     if (!contact.nom.trim() || !contact.telephone.trim() || !adresseInvite.pointDeRepere.trim()) {
       toast.error('Indiquez votre nom, votre téléphone et un point de repère.');
       return;
     }
+    submissionLock.current = true;
     creerInvite.mutate(
       { invite: contact, adresse: adresseInvite, partenaireId: cart.restaurantId, modePaiement, lignes },
       {
@@ -80,11 +83,15 @@ export function CartPage() {
           void apresCreationInvite(creee, { mode: modePaiement, statut: 'en_attente' });
         },
         onError: (error) => toast.error(error.message),
+        onSettled: () => {
+          submissionLock.current = false;
+        },
       },
     );
   };
 
-  const commander = () => {
+  const commander = async () => {
+    if (submissionLock.current || envoiEnCours) return;
     if (!token) {
       commanderSansCompte();
       return;
@@ -97,21 +104,21 @@ export function CartPage() {
       return;
     }
 
-    createCommande.mutate(
-      {
+    submissionLock.current = true;
+    try {
+      const commande = await createCommande.mutateAsync({
         partenaireId: cart.restaurantId,
         adresseId,
         modePaiement,
         lignes,
-      },
-      {
-        onSuccess: (commande) => {
-          cart.clear();
-          apresCreation.continuer(commande, `/commandes/${commande.id}`, 'Commande envoyée au restaurant !');
-        },
-        onError: (error) => toast.error(error.message),
-      },
-    );
+      });
+      cart.clear();
+      apresCreation.continuer(commande, `/commandes/${commande.id}`, 'Commande envoyée au restaurant !');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'La commande n’a pas pu être envoyée. Réessayez.');
+    } finally {
+      submissionLock.current = false;
+    }
   };
 
   return (
@@ -120,6 +127,9 @@ export function CartPage() {
         <h1 className="text-xl font-semibold">Votre panier</h1>
         <p className="text-sm text-muted-foreground">{cart.restaurantNom}</p>
       </div>
+
+      {!navigator.onLine && <p role="status" className="rounded-xl bg-secondary px-3 py-2 text-sm text-foreground">Vous êtes hors ligne. Votre panier est conservé sur cet appareil ; vous pourrez commander dès le retour du réseau.</p>}
+      {restaurantError && <div role="alert" className="rounded-xl bg-destructive/10 p-3 text-sm"><p>Le tarif du restaurant n’a pas pu être chargé.</p><Button variant="outline" size="sm" className="mt-2" onClick={() => void refetchRestaurant()}>Réessayer</Button></div>}
 
       <div>
         {cart.items.map((item) => (

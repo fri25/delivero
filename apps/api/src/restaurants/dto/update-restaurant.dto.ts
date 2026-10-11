@@ -23,6 +23,17 @@ export class UpdateRestaurantDto {
 
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
+  specialiteCuisine?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(10)
+  @Max(180)
+  delaiMoyenMinutes?: number;
+
+  @IsOptional()
+  @IsString()
   horaires?: string;
 
   @IsOptional()

@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AdminModule } from './admin/admin.module';
+import { AvisModule } from './avis/avis.module';
 import { AdressesModule } from './adresses/adresses.module';
 import { AuthModule } from './auth/auth.module';
 import { CommandesColisModule } from './commandes-colis/commandes-colis.module';
@@ -55,6 +56,7 @@ import { ZonesModule } from './zones/zones.module';
     InviteModule,
     ZonesModule,
     AdminModule,
+    AvisModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

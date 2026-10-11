@@ -44,8 +44,10 @@ function nouvelleEtape(): EtapeDraft {
 }
 
 export function CoursesExpressFormPage() {
+  const location = useLocation();
+  const preRemplir = (location.state as { preRemplir?: ModeleCoursesExpress } | null)?.preRemplir;
   // F-CLI-07 : modèle passé par « Refaire cette course ».
-  const modele = lireModele<ModeleCoursesExpress>(useLocation().state);
+  const modele = preRemplir ?? lireModele<ModeleCoursesExpress>(location.state);
   const token = useAuthStore((state) => state.token);
   const { data: zones } = useZones();
   const createCommande = useCreateCommandeCoursesExpress();
@@ -61,7 +63,7 @@ export function CoursesExpressFormPage() {
   const envoiEnCours = createCommande.isPending || apresCreation.isPending || creerInvite.isPending;
   const [photoEnCours, setPhotoEnCours] = useState(false);
   const [zoneId, setZoneId] = useState<string | null>(modele?.zoneId ?? null);
-  const [etapes, setEtapes] = useState<EtapeDraft[]>(modele?.etapes.length ? modele.etapes : [nouvelleEtape()]);
+  const [etapes, setEtapes] = useState<EtapeDraft[]>(modele?.etapes?.length ? modele.etapes : [nouvelleEtape()]);
   const [modePaiement, setModePaiement] = useState<ModePaiement>(
     ESPECES_ACTIF ? 'especes' : 'mobile_money',
   );
@@ -138,6 +140,7 @@ export function CoursesExpressFormPage() {
           Dépôt, retrait, démarche de proximité — décrivez la tâche, un livreur s'en charge.
         </p>
       </div>
+      {preRemplir && <p className="rounded-xl bg-secondary px-3 py-2 text-sm text-foreground">Les informations de votre ancienne course ont été reprises. Vérifiez chaque étape avant de confirmer.</p>}
 
       <section className="space-y-1.5">
         <Label htmlFor="description">Ce qu'il faut faire</Label>

@@ -61,6 +61,7 @@ export const router = createBrowserRouter([
       },
       { path: 'connexion', lazy: page(() => import('@/pages/LoginPage'), 'LoginPage') },
       { path: 'inscription', lazy: page(() => import('@/pages/RegisterPage'), 'RegisterPage') },
+      { path: 'aide', lazy: page(() => import('@/pages/HelpPage'), 'HelpPage') },
       {
         element: <ProtectedRoute />,
         children: [

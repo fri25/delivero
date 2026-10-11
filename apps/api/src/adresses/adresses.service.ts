@@ -31,6 +31,8 @@ export class AdressesService {
         data: {
           userId,
           libelle: dto.libelle,
+          adresse: dto.adresse,
+          quartier: dto.quartier,
           pointDeRepere: dto.pointDeRepere,
           latitude: dto.latitude,
           longitude: dto.longitude,

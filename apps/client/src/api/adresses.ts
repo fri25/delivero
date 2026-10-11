@@ -5,6 +5,8 @@ import type { Adresse } from './types';
 
 export interface AdresseInput {
   libelle: string;
+  adresse: string;
+  quartier: string;
   pointDeRepere: string;
   /** null clears a previously saved GPS position. */
   latitude?: number | null;

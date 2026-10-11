@@ -16,6 +16,8 @@ export interface RestaurantSummary {
   description: string | null;
   horaires: string | null;
   noteMoyenne: string | null;
+  specialiteCuisine?: string | null;
+  delaiMoyenMinutes?: number | null;
   statutOuverture: boolean;
   /** Values from TYPES_CUISINE (@delivero/config/types-cuisine). */
   typesCuisine: string[];
@@ -46,6 +48,8 @@ export interface RestaurantDetail extends Omit<RestaurantSummary, 'prixMoyen'> {
 export interface Adresse {
   id: string;
   libelle: string;
+  adresse?: string | null;
+  quartier?: string | null;
   pointDeRepere: string;
   latitude: string | null;
   longitude: string | null;

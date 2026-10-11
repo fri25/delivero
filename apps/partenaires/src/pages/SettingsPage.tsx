@@ -15,8 +15,11 @@ function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
   const [nom, setNom] = useState(restaurant.nom);
   const [description, setDescription] = useState(restaurant.description ?? '');
   const [horaires, setHoraires] = useState(restaurant.horaires ?? '');
-  const [typesCuisine, setTypesCuisine] = useState<string[]>(restaurant.typesCuisine);
-  const [delai, setDelai] = useState(restaurant.delaiPreparationMin?.toString() ?? '');
+  const [specialiteCuisine, setSpecialiteCuisine] = useState(restaurant.specialiteCuisine ?? '');
+  const [typesCuisine, setTypesCuisine] = useState<string[]>(restaurant.typesCuisine ?? []);
+  const [delai, setDelai] = useState(
+    (restaurant.delaiPreparationMin ?? restaurant.delaiMoyenMinutes)?.toString() ?? '',
+  );
 
   return (
     <form
@@ -28,6 +31,8 @@ function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
             nom: nom.trim(),
             description: description.trim() || undefined,
             horaires: horaires.trim() || undefined,
+            specialiteCuisine: specialiteCuisine.trim() || undefined,
+            delaiMoyenMinutes: delai ? Number(delai) : undefined,
             typesCuisine,
             delaiPreparationMin: delai ? Number(delai) : undefined,
           },
@@ -55,6 +60,16 @@ function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
           placeholder="ex. Tous les jours 11h00–22h30"
           value={horaires}
           onChange={(event) => setHoraires(event.target.value)}
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="specialiteCuisine">Cuisine / spécialité</Label>
+        <Input
+          id="specialiteCuisine"
+          value={specialiteCuisine}
+          onChange={(event) => setSpecialiteCuisine(event.target.value)}
+          placeholder="Cuisine béninoise, grillades…"
         />
       </div>
 
@@ -86,16 +101,20 @@ function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
       </fieldset>
 
       <div className="space-y-1.5">
-        <Label htmlFor="delai">Délai de préparation moyen (minutes)</Label>
+        <Label htmlFor="delai">Délai moyen de préparation (minutes)</Label>
         <Input
           id="delai"
           type="number"
           inputMode="numeric"
-          min={1}
+          min={10}
           max={240}
           value={delai}
           onChange={(event) => setDelai(event.target.value)}
+          placeholder="Ex. 35"
         />
+        <p className="text-xs text-muted-foreground">
+          Indiquez un délai moyen réaliste. Il sera affiché aux clients avant commande.
+        </p>
       </div>
 
       <Button type="submit" disabled={updateRestaurant.isPending}>

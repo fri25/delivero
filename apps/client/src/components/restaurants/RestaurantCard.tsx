@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { MediaFrame } from '@/components/restaurants/MediaFrame';
 import { getRestaurantImage } from '@/data/images';
 import type { RestaurantSummary } from '@/api/types';
+import { formatPrixFcfa } from '@/lib/format';
 
 export function RestaurantCard({
   restaurant,
@@ -56,15 +57,18 @@ export function RestaurantCard({
                 {restaurant.noteMoyenne}
               </span>
             )}
-            {restaurant.delaiPreparationMin !== null && (
+            {(restaurant.delaiPreparationMin ?? restaurant.delaiMoyenMinutes) != null && (
               <span className="inline-flex items-center gap-1">
                 <Clock className="size-3.5" aria-hidden="true" />
-                {restaurant.delaiPreparationMin} min
+                {restaurant.delaiPreparationMin ?? restaurant.delaiMoyenMinutes} min
               </span>
             )}
-            {restaurant.typesCuisine.length > 0 && (
-              <span className="line-clamp-1">{restaurant.typesCuisine.join(' · ')}</span>
+            {(restaurant.typesCuisine?.length ? restaurant.typesCuisine.join(' · ') : restaurant.specialiteCuisine) && (
+              <span className="line-clamp-1">
+                {restaurant.typesCuisine?.length ? restaurant.typesCuisine.join(' · ') : restaurant.specialiteCuisine}
+              </span>
             )}
+            {restaurant.prixMoyen != null && <span>Menu moyen {formatPrixFcfa(restaurant.prixMoyen)}</span>}
           </div>
         </div>
       </article>

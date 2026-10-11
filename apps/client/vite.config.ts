@@ -16,6 +16,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
+        navigateFallback: '/offline.html',
+        navigateFallbackDenylist: [/^\/api\//],
         // Emplettes is hidden in V1 (packages/config/perimetre-v1.ts): its
         // lazy chunks are unreachable, do not make every client download them.
         globIgnores: ['**/node_modules/**/*', 'sw.js', 'workbox-*.js', '**/Emplettes*.js'],

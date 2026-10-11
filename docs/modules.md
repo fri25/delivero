@@ -74,11 +74,10 @@ Repas → Colis → Emplettes → Courses express) :
       polling conservé comme filet de secours — voir
       `apps/api/src/realtime/realtime.gateway.ts`)*
 - [x] F-CLI-06 — Historique unifié de toutes les commandes, tous services — *(fait
-      le 05/10 : `OrdersPage` agrège les services ouverts via
-      `apps/client/src/api/historique.ts`, triés du plus récent au plus ancien ;
+      le 05/10 : `OrdersPage` agrège les services ouverts avec filtres service/statut/période,
+      triés du plus récent au plus ancien et liens vers les fiches de suivi ;
       le bandeau « commande en cours » de l'accueil couvre aussi tous les
-      services. Emplettes est inclus automatiquement quand `EMPLETTES_ACTIF`
-      repasse à vrai)*
+      services)*
 - [x] F-CLI-07 — Recommander en un clic — *(06/10 : Repas remplit le panier
       avec les plats encore disponibles, au prix du jour (remplace le panier
       en cours après confirmation) ; Colis et Courses express rouvrent le
@@ -87,8 +86,7 @@ Repas → Colis → Emplettes → Courses express) :
       *(06/10 : 1 à 5 étoiles + commentaire facultatif, une note par cible et
       par commande, seulement après livraison ; le partenaire ne se note que
       pour Repas. Recalcule `noteMoyenne` du partenaire et du livreur —
-      `apps/api/src/notations/`. Les notes ne sont pas encore affichées côté
-      partenaire/livreur/admin)*
+      `apps/api/src/notations/` et avis)*
 - [ ] F-CLI-09 — Notifications SMS/WhatsApp/e-mail aux étapes clés — *(partiel,
       05/10 : Web Push (VAPID) sur l'app client + repli WhatsApp/SMS dès
       qu'aucun push n'est remis, aux étapes clés des 4 services, au paiement
@@ -99,8 +97,8 @@ Repas → Colis → Emplettes → Courses express) :
       apps partenaires/livreur)*
 - [x] F-CLI-10 — Accueil présentant les 4 services et orientant vers le bon parcours
       — *(`ServicesHubPage` est désormais la route `/`, une tuile par service ;
-      deux raccourcis actifs : « Mes commandes » (historique unifié) et « Aide
-      WhatsApp » vers le support 01 57 86 69 59)*
+      raccourcis actifs : « Mes commandes », « Mes adresses », « Aide et contact »
+      et « Aide WhatsApp »)*
 
 ### Repas
 - [x] F-CLI-11 — Catalogue des restaurants (recherche, filtres cuisine/prix/note/délai)
@@ -126,9 +124,9 @@ Repas → Colis → Emplettes → Courses express) :
 - [x] F-CLI-19 — Programmation de l'enlèvement (immédiat ou planifié)
 - [x] F-CLI-20 — Rappel des objets interdits + acceptation des conditions
 - [x] F-CLI-21 — Suivi de statut Colis
-- [ ] F-CLI-22 — Consultation de la preuve de livraison — *(partiel, 05/10 : le
-      détail Colis livré affiche la date de remise, le nom du réceptionnaire et
-      la confirmation par code de remise. Pas de photo — S3 absent)*
+- [x] F-CLI-22 — Consultation de la preuve de livraison — *(côté client Colis :
+      date de remise, nom du réceptionnaire et code de remise vérifié affichés ;
+      aucune photo, stockage S3 absent)*
 
 *(Backend + écrans client/livreur/suivi public livrés le 2026-08-27, voir
 [api-colis.md](api-colis.md) et [service-colis.md](service-colis.md). Hors

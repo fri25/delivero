@@ -12,10 +12,12 @@ import { RotateCcw } from 'lucide-react';
 import { useRecommanderRepas } from '@/lib/recommander';
 import { isStatutRepasActif } from '@/lib/statut-repas';
 import { formatPrixFcfa } from '@/lib/format';
+import { AvisCommandeSection } from '@/components/orders/AvisCommandeSection';
+import { LoadError } from '@/components/layout/LoadError';
 
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: commande, isPending } = useCommandeRepas(id);
+  const { data: commande, isPending, isError, refetch } = useCommandeRepas(id);
   const annuler = useAnnulerCommande();
   const noter = useNoterCommande(['commande-repas', id]);
   const { recommander, enCours: recommandationEnCours } = useRecommanderRepas();
@@ -29,6 +31,8 @@ export function OrderDetailPage() {
     );
   }
 
+  if (isError) return <LoadError message="Le détail de la commande n’a pas pu être chargé." onRetry={() => void refetch()} />;
+
   if (!commande) {
     return <p className="text-sm text-destructive">Commande introuvable.</p>;
   }
@@ -38,7 +42,7 @@ export function OrderDetailPage() {
       <div>
         <h1 className="text-xl font-semibold">{commande.partenaire.nom}</h1>
         <p className="text-sm text-muted-foreground">
-          Commande passée le {new Date(commande.createdAt).toLocaleString('fr-FR')}
+          Commande passée le {new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Porto-Novo' }).format(new Date(commande.createdAt))}
         </p>
       </div>
 
@@ -102,6 +106,8 @@ export function OrderDetailPage() {
           </span>
         </div>
       </div>
+
+      <AvisCommandeSection commandeId={commande.id} prestationTerminee={commande.statut === 'livree'} />
 
       {!isStatutRepasActif(commande.statut) && (
         <Button className="w-full" disabled={recommandationEnCours} onClick={() => void recommander(commande)}>

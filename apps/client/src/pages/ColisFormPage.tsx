@@ -40,8 +40,10 @@ const TAILLE_LABELS: Record<TailleColis, string> = {
 };
 
 export function ColisFormPage() {
+  const location = useLocation();
+  const preRemplir = (location.state as { preRemplir?: ModeleColis } | null)?.preRemplir;
   // F-CLI-07 : modèle passé par « Envoyer un colis similaire ».
-  const modele = lireModele<ModeleColis>(useLocation().state);
+  const modele = preRemplir ?? lireModele<ModeleColis>(location.state);
   const token = useAuthStore((state) => state.token);
   const { data: zones, isPending: zonesPending } = useZones();
   const createCommande = useCreateCommandeColis();
@@ -185,6 +187,7 @@ export function ColisFormPage() {
           Enlèvement chez vous, livraison au destinataire — vous suivez chaque étape.
         </p>
       </div>
+      {preRemplir && <p className="rounded-xl bg-secondary px-3 py-2 text-sm text-foreground">Les informations de votre ancien envoi ont été reprises. Vérifiez-les avant de confirmer.</p>}
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold">Adresse d'enlèvement</h2>

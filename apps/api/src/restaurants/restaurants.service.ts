@@ -42,6 +42,8 @@ export class RestaurantsService {
         horaires: true,
         noteMoyenne: true,
         statutOuverture: true,
+        specialiteCuisine: true,
+        delaiMoyenMinutes: true,
         typesCuisine: true,
         delaiPreparationMin: true,
         plats: {
@@ -73,6 +75,8 @@ export class RestaurantsService {
         pointDeRepere: true,
         statutOuverture: true,
         noteMoyenne: true,
+        specialiteCuisine: true,
+        delaiMoyenMinutes: true,
         typesCuisine: true,
         delaiPreparationMin: true,
         plats: { orderBy: [{ categorie: 'asc' }, { nom: 'asc' }] },
