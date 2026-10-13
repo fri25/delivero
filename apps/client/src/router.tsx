@@ -62,6 +62,8 @@ export const router = createBrowserRouter([
       { path: 'connexion', lazy: page(() => import('@/pages/LoginPage'), 'LoginPage') },
       { path: 'inscription', lazy: page(() => import('@/pages/RegisterPage'), 'RegisterPage') },
       { path: 'aide', lazy: page(() => import('@/pages/HelpPage'), 'HelpPage') },
+      // Public: signed out, it invites to sign in.
+      { path: 'compte', lazy: page(() => import('@/pages/ComptePage'), 'ComptePage') },
       {
         element: <ProtectedRoute />,
         children: [

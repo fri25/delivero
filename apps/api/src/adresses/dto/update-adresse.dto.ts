@@ -19,6 +19,13 @@ export class UpdateAdresseDto {
   @MaxLength(180)
   adresse?: string;
 
+  /** Priced neighbourhood (GET /quartiers). */
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  quartierId?: string;
+
+  /** Name typed by the client; required when quartierId is "Autre quartier". */
   @IsOptional()
   @IsString()
   @MaxLength(100)

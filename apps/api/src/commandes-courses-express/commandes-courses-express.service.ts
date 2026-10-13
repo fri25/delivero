@@ -23,6 +23,8 @@ import {
   HISTORIQUE_LIVREUR_MAX,
 } from '../livreurs/periode-livreur';
 import { PrismaService } from '../prisma/prisma.service';
+import { QuartiersService } from '../quartiers/quartiers.service';
+import { tarifCoursesExpress } from '../quartiers/tarification';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
 import { MediasService } from '../medias/medias.service';
 import {
@@ -76,11 +78,6 @@ const DISPONIBLES_INCLUDE = {
 
 const ADMIN_ROLE_NAME = 'admin_dispatcher';
 
-// Majoration provisoire par arrêt supplémentaire, appliquée au tarif de base
-// par zone (GrilleTarifaireCoursesExpress.tarifBase, lui-même provisoire).
-// Vit en code, pas en base — même statut que MAJORATION_TAILLE côté Colis.
-const MAJORATION_PAR_ARRET_SUPPLEMENTAIRE = 200;
-
 @Injectable()
 export class CommandesCoursesExpressService {
   constructor(
@@ -90,6 +87,7 @@ export class CommandesCoursesExpressService {
     private readonly notifications: NotificationsService,
     private readonly medias: MediasService,
     private readonly perimetre: PerimetreV1Service,
+    private readonly quartiers: QuartiersService,
   ) {}
 
   // F-CLI-05 : voir même principe que commandes-repas.service.ts.
@@ -116,9 +114,14 @@ export class CommandesCoursesExpressService {
     );
   }
 
-  async estimer(zoneId: string, nombreEtapes: number) {
-    const tarif = await this.calculerTarif(zoneId, nombreEtapes);
-    return { zoneId, nombreEtapes, tarif };
+  // Price = dearest stop neighbourhood × number of stops (Q-28, decided 13/10;
+  // the former zone grid + 200 FCFA per extra stop is no longer used).
+  async estimer(quartierIds: string[]) {
+    const quartiers = await this.quartiers.resoudrePlusieurs(quartierIds);
+    const tarif = tarifCoursesExpress(
+      quartiers.map((q) => Number(q.fraisLivraison)),
+    );
+    return { nombreEtapes: quartierIds.length, tarif };
   }
 
   /**
@@ -141,8 +144,15 @@ export class CommandesCoursesExpressService {
     }
 
     // Le tarif est toujours recalculé côté serveur : aucun montant envoyé
-    // par le client n'est pris en compte.
-    const tarif = await this.calculerTarif(dto.zoneId, dto.etapes.length);
+    // par le client n'est pris en compte. Prix par quartier (Q-28).
+    const arrets = await Promise.all(
+      dto.etapes.map((etape) =>
+        this.quartiers.resoudre(etape.quartierId, etape.quartier),
+      ),
+    );
+    const tarif = tarifCoursesExpress(
+      arrets.map((a) => Number(a.quartier.fraisLivraison)),
+    );
 
     const commandeCoursesExpress = await this.prisma.$transaction(
       async (tx) => {
@@ -179,7 +189,11 @@ export class CommandesCoursesExpressService {
                 ordre: index + 1,
                 description: etape.description,
                 pointDeRepere: etape.pointDeRepere,
-                adresse: etape.adresse,
+                quartierId: arrets[index].quartier.id,
+                adresse:
+                  [arrets[index].nom, etape.adresse?.trim()]
+                    .filter(Boolean)
+                    .join(' — ') || undefined,
               })),
             },
           },
@@ -415,22 +429,6 @@ export class CommandesCoursesExpressService {
         include: DETAIL_INCLUDE,
       });
     });
-  }
-
-  private async calculerTarif(zoneId: string, nombreEtapes: number) {
-    const grille = await this.prisma.grilleTarifaireCoursesExpress.findUnique({
-      where: { zoneId },
-    });
-    if (!grille) {
-      throw new NotFoundException(
-        'Aucune grille tarifaire Courses express pour cette zone.',
-      );
-    }
-    const arretsSupplementaires = Math.max(0, nombreEtapes - 1);
-    return (
-      Math.round(Number(grille.tarifBase)) +
-      arretsSupplementaires * MAJORATION_PAR_ARRET_SUPPLEMENTAIRE
-    );
   }
 
   /** Guest tracking page (F-CLI-02); the caller has verified the link. */

@@ -23,8 +23,20 @@ export class CreateCommandeColisDto {
   @IsNotEmpty()
   zoneId!: string;
 
+  /** Kept for the livreur (what to carry); no longer changes the price. */
   @IsEnum(TailleColis)
   taille!: TailleColis;
+
+  /** Recipient's neighbourhood (GET /quartiers): sets the price (Q-28, 13/10). */
+  @IsString()
+  @IsNotEmpty()
+  quartierLivraisonId!: string;
+
+  /** Name typed for "Autre quartier". */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  quartierLivraison?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -34,9 +46,11 @@ export class CreateCommandeColisDto {
   @IsNotEmpty()
   destinataireTelephone!: string;
 
+  /** Street, house… — optional: neighbourhood + landmark locate the recipient. */
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  adresseLivraison!: string;
+  @MaxLength(180)
+  adresseLivraison?: string;
 
   @IsString()
   @IsNotEmpty()

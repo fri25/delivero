@@ -40,9 +40,30 @@ export const envValidationSchema = Joi.object({
   VAPID_PUBLIC_KEY: Joi.string().allow('').default(''),
   VAPID_PRIVATE_KEY: Joi.string().allow('').default(''),
   VAPID_SUBJECT: Joi.string().default('mailto:contact@chapexpress.bj'),
-  // WhatsApp/SMS provider (fallback for every alert + OTP codes). Only
-  // "console" exists for now: messages are written to the API logs.
-  MESSAGERIE_FOURNISSEUR: Joi.string().valid('console').default('console'),
+  // WhatsApp/SMS provider (fallback for every alert + OTP codes).
+  // "console" writes messages to the API logs (dev only); "twilio" sends them
+  // (decision of 13/10) and needs the TWILIO_* variables below.
+  MESSAGERIE_FOURNISSEUR: Joi.string()
+    .valid('console', 'twilio')
+    .default('console'),
+  TWILIO_ACCOUNT_SID: Joi.string().when('MESSAGERIE_FOURNISSEUR', {
+    is: 'twilio',
+    then: Joi.required(),
+    otherwise: Joi.allow('').default(''),
+  }),
+  TWILIO_AUTH_TOKEN: Joi.string().when('MESSAGERIE_FOURNISSEUR', {
+    is: 'twilio',
+    then: Joi.required(),
+    otherwise: Joi.allow('').default(''),
+  }),
+  // SMS sender: Twilio number (+…) or Messaging Service SID (MG…).
+  TWILIO_SMS_FROM: Joi.string().when('MESSAGERIE_FOURNISSEUR', {
+    is: 'twilio',
+    then: Joi.required(),
+    otherwise: Joi.allow('').default(''),
+  }),
+  // Optional WhatsApp sender (+…): tried first, SMS as fallback.
+  TWILIO_WHATSAPP_FROM: Joi.string().allow('').default(''),
   // Cloudinary (photos colis / courses). Missing => photo fields hidden.
   CLOUDINARY_CLOUD_NAME: Joi.string().allow('').default(''),
   CLOUDINARY_API_KEY: Joi.string().allow('').default(''),

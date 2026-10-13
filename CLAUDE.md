@@ -38,15 +38,19 @@ Choix tranchés (voir [docs/decisions-arbitrage.md](docs/decisions-arbitrage.md)
   voir `apps/api/src/realtime/`. Le polling reste en place comme filet de
   secours (reconnexion, 3G instable) ; livreur et back-office non couverts.
 - Push : Web Push (VAPID) + fallback WhatsApp/SMS obligatoire — en place côté
-  client depuis le 05/10 (`apps/api/src/notifications/`), mais **fournisseur
-  WhatsApp/SMS non choisi** : pilote `console` (messages et codes OTP écrits
-  dans les logs). Push non proposé dans partenaires/livreur.
+  client depuis le 05/10 (`apps/api/src/notifications/`). Fournisseur
+  WhatsApp/SMS : **Twilio** (choisi le 13/10, pilote prêt), **identifiants à
+  renseigner** — d'ici là pilote `console` (messages et codes OTP écrits dans
+  les logs). Push non proposé dans partenaires/livreur.
 - Paiement : agrégateur Mobile Money, FedaPay — intégré le 05/10 (page de
   paiement hébergée + webhook signé, `apps/api/src/paiements/`), **pas encore
   validé en sandbox**. Paiement à la commande : une commande Mobile Money non
   payée n'est transmise ni au restaurant ni aux livreurs. Remboursements
   manuels (statut `a_rembourser`), sans écran back-office à ce jour.
-- Cartographie : Google Maps Platform — **[À FAIRE]**.
+- Cartographie : pas de carte en V1 (décision du 13/10) ; le **quartier**
+  (liste tenue au back-office) est obligatoire et fixe les prix Repas / Colis /
+  Courses express — voir RG-08 (Q-28). Google Maps Platform reste la cible
+  ultérieure.
 - Fichiers : photos sur Cloudinary (choisi le 06/10, `apps/api/src/medias/`,
   upload direct signé). Clés à renseigner ; preuve photo livreur et pièces
   d'identité livreur pas encore branchées.

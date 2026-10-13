@@ -28,10 +28,7 @@ export class CommandesCoursesExpressController {
   @Get('estimation')
   @Roles('client')
   estimer(@Query() dto: EstimerCoursesExpressDto) {
-    return this.commandesCoursesExpressService.estimer(
-      dto.zoneId,
-      dto.nombreEtapes,
-    );
+    return this.commandesCoursesExpressService.estimer(dto.quartierIds);
   }
 
   @Post()

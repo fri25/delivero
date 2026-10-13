@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { useCreateAdresse, useUpdateAdresse, type AdresseInput } from '@/api/adresses';
 import type { Adresse } from '@/api/types';
 import { lienGoogleMaps, lirePositionGps } from '@/lib/geolocalisation';
+import { versApi, type ChoixQuartier } from '@/lib/quartiers';
+import { QuartierField } from './QuartierField';
 
 interface Coordonnees {
   latitude: number;
@@ -34,7 +36,10 @@ export function AddressForm({
 }) {
   const [libelle, setLibelle] = useState(adresseInitiale?.libelle ?? '');
   const [rue, setRue] = useState(adresseInitiale?.adresse ?? '');
-  const [quartier, setQuartier] = useState(adresseInitiale?.quartier ?? '');
+  const [quartier, setQuartier] = useState<ChoixQuartier>({
+    quartierId: adresseInitiale?.quartierId ?? '',
+    precision: adresseInitiale?.quartierTarifaire?.autre ? (adresseInitiale.quartier ?? '') : '',
+  });
   const [pointDeRepere, setPointDeRepere] = useState(adresseInitiale?.pointDeRepere ?? '');
   const [position, setPosition] = useState<Coordonnees | null>(() => coordonneesInitiales(adresseInitiale));
   const [localisationEnCours, setLocalisationEnCours] = useState(false);
@@ -62,7 +67,7 @@ export function AddressForm({
         const dto: AdresseInput = {
           libelle,
           adresse: rue,
-          quartier,
+          ...versApi(quartier),
           pointDeRepere,
           latitude: position?.latitude ?? null,
           longitude: position?.longitude ?? null,
@@ -106,16 +111,7 @@ export function AddressForm({
         />
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="quartier">Quartier</Label>
-        <Input
-          id="quartier"
-          placeholder="Ex. Ourbouga, Yokossi…"
-          value={quartier}
-          onChange={(event) => setQuartier(event.target.value)}
-          maxLength={100}
-        />
-      </div>
+      <QuartierField id="quartier" value={quartier} onChange={setQuartier} />
 
       <div className="space-y-1.5">
         <Label htmlFor="pointDeRepere">Point de repère obligatoire</Label>

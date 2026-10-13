@@ -16,6 +16,7 @@ import {
 } from '@/api/saisie-manuelle';
 import { useRestaurant, useRestaurants } from '@/api/restaurants';
 import { useZones } from '@/api/zones';
+import { QuartierSelect } from '@/components/saisie/QuartierSelect';
 import type { ModePaiement, TypeService } from '@/api/types';
 
 const TOUS_SERVICES: { value: TypeService; label: string }[] = [
@@ -33,6 +34,9 @@ const SERVICES = TOUS_SERVICES.filter((s) => s.value !== 'emplettes' || EMPLETTE
 // téléphone suit le même périmètre que le parcours client. Les espèces étant
 // retirées de la V1, l'API refuserait `especes` (voir perimetre-v1.service.ts).
 const MODE_PAIEMENT_V1: ModePaiement = ESPECES_ACTIF ? 'especes' : 'mobile_money';
+
+// A course stop: its neighbourhood prices the course (Q-28, dearest × stops).
+const ETAPE_VIDE = { description: '', pointDeRepere: '', quartierId: '', precision: '' };
 
 function ZoneSelect({
   value,
@@ -101,6 +105,7 @@ function FormRepas() {
   const [clientNom, setClientNom] = useState('');
   const [clientTelephone, setClientTelephone] = useState('');
   const [pointDeRepere, setPointDeRepere] = useState('');
+  const [quartier, setQuartier] = useState({ quartierId: '', precision: '' });
   const [partenaireId, setPartenaireId] = useState('');
   const { data: restaurant } = useRestaurant(partenaireId || undefined);
   const [lignes, setLignes] = useState([{ platId: '', quantite: 1 }]);
@@ -109,6 +114,7 @@ function FormRepas() {
     setClientNom('');
     setClientTelephone('');
     setPointDeRepere('');
+    setQuartier({ quartierId: '', precision: '' });
     setPartenaireId('');
     setLignes([{ platId: '', quantite: 1 }]);
   };
@@ -123,6 +129,8 @@ function FormRepas() {
             clientNom,
             clientTelephone,
             pointDeRepere,
+            quartierId: quartier.quartierId,
+            quartier: quartier.precision.trim() || undefined,
             partenaireId,
             modePaiement: MODE_PAIEMENT_V1,
             lignes: lignes.filter((l) => l.platId),
@@ -143,6 +151,15 @@ function FormRepas() {
         clientTelephone={clientTelephone}
         setClientTelephone={setClientTelephone}
       />
+      <div className="space-y-1.5">
+        <Label htmlFor="repas-quartier">Quartier (fixe les frais de livraison)</Label>
+        <QuartierSelect
+          id="repas-quartier"
+          quartierId={quartier.quartierId}
+          precision={quartier.precision}
+          onChange={setQuartier}
+        />
+      </div>
       <div className="space-y-1.5">
         <Label htmlFor="repas-point-de-repere">Point de repère (livraison)</Label>
         <Input
@@ -249,6 +266,7 @@ function FormColis() {
   const [destinataireNom, setDestinataireNom] = useState('');
   const [destinataireTelephone, setDestinataireTelephone] = useState('');
   const [adresseLivraison, setAdresseLivraison] = useState('');
+  const [quartierLivraison, setQuartierLivraison] = useState({ quartierId: '', precision: '' });
   const [pointDeRepereLivraison, setPointDeRepereLivraison] = useState('');
   const [montantContreRemboursement, setMontantContreRemboursement] = useState('');
 
@@ -266,7 +284,9 @@ function FormColis() {
             taille,
             destinataireNom,
             destinataireTelephone,
-            adresseLivraison,
+            adresseLivraison: adresseLivraison.trim() || undefined,
+            quartierLivraisonId: quartierLivraison.quartierId,
+            quartierLivraison: quartierLivraison.precision.trim() || undefined,
             pointDeRepereLivraison,
             montantContreRemboursement: montantContreRemboursement
               ? Number(montantContreRemboursement)
@@ -284,6 +304,7 @@ function FormColis() {
               setDestinataireNom('');
               setDestinataireTelephone('');
               setAdresseLivraison('');
+              setQuartierLivraison({ quartierId: '', precision: '' });
               setPointDeRepereLivraison('');
               setMontantContreRemboursement('');
             },
@@ -357,12 +378,20 @@ function FormColis() {
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="colis-adresse-livraison">Adresse de livraison</Label>
+        <Label htmlFor="colis-quartier-livraison">Quartier du destinataire (fixe le prix)</Label>
+        <QuartierSelect
+          id="colis-quartier-livraison"
+          quartierId={quartierLivraison.quartierId}
+          precision={quartierLivraison.precision}
+          onChange={setQuartierLivraison}
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="colis-adresse-livraison">Rue, maison (facultatif)</Label>
         <Input
           id="colis-adresse-livraison"
           value={adresseLivraison}
           onChange={(e) => setAdresseLivraison(e.target.value)}
-          required
         />
       </div>
       <div className="space-y-1.5">
@@ -507,14 +536,14 @@ function FormCoursesExpress() {
   const [clientTelephone, setClientTelephone] = useState('');
   const [description, setDescription] = useState('');
   const [zoneId, setZoneId] = useState('');
-  const [etapes, setEtapes] = useState([{ description: '', pointDeRepere: '' }]);
+  const [etapes, setEtapes] = useState([ETAPE_VIDE]);
 
   const reset = () => {
     setClientNom('');
     setClientTelephone('');
     setDescription('');
     setZoneId('');
-    setEtapes([{ description: '', pointDeRepere: '' }]);
+    setEtapes([ETAPE_VIDE]);
   };
 
   return (
@@ -529,7 +558,10 @@ function FormCoursesExpress() {
             description,
             zoneId,
             modePaiement: MODE_PAIEMENT_V1,
-            etapes,
+            etapes: etapes.map(({ precision, ...etape }) => ({
+              ...etape,
+              quartier: precision.trim() || undefined,
+            })),
           },
           {
             onSuccess: () => {
@@ -583,6 +615,14 @@ function FormCoursesExpress() {
               placeholder="Point de repère"
               required
             />
+            <div className="w-56 shrink-0">
+              <QuartierSelect
+                id={`courses-quartier-${index}`}
+                quartierId={etape.quartierId}
+                precision={etape.precision}
+                onChange={(choix) => setEtapes(etapes.map((et, i) => (i === index ? { ...et, ...choix } : et)))}
+              />
+            </div>
             {etapes.length > 1 && (
               <Button
                 type="button"
@@ -599,7 +639,7 @@ function FormCoursesExpress() {
           type="button"
           size="sm"
           variant="outline"
-          onClick={() => setEtapes([...etapes, { description: '', pointDeRepere: '' }])}
+          onClick={() => setEtapes([...etapes, ETAPE_VIDE])}
         >
           + Ajouter une étape
         </Button>

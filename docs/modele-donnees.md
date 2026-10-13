@@ -39,9 +39,14 @@ articles d'emplettes...) sont rattachées à la commande générique.
   disponibilité.
 - **Livreur** — utilisateur, zone assignée, pièces d'identité, plafond d'avance,
   plafond de caisse, statut disponible/indisponible, note moyenne.
-- **Zone** — périmètre géographique servant de base aux grilles tarifaires (dont la
-  grille de frais de livraison Repas par zone, 500 / 1 000 FCFA — voir
-  [regles-gestion.md](regles-gestion.md) RG-08) et à l'affectation des livreurs.
+- **Zone** — périmètre géographique servant à l'affectation des livreurs (et aux
+  tarifs Emplettes, hors V1). Depuis le 13/10, les prix Repas / Colis / Courses
+  express ne dépendent plus de la zone mais du quartier.
+- **Quartier** — nom, frais de livraison (500 / 1 000 FCFA), actif, `autre`
+  (entrée unique « Autre quartier » : le client saisit le nom). Référencé par
+  `Adresse.quartierId`, `CommandeColis.quartierLivraisonId` et
+  `EtapeCourseExpress.quartierId` — voir [regles-gestion.md](regles-gestion.md)
+  RG-08 (Q-28).
 
 ### Commande (entité générique) et spécialisations par service
 - **Commande** — id, `type_service` (enum), client, statut (valeurs dépendantes du

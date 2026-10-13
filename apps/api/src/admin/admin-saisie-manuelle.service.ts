@@ -4,6 +4,7 @@ import { CommandesCoursesExpressService } from '../commandes-courses-express/com
 import { CommandesEmplettesService } from '../commandes-emplettes/commandes-emplettes.service';
 import { CommandesRepasService } from '../commandes-repas/commandes-repas.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { QuartiersService } from '../quartiers/quartiers.service';
 import { SaisieManuelleColisDto } from './dto/saisie-manuelle-colis.dto';
 import { SaisieManuelleCoursesExpressDto } from './dto/saisie-manuelle-courses-express.dto';
 import { SaisieManuelleEmplettesDto } from './dto/saisie-manuelle-emplettes.dto';
@@ -27,6 +28,7 @@ export class AdminSaisieManuelleService {
     private readonly commandesColis: CommandesColisService,
     private readonly commandesEmplettes: CommandesEmplettesService,
     private readonly commandesCoursesExpress: CommandesCoursesExpressService,
+    private readonly quartiers: QuartiersService,
   ) {}
 
   private async resoudreClient(
@@ -44,12 +46,18 @@ export class AdminSaisieManuelleService {
     return user.id;
   }
 
-  private creerAdresse(
+  // `quartier` is mandatory where it prices the order (Repas delivery);
+  // optional for a Colis pick-up point, which does not change the price.
+  private async creerAdresse(
     userId: string,
     pointDeRepere: string,
     latitude?: number,
     longitude?: number,
+    quartier?: { id: string; precision?: string },
   ) {
+    const resolu = quartier
+      ? await this.quartiers.resoudre(quartier.id, quartier.precision)
+      : undefined;
     return this.prisma.adresse.create({
       data: {
         userId,
@@ -57,6 +65,8 @@ export class AdminSaisieManuelleService {
         pointDeRepere,
         latitude,
         longitude,
+        quartierId: resolu?.quartier.id,
+        quartier: resolu?.nom,
       },
     });
   }
@@ -71,6 +81,7 @@ export class AdminSaisieManuelleService {
       dto.pointDeRepere,
       dto.latitude,
       dto.longitude,
+      { id: dto.quartierId, precision: dto.quartier },
     );
     return this.commandesRepas.create(clientId, {
       partenaireId: dto.partenaireId,
@@ -98,6 +109,8 @@ export class AdminSaisieManuelleService {
       destinataireNom: dto.destinataireNom,
       destinataireTelephone: dto.destinataireTelephone,
       adresseLivraison: dto.adresseLivraison,
+      quartierLivraisonId: dto.quartierLivraisonId,
+      quartierLivraison: dto.quartierLivraison,
       pointDeRepereLivraison: dto.pointDeRepereLivraison,
       latitudeLivraison: dto.latitudeLivraison,
       longitudeLivraison: dto.longitudeLivraison,

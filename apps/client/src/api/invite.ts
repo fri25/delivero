@@ -24,6 +24,10 @@ export interface ContactInvite {
 }
 
 export interface AdresseInvite {
+  /** Priced neighbourhood (mandatory, Q-28). */
+  quartierId: string;
+  /** Name typed for "Autre quartier". */
+  quartier?: string;
   pointDeRepere: string;
   latitude?: number;
   longitude?: number;
@@ -58,7 +62,9 @@ export interface CommandeColisInviteInput {
   taille: TailleColis;
   destinataireNom: string;
   destinataireTelephone: string;
-  adresseLivraison: string;
+  quartierLivraisonId: string;
+  quartierLivraison?: string;
+  adresseLivraison?: string;
   pointDeRepereLivraison: string;
   valeurDeclaree?: number;
   fragile?: boolean;
@@ -74,7 +80,7 @@ export interface CommandeCoursesExpressInviteInput {
   zoneId: string;
   modePaiement: ModePaiement;
   photoUrls?: string[];
-  etapes: { description: string; pointDeRepere: string; adresse?: string }[];
+  etapes: { description: string; pointDeRepere: string; adresse?: string; quartierId: string; quartier?: string }[];
 }
 
 const CHEMINS_CREATION: Record<TypeServiceInvite, string> = {

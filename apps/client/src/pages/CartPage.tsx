@@ -1,21 +1,20 @@
 import { ESPECES_ACTIF } from '@delivero/config/perimetre-v1';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { Plus, ShoppingCart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { ChoiceCards } from '@/components/forms/ChoiceCards';
+import { FormStep } from '@/components/forms/FormStep';
+import { SubmitBar } from '@/components/forms/SubmitBar';
 import { CartItemRow } from '@/components/cart/CartItemRow';
 import { AddressPicker } from '@/components/adresses/AddressPicker';
 import { useAuthStore } from '@/stores/auth-store';
 import { useCartStore } from '@/stores/cart-store';
 import { useCreateCommandeRepas } from '@/api/commandes-repas';
 import { useApresCreationCommande } from '@/api/paiements';
-import { useRestaurant } from '@/api/restaurants';
+import { useAdresses } from '@/api/adresses';
+import { useQuartiers } from '@/api/quartiers';
 import {
   useApresCreationInvite,
   useCreerCommandeInvite,
@@ -27,6 +26,7 @@ import { AdresseInviteFields } from '@/components/invite/AdresseInviteFields';
 import { ChoixCompteInvite } from '@/components/invite/ChoixCompteInvite';
 import { ContactInviteFields } from '@/components/invite/ContactInviteFields';
 import { formatPrixFcfa } from '@/lib/format';
+import { choixQuartierComplet, quartierChoisi } from '@/lib/quartiers';
 import type { ModePaiement } from '@/api/types';
 
 export function CartPage() {
@@ -37,13 +37,14 @@ export function CartPage() {
   const creerInvite = useCreerCommandeInvite<CommandeRepasInviteInput>('repas');
   const apresCreationInvite = useApresCreationInvite();
   const envoiEnCours = createCommande.isPending || apresCreation.isPending || creerInvite.isPending;
-  const { data: restaurant, isError: restaurantError, refetch: refetchRestaurant } = useRestaurant(cart.restaurantId ?? undefined);
+  const { data: adresses } = useAdresses();
+  const { data: quartiers } = useQuartiers();
 
   const [adresseId, setAdresseId] = useState<string | null>(null);
   // F-CLI-02 : commande sans compte.
   const [sansCompte, setSansCompte] = useState(false);
   const [contact, setContact] = useState<ContactInvite>({ nom: '', telephone: '' });
-  const [adresseInvite, setAdresseInvite] = useState<AdresseInvite>({ pointDeRepere: '' });
+  const [adresseInvite, setAdresseInvite] = useState<AdresseInvite>({ quartierId: '', pointDeRepere: '' });
   const [modePaiement, setModePaiement] = useState<ModePaiement>(
     ESPECES_ACTIF ? 'especes' : 'mobile_money',
   );
@@ -51,14 +52,29 @@ export function CartPage() {
 
   const sousTotal = cart.items.reduce((sum, item) => sum + item.prixUnitaire * item.quantite, 0);
   // Décompte transparent (RG-08) : frais de livraison + 15 % de service,
-  // calculés sur (plats + livraison) — même formule que côté API.
-  const fraisLivraison = restaurant ? Number(restaurant.fraisLivraison) : undefined;
+  // calculés sur (plats + livraison) — même formule que côté API. Les frais
+  // de livraison sont ceux du quartier de livraison (Q-28, 13/10).
+  const quartierLivraison = token
+    ? adresses?.find((adresse) => adresse.id === adresseId)?.quartierTarifaire
+    : quartierChoisi({ quartierId: adresseInvite.quartierId, precision: '' }, quartiers);
+  const fraisLivraison = quartierLivraison ? Number(quartierLivraison.fraisLivraison) : undefined;
   const fraisService =
     fraisLivraison !== undefined ? Math.round((sousTotal + fraisLivraison) * 0.15) : undefined;
   const total = sousTotal + (fraisLivraison ?? 0) + (fraisService ?? 0);
 
   if (cart.items.length === 0) {
-    return <p className="text-sm text-muted-foreground">Votre panier est vide.</p>;
+    return (
+      <div className="mx-auto max-w-md rounded-2xl bg-card px-6 py-12 text-center ring-1 ring-foreground/10">
+        <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-secondary text-primary">
+          <ShoppingCart className="size-6" aria-hidden="true" />
+        </div>
+        <h1 className="font-heading mt-4 text-xl font-semibold">Votre panier est vide</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Choisissez un restaurant et ajoutez vos plats avec le bouton +.</p>
+        <Button asChild className="mt-5">
+          <Link to="/repas">Voir les restaurants</Link>
+        </Button>
+      </div>
+    );
   }
 
   const lignes = cart.items.map((item) => ({
@@ -70,8 +86,8 @@ export function CartPage() {
   const commanderSansCompte = () => {
     if (submissionLock.current || envoiEnCours) return;
     if (!cart.restaurantId) return;
-    if (!contact.nom.trim() || !contact.telephone.trim() || !adresseInvite.pointDeRepere.trim()) {
-      toast.error('Indiquez votre nom, votre téléphone et un point de repère.');
+    if (!contact.nom.trim() || !contact.telephone.trim() || !adresseInvite.pointDeRepere.trim() || !adresseInvite.quartierId) {
+      toast.error('Indiquez votre nom, votre téléphone, votre quartier et un point de repère.');
       return;
     }
     submissionLock.current = true;
@@ -121,100 +137,154 @@ export function CartPage() {
     }
   };
 
+  // In form order: the SubmitBar names the first one.
+  const manquant: string[] = [];
+  if (token && !adresseId) manquant.push('adresse de livraison');
+  if (token && adresseId && !quartierLivraison) manquant.push('quartier de l’adresse de livraison');
+  if (!token && !sansCompte) manquant.push('se connecter ou continuer sans compte');
+  if (!token && sansCompte) {
+    if (!contact.nom.trim()) manquant.push('votre nom');
+    if (!contact.telephone.trim()) manquant.push('votre téléphone');
+    if (!choixQuartierComplet({ quartierId: adresseInvite.quartierId, precision: adresseInvite.quartier ?? '' }, quartiers))
+      manquant.push('votre quartier');
+    if (!adresseInvite.pointDeRepere.trim()) manquant.push('point de repère de livraison');
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold">Votre panier</h1>
-        <p className="text-sm text-muted-foreground">{cart.restaurantNom}</p>
-      </div>
+    <div className="mx-auto max-w-2xl space-y-4 lg:max-w-6xl lg:space-y-6">
+      <header>
+        <h1 className="font-heading text-2xl font-semibold lg:text-3xl">Votre panier</h1>
+        {cart.restaurantId && (
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Chez{' '}
+            <Link to={`/restaurants/${cart.restaurantId}`} className="font-medium text-primary hover:underline">
+              {cart.restaurantNom}
+            </Link>
+          </p>
+        )}
+      </header>
 
-      {!navigator.onLine && <p role="status" className="rounded-xl bg-secondary px-3 py-2 text-sm text-foreground">Vous êtes hors ligne. Votre panier est conservé sur cet appareil ; vous pourrez commander dès le retour du réseau.</p>}
-      {restaurantError && <div role="alert" className="rounded-xl bg-destructive/10 p-3 text-sm"><p>Le tarif du restaurant n’a pas pu être chargé.</p><Button variant="outline" size="sm" className="mt-2" onClick={() => void refetchRestaurant()}>Réessayer</Button></div>}
+      {!navigator.onLine && (
+        <p role="status" className="rounded-xl bg-secondary px-3 py-2 text-sm text-foreground">
+          Vous êtes hors ligne. Votre panier est conservé sur cet appareil ; vous pourrez commander dès le retour du
+          réseau.
+        </p>
+      )}
 
-      <div>
-        {cart.items.map((item) => (
-          <CartItemRow
-            key={item.platId}
-            item={item}
-            onUpdateQuantity={cart.updateQuantity}
-            onRemove={cart.removeItem}
-          />
-        ))}
-      </div>
-
-      <div className="space-y-1 border-t border-border pt-3 text-sm">
-        <div className="flex items-center justify-between text-muted-foreground">
-          <span>Sous-total plats</span>
-          <span>{formatPrixFcfa(sousTotal)}</span>
-        </div>
-        <div className="flex items-center justify-between text-muted-foreground">
-          <span>Frais de livraison</span>
-          <span>{fraisLivraison !== undefined ? formatPrixFcfa(fraisLivraison) : '—'}</span>
-        </div>
-        <div className="flex items-start justify-between gap-3 text-muted-foreground">
-          <span>
-            Frais de service ChapExpress
-            <span className="block text-xs">15 % des plats + livraison</span>
-          </span>
-          <span className="shrink-0">
-            {fraisService !== undefined ? formatPrixFcfa(fraisService) : '—'}
-          </span>
-        </div>
-        <div className="mt-2 flex items-baseline justify-between border-t border-border pt-2 text-foreground">
-          <span className="font-semibold">À payer</span>
-          <span className="font-heading text-2xl font-semibold">{formatPrixFcfa(total)}</span>
-        </div>
-      </div>
-
-      {!token && !sansCompte && <ChoixCompteInvite onSansCompte={() => setSansCompte(true)} />}
-
-      {(token || sansCompte) && (
+      {/* Desktop: steps on the left, sticky summary on the right. */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
         <div className="space-y-4">
-          {token ? (
-            <div>
-              <h2 className="mb-2 text-sm font-semibold">Adresse de livraison</h2>
-              <AddressPicker value={adresseId} onChange={setAdresseId} />
+          <FormStep numero={1} titre="Vos plats" complete>
+            <div className="divide-y divide-border">
+              {cart.items.map((item) => (
+                <CartItemRow
+                  key={item.platId}
+                  item={item}
+                  onUpdateQuantity={cart.updateQuantity}
+                  onRemove={cart.removeItem}
+                />
+              ))}
             </div>
-          ) : (
-            <div className="space-y-3">
-              <h2 className="text-sm font-semibold">Vos coordonnées</h2>
-              <ContactInviteFields value={contact} onChange={setContact} />
-              <AdresseInviteFields
-                id="adresse-livraison-invite"
-                label="Point de repère pour la livraison"
-                value={adresseInvite}
-                onChange={setAdresseInvite}
-              />
-            </div>
-          )}
+            {cart.restaurantId && (
+              <Link
+                to={`/restaurants/${cart.restaurantId}`}
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+              >
+                <Plus className="size-4" aria-hidden="true" /> Ajouter d’autres plats
+              </Link>
+            )}
 
-          <div>
-            <h2 className="mb-2 text-sm font-semibold">Paiement</h2>
+            {/* Décompte transparent (RG-08). */}
+            <dl className="space-y-1.5 rounded-xl bg-secondary/60 p-3 text-sm">
+              <div className="flex justify-between text-muted-foreground">
+                <dt>Plats</dt>
+                <dd>{formatPrixFcfa(sousTotal)}</dd>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <dt>
+                  Livraison
+                  {quartierLivraison && <span className="block text-xs">Quartier {quartierLivraison.nom}</span>}
+                </dt>
+                <dd className="shrink-0">
+                  {fraisLivraison !== undefined ? formatPrixFcfa(fraisLivraison) : 'selon le quartier'}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3 text-muted-foreground">
+                <dt>
+                  Frais de service ChapExpress
+                  <span className="block text-xs">15 % des plats + livraison</span>
+                </dt>
+                <dd className="shrink-0">{fraisService !== undefined ? formatPrixFcfa(fraisService) : '—'}</dd>
+              </div>
+              <div className="flex items-baseline justify-between border-t border-border pt-2 text-foreground">
+                <dt className="font-semibold">Total à payer</dt>
+                <dd className="font-heading text-xl font-semibold">
+                  {fraisLivraison !== undefined ? formatPrixFcfa(total) : '—'}
+                </dd>
+              </div>
+            </dl>
+          </FormStep>
+
+          <FormStep
+            numero={2}
+            titre="Où livrer ?"
+            aide="Le livreur se repère avec le point de repère : soyez précis."
+            complete={manquant.length === 0}
+          >
+            {token ? (
+              <AddressPicker value={adresseId} onChange={setAdresseId} />
+            ) : sansCompte ? (
+              <div className="space-y-4">
+                <ContactInviteFields value={contact} onChange={setContact} />
+                <AdresseInviteFields
+                  id="adresse-livraison-invite"
+                  label="Point de repère pour la livraison"
+                  value={adresseInvite}
+                  onChange={setAdresseInvite}
+                />
+              </div>
+            ) : (
+              <ChoixCompteInvite onSansCompte={() => setSansCompte(true)} />
+            )}
+          </FormStep>
+
+          <FormStep numero={3} titre="Paiement">
             {/* Espèces retirées de la V1 : plus qu'un seul moyen, on annonce
                 le paiement au lieu de simuler un choix (voir
                 packages/config/perimetre-v1.ts). */}
             {ESPECES_ACTIF ? (
-              <Select value={modePaiement} onValueChange={(value) => setModePaiement(value as ModePaiement)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="especes">Espèces à la livraison</SelectItem>
-                  <SelectItem value="mobile_money">Mobile Money</SelectItem>
-                </SelectContent>
-              </Select>
+              <ChoiceCards
+                name="Mode de paiement"
+                colonnes={2}
+                value={modePaiement}
+                options={[
+                  { value: 'mobile_money', label: 'Mobile Money', detail: 'Payé maintenant' },
+                  { value: 'especes', label: 'Espèces', detail: 'Payé à la livraison' },
+                ]}
+                onChange={setModePaiement}
+              />
             ) : (
-              <p className="rounded-lg border border-border px-3 py-2 text-sm">Mobile Money</p>
+              <p className="rounded-xl bg-secondary px-3 py-2.5 text-sm">
+                <span className="font-medium">Mobile Money</span>
+                <span className="text-muted-foreground">
+                  {' '}
+                  — vous payez à la confirmation ; le restaurant reçoit la commande dès le paiement reçu.
+                </span>
+              </p>
             )}
-          </div>
+          </FormStep>
         </div>
-      )}
 
-      {(token || sansCompte) && (
-        <Button className="w-full" disabled={envoiEnCours} onClick={commander}>
-          {envoiEnCours ? 'Envoi...' : ESPECES_ACTIF ? 'Commander' : 'Commander et payer'}
-        </Button>
-      )}
+        <SubmitBar
+          titre="Votre commande"
+          tarif={fraisLivraison !== undefined ? total : undefined}
+          tarifLabel="Total à payer"
+          manquant={manquant}
+          enCours={envoiEnCours}
+          libelle={ESPECES_ACTIF ? 'Commander' : 'Commander et payer'}
+          onConfirmer={() => void commander()}
+        />
+      </div>
     </div>
   );
 }

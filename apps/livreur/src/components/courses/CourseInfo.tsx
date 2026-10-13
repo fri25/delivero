@@ -1,7 +1,8 @@
 import { contactClient } from '@/lib/contact-client';
-import { ExternalLink, Phone } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { formatPrixFcfa, googleMapsRouteUrl } from '@/lib/format';
 import type { CommandeRepas } from '@/api/types';
+import { ContactLigne } from '@/components/contact/ContactLigne';
 
 export function CourseInfo({ commande }: { commande: CommandeRepas }) {
   const { adresse, paiement, montantTotal } = commande.commande;
@@ -48,14 +49,7 @@ export function CourseInfo({ commande }: { commande: CommandeRepas }) {
         )}
       </div>
 
-      {client && (
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">{client.nom}</span>
-          <a href={`tel:${client.telephone}`} className="inline-flex items-center gap-1 text-brand-blue hover:underline">
-            <Phone className="size-3.5" /> {client.telephone}
-          </a>
-        </div>
-      )}
+      {client && <ContactLigne nom={client.nom} telephone={client.telephone} />}
 
       {paiement?.mode === 'especes' && (
         <p className="rounded-md bg-muted/60 px-2 py-1.5 font-medium">

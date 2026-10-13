@@ -45,6 +45,14 @@ export function Header() {
               Zones
             </NavLink>
             <NavLink
+              to="/quartiers"
+              className={({ isActive }) =>
+                cn('text-white/75 hover:text-white', isActive && 'font-medium text-white')
+              }
+            >
+              Quartiers
+            </NavLink>
+            <NavLink
               to="/caisse"
               className={({ isActive }) =>
                 cn('text-white/75 hover:text-white', isActive && 'font-medium text-white')

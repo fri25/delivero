@@ -5,6 +5,7 @@ import { LoginPage } from '@/pages/LoginPage';
 import { OverviewPage } from '@/pages/OverviewPage';
 import { LivreursPage } from '@/pages/LivreursPage';
 import { ZonesPage } from '@/pages/ZonesPage';
+import { QuartiersPage } from '@/pages/QuartiersPage';
 import { CaissePage } from '@/pages/CaissePage';
 import { SaisieManuellePage } from '@/pages/SaisieManuellePage';
 
@@ -34,6 +35,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <ZonesPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'quartiers',
+        element: (
+          <ProtectedRoute>
+            <QuartiersPage />
           </ProtectedRoute>
         ),
       },

@@ -1,72 +1,30 @@
-import { Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { StatutCoursesExpress } from '@/api/types';
+import type { PaiementResume, StatutCoursesExpress } from '@/api/types';
+import { StatutHero } from '@/components/orders/StatutHero';
+import { SuiviEtapes } from '@/components/orders/SuiviEtapes';
+import { suiviCoursesExpress } from '@/lib/suivi';
 
-const STEPS: { key: StatutCoursesExpress; label: string }[] = [
-  { key: 'confirmee', label: 'Confirmée' },
-  { key: 'en_cours', label: 'En cours' },
-  { key: 'terminee', label: 'Terminée' },
-];
-
+/**
+ * Courses express tracking: plain-language status + overall timeline. The
+ * stop-by-stop detail is shown separately on the detail page.
+ */
 export function CoursesExpressStatusStepper({
   statut,
   motif,
+  paiement,
 }: {
   statut: StatutCoursesExpress;
   motif?: string | null;
+  paiement?: PaiementResume | null;
 }) {
-  if (statut === 'litige') {
-    return (
-      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-destructive">
-        <p className="font-medium">Litige en cours</p>
-        {motif && <p className="text-sm">{motif}</p>}
-      </div>
-    );
-  }
-
-  if (statut === 'annulee') {
-    return (
-      <div className="rounded-lg border border-border bg-muted p-4 text-muted-foreground">
-        <p className="font-medium">Commande annulée</p>
-      </div>
-    );
-  }
-
-  // etape_realisee est un état transitoire dans en_cours (auto-boucle "étape
-  // suivante" de la machine à états, voir docs/service-courses-express.md) :
-  // même position que en_cours dans la barre de progression, le détail des
-  // étapes s'affiche séparément.
-  const statutAffiche = statut === 'etape_realisee' ? 'en_cours' : statut;
-  const currentIndex = STEPS.findIndex((step) => step.key === statutAffiche);
-
+  const suivi = suiviCoursesExpress(statut, paiement);
   return (
-    <ol className="flex items-center">
-      {STEPS.map((step, index) => {
-        const done = currentIndex >= 0 && index <= currentIndex;
-        const isLast = index === STEPS.length - 1;
-        return (
-          <li key={step.key} className={cn('flex items-center', !isLast && 'flex-1')}>
-            <div className="flex flex-col items-center gap-1">
-              <div
-                className={cn(
-                  'flex size-7 items-center justify-center rounded-full border text-xs',
-                  done
-                    ? 'border-success bg-success text-success-foreground'
-                    : 'border-border bg-background text-muted-foreground',
-                )}
-              >
-                {done ? <Check className="size-4" /> : index + 1}
-              </div>
-              <span className={cn('text-xs', done ? 'text-foreground' : 'text-muted-foreground')}>
-                {step.label}
-              </span>
-            </div>
-            {!isLast && (
-              <div className={cn('mx-2 h-px flex-1', done ? 'bg-success' : 'bg-border')} />
-            )}
-          </li>
-        );
-      })}
-    </ol>
+    <div className="space-y-4">
+      <StatutHero ton={suivi.ton} titre={suivi.titre} message={suivi.message} motif={statut === 'litige' ? motif : null} />
+      {suivi.indexCourant >= 0 && (
+        <div className="rounded-2xl bg-card p-4 ring-1 ring-foreground/10 sm:p-5">
+          <SuiviEtapes etapes={suivi.etapes} indexCourant={suivi.indexCourant} termine={suivi.termine} />
+        </div>
+      )}
+    </div>
   );
 }

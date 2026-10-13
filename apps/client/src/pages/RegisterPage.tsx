@@ -18,7 +18,7 @@ export function RegisterPage() {
 
   return (
     <div className="mx-auto max-w-sm space-y-6">
-      <h1 className="text-xl font-semibold">Créer un compte</h1>
+      <h1 className="font-heading text-2xl font-semibold">Créer un compte</h1>
 
       <form
         className="space-y-4"

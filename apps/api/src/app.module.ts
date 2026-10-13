@@ -21,6 +21,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { PaiementsModule } from './paiements/paiements.module';
 import { PortefeuilleModule } from './portefeuille/portefeuille.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { QuartiersModule } from './quartiers/quartiers.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { RestaurantsModule } from './restaurants/restaurants.module';
 import { ZonesModule } from './zones/zones.module';
@@ -38,6 +39,7 @@ import { ZonesModule } from './zones/zones.module';
     }),
     PerimetreV1Module,
     PrismaModule,
+    QuartiersModule,
     PortefeuilleModule,
     RealtimeModule,
     NotificationsModule,

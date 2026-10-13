@@ -8,6 +8,9 @@ interface CreateEtapeInput {
   description: string;
   pointDeRepere: string;
   adresse?: string;
+  /** Neighbourhood of the stop: prices the course (Q-28). */
+  quartierId: string;
+  quartier?: string;
 }
 
 interface CreateCommandeCoursesExpressInput {
@@ -16,28 +19,6 @@ interface CreateCommandeCoursesExpressInput {
   zoneId: string;
   modePaiement: ModePaiement;
   etapes: CreateEtapeInput[];
-}
-
-interface EstimationCoursesExpress {
-  zoneId: string;
-  nombreEtapes: number;
-  tarif: number;
-}
-
-export function useEstimationCoursesExpress(
-  zoneId: string | undefined,
-  nombreEtapes: number | undefined,
-) {
-  const token = useAuthStore((state) => state.token);
-  return useQuery({
-    queryKey: ['estimation-courses-express', zoneId, nombreEtapes],
-    queryFn: () =>
-      apiFetch<EstimationCoursesExpress>(
-        `/commandes/courses-express/estimation?zoneId=${encodeURIComponent(zoneId!)}&nombreEtapes=${nombreEtapes}`,
-        { token },
-      ),
-    enabled: Boolean(zoneId && nombreEtapes && nombreEtapes > 0 && token),
-  });
 }
 
 export function useCreateCommandeCoursesExpress() {

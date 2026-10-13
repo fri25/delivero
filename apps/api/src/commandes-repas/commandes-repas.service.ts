@@ -24,6 +24,7 @@ import {
   HISTORIQUE_LIVREUR_MAX,
 } from '../livreurs/periode-livreur';
 import { PrismaService } from '../prisma/prisma.service';
+import { tarifQuartier } from '../quartiers/tarification';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
 import {
   type ContactCommande,
@@ -151,9 +152,16 @@ export class CommandesRepasService {
 
     const adresse = await this.prisma.adresse.findUnique({
       where: { id: dto.adresseId },
+      include: { quartierTarifaire: true },
     });
     if (!adresse || adresse.userId !== clientId || adresse.archiveeAt) {
       throw new NotFoundException('Adresse introuvable.');
+    }
+    // Addresses saved before 13/10 have no priced neighbourhood yet.
+    if (!adresse.quartierTarifaire) {
+      throw new BadRequestException(
+        'Indiquez le quartier de cette adresse (Mes adresses) pour connaître les frais de livraison.',
+      );
     }
 
     const platIds = [...new Set(dto.lignes.map((ligne) => ligne.platId))];
@@ -176,14 +184,15 @@ export class CommandesRepasService {
 
     // Décomposition du prix décidée le 2026-08-25 (RG-08) : le restaurant est
     // reversé sur sousTotal plein tarif ; fraisLivraison et commission
-    // reviennent à ChapExpress. La zone facturée est celle du restaurant, pas
-    // celle de l'adresse du client — la frontière exacte entre zones n'est
-    // pas encore définie (Q-28).
+    // reviennent à ChapExpress. Les frais de livraison sont ceux du quartier
+    // de livraison du client (Q-28, tranchée le 13/10 : liste de quartiers).
     const sousTotal = dto.lignes.reduce((total, ligne) => {
       const plat = platsById.get(ligne.platId)!;
       return total + Number(plat.prix) * ligne.quantite;
     }, 0);
-    const fraisLivraison = Number(partenaire.zone.fraisLivraison);
+    const fraisLivraison = tarifQuartier(
+      Number(adresse.quartierTarifaire.fraisLivraison),
+    );
     const commission = Math.round((sousTotal + fraisLivraison) * 0.15);
     const montantTotal = sousTotal + fraisLivraison + commission;
 

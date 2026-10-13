@@ -36,6 +36,17 @@ export class AdresseInviteDto {
   @MaxLength(300)
   pointDeRepere!: string;
 
+  /** Priced neighbourhood (GET /quartiers) — Q-28, 13/10. */
+  @IsString()
+  @IsNotEmpty()
+  quartierId!: string;
+
+  /** Name typed for "Autre quartier". */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  quartier?: string;
+
   @IsOptional()
   @IsLatitude()
   latitude?: number;

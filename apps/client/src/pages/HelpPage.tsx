@@ -1,8 +1,6 @@
-import { ArrowLeft, CircleHelp, Clock3, MapPin, MessageCircle, PackageCheck, ShieldCheck } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { CircleHelp, Clock3, MapPin, MessageCircle, PackageCheck, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-const WHATSAPP_SUPPORT = 'https://wa.me/22900000000';
+import { WHATSAPP_SUPPORT } from '@/lib/support';
 
 const QUESTIONS = [
   {
@@ -24,8 +22,7 @@ const QUESTIONS = [
 
 export function HelpPage() {
   return (
-    <div className="space-y-5 pb-8">
-      <Link to="/" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> Retour à l’accueil</Link>
+    <div className="mx-auto max-w-2xl space-y-5">
       <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-brand-navy to-brand-blue p-6 text-white sm:p-8">
         <div className="flex size-12 items-center justify-center rounded-2xl bg-white/10"><CircleHelp className="size-6" /></div>
         <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-white/65">ChapExpress · Natitingou</p>

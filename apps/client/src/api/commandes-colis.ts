@@ -10,7 +10,10 @@ interface CreateCommandeColisInput {
   taille: TailleColis;
   destinataireNom: string;
   destinataireTelephone: string;
-  adresseLivraison: string;
+  /** Recipient's neighbourhood: sets the price (Q-28). */
+  quartierLivraisonId: string;
+  quartierLivraison?: string;
+  adresseLivraison?: string;
   pointDeRepereLivraison: string;
   valeurDeclaree?: number;
   fragile?: boolean;
@@ -19,25 +22,6 @@ interface CreateCommandeColisInput {
   modePaiement: ModePaiement;
   programmationAt?: string;
   conditionsAcceptees: boolean;
-}
-
-interface EstimationColis {
-  zoneId: string;
-  taille: TailleColis;
-  tarif: number;
-}
-
-export function useEstimationColis(zoneId: string | undefined, taille: TailleColis | undefined) {
-  const token = useAuthStore((state) => state.token);
-  return useQuery({
-    queryKey: ['estimation-colis', zoneId, taille],
-    queryFn: () =>
-      apiFetch<EstimationColis>(
-        `/commandes/colis/estimation?zoneId=${encodeURIComponent(zoneId!)}&taille=${taille}`,
-        { token },
-      ),
-    enabled: Boolean(zoneId && taille && token),
-  });
 }
 
 export function useCreateCommandeColis() {

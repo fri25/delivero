@@ -22,6 +22,7 @@ export interface ModeleColis {
   taille: TailleColis;
   destinataireNom: string;
   destinataireTelephone: string;
+  quartierLivraisonId?: string;
   adresseLivraison: string;
   pointDeRepereLivraison: string;
   valeurDeclaree: string;
@@ -35,7 +36,11 @@ export function modeleColis(commande: CommandeColis): ModeleColis {
     taille: commande.taille,
     destinataireNom: commande.destinataireNom,
     destinataireTelephone: commande.destinataireTelephone,
-    adresseLivraison: commande.adresseLivraison,
+    quartierLivraisonId: commande.quartierLivraisonId ?? undefined,
+    // Stored as "Quartier — rue": the neighbourhood is re-picked from the list.
+    adresseLivraison: commande.quartierLivraisonId
+      ? (commande.adresseLivraison.split(' — ').slice(1).join(' — '))
+      : commande.adresseLivraison,
     pointDeRepereLivraison: commande.pointDeRepereLivraison,
     valeurDeclaree: commande.valeurDeclaree ? String(Number(commande.valeurDeclaree)) : '',
     fragile: commande.fragile,
@@ -45,7 +50,7 @@ export function modeleColis(commande: CommandeColis): ModeleColis {
 export interface ModeleCoursesExpress {
   zoneId: string;
   description: string;
-  etapes: { description: string; pointDeRepere: string; adresse: string }[];
+  etapes: { description: string; pointDeRepere: string; adresse: string; quartierId?: string }[];
 }
 
 export function modeleCoursesExpress(commande: CommandeCoursesExpress): ModeleCoursesExpress {
@@ -55,7 +60,9 @@ export function modeleCoursesExpress(commande: CommandeCoursesExpress): ModeleCo
     etapes: commande.etapes.map((etape) => ({
       description: etape.description,
       pointDeRepere: etape.pointDeRepere,
-      adresse: etape.adresse ?? '',
+      quartierId: etape.quartierId ?? undefined,
+      // Stored as "Quartier — lieu": the neighbourhood is re-picked from the list.
+      adresse: (etape.quartierId ? etape.adresse?.split(' — ').slice(1).join(' — ') : etape.adresse) ?? '',
     })),
   };
 }

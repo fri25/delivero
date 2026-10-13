@@ -6,7 +6,10 @@ import type { Adresse } from './types';
 export interface AdresseInput {
   libelle: string;
   adresse: string;
-  quartier: string;
+  /** Priced neighbourhood (mandatory since 13/10, Q-28). */
+  quartierId: string;
+  /** Name typed for "Autre quartier". */
+  quartier?: string;
   pointDeRepere: string;
   /** null clears a previously saved GPS position. */
   latitude?: number | null;

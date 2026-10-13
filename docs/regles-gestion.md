@@ -130,15 +130,33 @@ Montant total client = Prix des plats (menu)
   [modele-donnees.md](modele-donnees.md)) n'est donc plus pertinent pour Repas ;
   il reste utilisable pour les autres services tant qu'ils suivent le modèle par
   défaut ci-dessous.
-- **Frais de livraison** : grille par zone géographique, pas un calcul continu au
+- **Frais de livraison** : grille par **quartier**, pas un calcul continu au
   kilomètre. Valeurs actées : 500 FCFA en zone centre-ville, 1 000 FCFA en zone
   plus éloignée. Ces frais sont un revenu ChapExpress, **pas** la rémunération du
   livreur (voir [decisions-ouvertes.md](decisions-ouvertes.md) Q-08, qui reste
-  ouverte sur ce point précis). **[À ARBITRER]** : définition exacte de la limite
-  entre zone centre-ville et zone éloignée (rayon, liste de quartiers, ou seuil de
-  distance calculé via Google Maps Platform), et existence éventuelle d'un palier
-  supplémentaire pour les zones très excentrées — voir
-  [decisions-ouvertes.md](decisions-ouvertes.md) Q-28.
+  ouverte sur ce point précis).
+  **✅ Décidé (2026-10-13, Q-28)** : la frontière est une **liste de quartiers**,
+  tenue dans le back-office (page Quartiers). Le client choisit obligatoirement
+  son quartier ; c'est le quartier **de livraison du client** qui fixe les frais
+  (plus la zone du restaurant). Liste de départ : Boriyouré, Dassagate,
+  Kantaborifa à 500 FCFA ; Ourbouga, Sorssouna à 1 000 FCFA ; tout autre
+  quartier (« Autre quartier », nom saisi par le client) à 1 000 FCFA. Liste à
+  compléter par ChapExpress.
+
+### Tarification Colis et Courses express par quartier
+
+**✅ Décidé (2026-10-13)** — la grille par quartier s'applique aussi aux deux
+autres services ouverts en V1 (elle remplace le tarif de base par zone et ses
+majorations provisoires) :
+
+- **Colis** : prix = frais du quartier de livraison du destinataire. La taille
+  ne change plus le prix (elle reste demandée pour le livreur).
+- **Courses express** : prix = frais du quartier le plus cher parmi les arrêts
+  × nombre d'arrêts (ex. Boriyouré + Ourbouga = 2 × 1 000 = 2 000 FCFA).
+- Pas de commission ajoutée sur Colis / Courses express à ce jour (inchangé).
+- Un changement de prix dans le back-office ne vaut que pour les nouvelles
+  commandes : le montant d'une commande est figé à sa création.
+- Code : `apps/api/src/quartiers/` (tarification pure dans `tarification.ts`).
 - **Commission de 15 %** : taux unique pour tous les restaurants du service Repas,
   qu'ils soient équipés de l'Interface web ou du Canal de secours WhatsApp/SMS —
   il n'y a plus de taux négocié par partenaire pour ce service. Revenu ChapExpress,

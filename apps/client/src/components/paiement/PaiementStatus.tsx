@@ -28,7 +28,7 @@ export function PaiementStatus({
 
   if (!doitEtrePaye(paiement) || commandeClose) {
     return (
-      <p className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
+      <p className="flex items-center justify-between rounded-2xl bg-card px-4 py-3 text-sm ring-1 ring-foreground/10">
         <span className="text-muted-foreground">Paiement</span>
         <span className="font-medium">{STATUT_PAIEMENT_LABELS[paiement.statut]}</span>
       </p>
@@ -36,7 +36,7 @@ export function PaiementStatus({
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+    <div className="space-y-3 rounded-2xl bg-card p-4 ring-2 ring-primary sm:p-5">
       <div className="space-y-1">
         <p className="font-semibold">
           {paiement.statut === 'echoue' ? 'Le paiement n’a pas abouti' : 'Paiement en attente'}
@@ -46,6 +46,7 @@ export function PaiementStatus({
         </p>
       </div>
       <Button
+        size="lg"
         className="w-full"
         disabled={payer ? payer.enCours : initier.isPending}
         onClick={() =>

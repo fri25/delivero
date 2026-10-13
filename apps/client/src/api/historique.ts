@@ -11,7 +11,14 @@ import {
 } from '../lib/statut-courses-express';
 import { isStatutEmplettesActif, STATUT_EMPLETTES_LABELS } from '../lib/statut-emplettes';
 import { doitEtrePaye, STATUT_PAIEMENT_LABELS } from '../lib/paiement';
-import type { CommandeEmplettes, PaiementResume, TypeService } from './types';
+import type {
+  CommandeColis,
+  CommandeCoursesExpress,
+  CommandeEmplettes,
+  CommandeRepas,
+  PaiementResume,
+  TypeService,
+} from './types';
 
 export type { TypeService };
 
@@ -30,8 +37,27 @@ export interface CommandeResume {
   montantTotal: string | null;
   statutLabel: string;
   actif: boolean;
+  /** Outcome, for the history filters: still open, completed, or not. */
+  issue: IssueCommande;
+  /** Open and waiting for its Mobile Money payment (sent to no one yet). */
+  aPayer: boolean;
   createdAt: string;
   lien: string;
+  /** Original order, for "Recommander" / "Refaire" (F-CLI-07). */
+  repas?: CommandeRepas;
+  colis?: CommandeColis;
+  coursesExpress?: CommandeCoursesExpress;
+}
+
+export type IssueCommande = 'en_cours' | 'terminee' | 'annulee';
+
+// Completed statuses; any other closed status (cancelled, refused, dispute)
+// counts as "annulee" in the history.
+const STATUTS_REUSSIS = ['livree', 'livre', 'terminee'];
+
+function issue(actif: boolean, statut: string): IssueCommande {
+  if (actif) return 'en_cours';
+  return STATUTS_REUSSIS.includes(statut) ? 'terminee' : 'annulee';
 }
 
 // Emplettes is hidden in V1: swap the hook for a no-op at module level, so the
@@ -64,8 +90,11 @@ export function useHistoriqueCommandes() {
       montantTotal: c.commande.montantTotal,
       statutLabel: libelleStatut(STATUT_REPAS_LABELS[c.statut] ?? c.statut, isStatutRepasActif(c.statut), c.commande.paiement),
       actif: isStatutRepasActif(c.statut),
+      issue: issue(isStatutRepasActif(c.statut), c.statut),
+      aPayer: isStatutRepasActif(c.statut) && doitEtrePaye(c.commande.paiement),
       createdAt: c.createdAt,
       lien: `/commandes/${c.id}`,
+      repas: c,
     })),
     ...(colis.data ?? []).map((c) => ({
       id: c.id,
@@ -74,8 +103,11 @@ export function useHistoriqueCommandes() {
       montantTotal: c.commande.montantTotal,
       statutLabel: libelleStatut(STATUT_COLIS_LABELS[c.statut] ?? c.statut, isStatutColisActif(c.statut), c.commande.paiement),
       actif: isStatutColisActif(c.statut),
+      issue: issue(isStatutColisActif(c.statut), c.statut),
+      aPayer: isStatutColisActif(c.statut) && doitEtrePaye(c.commande.paiement),
       createdAt: c.createdAt,
       lien: `/colis/commandes/${c.id}`,
+      colis: c,
     })),
     ...(coursesExpress.data ?? []).map((c) => ({
       id: c.id,
@@ -84,8 +116,11 @@ export function useHistoriqueCommandes() {
       montantTotal: c.commande.montantTotal,
       statutLabel: libelleStatut(STATUT_COURSES_EXPRESS_LABELS[c.statut] ?? c.statut, isStatutCoursesExpressActif(c.statut), c.commande.paiement),
       actif: isStatutCoursesExpressActif(c.statut),
+      issue: issue(isStatutCoursesExpressActif(c.statut), c.statut),
+      aPayer: isStatutCoursesExpressActif(c.statut) && doitEtrePaye(c.commande.paiement),
       createdAt: c.createdAt,
       lien: `/courses-express/commandes/${c.id}`,
+      coursesExpress: c,
     })),
     ...(emplettes.data ?? []).map((c) => ({
       id: c.id,
@@ -94,6 +129,8 @@ export function useHistoriqueCommandes() {
       montantTotal: c.commande.montantTotal,
       statutLabel: libelleStatut(STATUT_EMPLETTES_LABELS[c.statut] ?? c.statut, isStatutEmplettesActif(c.statut), c.commande.paiement),
       actif: isStatutEmplettesActif(c.statut),
+      issue: issue(isStatutEmplettesActif(c.statut), c.statut),
+      aPayer: isStatutEmplettesActif(c.statut) && doitEtrePaye(c.commande.paiement),
       createdAt: c.createdAt,
       lien: `/emplettes/commandes/${c.id}`,
     })),
@@ -101,6 +138,11 @@ export function useHistoriqueCommandes() {
 
   return {
     commandes,
+    refetch: () => {
+      void repas.refetch();
+      void colis.refetch();
+      void coursesExpress.refetch();
+    },
     isPending: repas.isPending || colis.isPending || coursesExpress.isPending || emplettes.isPending,
     // Partial failure: show what loaded and warn, rather than hide everything.
     isError: repas.isError || colis.isError || coursesExpress.isError || emplettes.isError,

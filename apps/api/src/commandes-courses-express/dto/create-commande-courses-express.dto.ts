@@ -25,6 +25,17 @@ export class CreateEtapeDto {
   @IsOptional()
   @IsString()
   adresse?: string;
+
+  /** Neighbourhood of the stop (GET /quartiers): prices the course (Q-28). */
+  @IsString()
+  @IsNotEmpty()
+  quartierId!: string;
+
+  /** Name typed for "Autre quartier". */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  quartier?: string;
 }
 
 export class CreateCommandeCoursesExpressDto {

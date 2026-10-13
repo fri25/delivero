@@ -135,22 +135,28 @@ model OtpCode {
 // jamais l'inverse (contrainte locale, voir CLAUDE.md).
 
 model Adresse {
-  id            String    @id @default(cuid())
+  id                String    @id @default(cuid())
   // Null for a guest order address (F-CLI-02): it belongs to no account.
-  userId        String?   @map("user_id")
-  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  libelle       String
-  adresse       String?
-  quartier      String?
-  pointDeRepere String    @map("point_de_repere")
-  latitude      Decimal?  @db.Decimal(10, 7)
-  longitude     Decimal?  @db.Decimal(10, 7)
-  estParDefaut  Boolean   @default(false) @map("est_par_defaut")
+  userId            String?   @map("user_id")
+  user              User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  libelle           String
+  adresse           String?
+  // Name of the neighbourhood as the client gave it: the list entry's name,
+  // or what they typed when they picked "Autre quartier".
+  quartier          String?
+  // Priced neighbourhood (Q-28, decided 13/10). Null only for addresses
+  // created before then; ordering with such an address asks for it.
+  quartierId        String?   @map("quartier_id")
+  quartierTarifaire Quartier? @relation(fields: [quartierId], references: [id])
+  pointDeRepere     String    @map("point_de_repere")
+  latitude          Decimal?  @db.Decimal(10, 7)
+  longitude         Decimal?  @db.Decimal(10, 7)
+  estParDefaut      Boolean   @default(false) @map("est_par_defaut")
   // Soft delete: orders keep pointing at the address they were delivered to
   // (Colis references it with RESTRICT, Commande with SET NULL — a hard
   // delete would fail or erase the delivery point of an order in progress).
-  archiveeAt    DateTime? @map("archivee_at")
-  createdAt     DateTime  @default(now()) @map("created_at")
+  archiveeAt        DateTime? @map("archivee_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
 
   commandes                Commande[]
   commandesColisEnlevement CommandeColis[]
@@ -182,6 +188,29 @@ model Zone {
   commandesCoursesExpress       CommandeCoursesExpress[]
 
   @@map("zones")
+}
+
+// Delivery price by neighbourhood (Q-28, decided 13/10/2026): the client's
+// neighbourhood sets the delivery fee of Repas, the price of a Colis (delivery
+// neighbourhood) and of a Course express (dearest stop × number of stops).
+// Edited from the back-office (Quartiers page); see docs/regles-gestion.md RG-08.
+model Quartier {
+  id             String   @id @default(cuid())
+  nom            String   @unique
+  fraisLivraison Decimal  @map("frais_livraison") @db.Decimal(10, 2)
+  // "Autre quartier": catch-all for names not (yet) in the list — the client
+  // must then type the name of their neighbourhood.
+  autre          Boolean  @default(false)
+  // Hidden from clients when false; kept for the orders that reference it.
+  actif          Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  adresses             Adresse[]
+  commandesColis       CommandeColis[]
+  etapesCoursesExpress EtapeCourseExpress[]
+
+  @@map("quartiers")
 }
 
 enum TypePartenaire {
@@ -355,8 +384,8 @@ model Commande {
   paiement               Paiement?
   notations              Notation[]
   mouvementsPortefeuille MouvementPortefeuille[]
-  avisPartenaire        AvisPartenaire?
-  avisLivreur           AvisLivreur?
+  avisPartenaire         AvisPartenaire?
+  avisLivreur            AvisLivreur?
 
   @@map("commandes")
 }
@@ -364,14 +393,14 @@ model Commande {
 // A completed order can receive at most one client review for each eligible
 // target. Reviews are linked to the shared order so ownership is verifiable.
 model AvisPartenaire {
-  id           String    @id @default(cuid())
-  commandeId   String    @unique @map("commande_id")
-  commande     Commande  @relation(fields: [commandeId], references: [id], onDelete: Cascade)
-  partenaireId String    @map("partenaire_id")
+  id           String     @id @default(cuid())
+  commandeId   String     @unique @map("commande_id")
+  commande     Commande   @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+  partenaireId String     @map("partenaire_id")
   partenaire   Partenaire @relation(fields: [partenaireId], references: [id], onDelete: Cascade)
   note         Int
   commentaire  String?
-  createdAt    DateTime  @default(now()) @map("created_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
 
   @@index([partenaireId, createdAt])
   @@map("avis_partenaires")
@@ -545,12 +574,16 @@ model CommandeColis {
   adresseEnlevementId String  @map("adresse_enlevement_id")
   adresseEnlevement   Adresse @relation(fields: [adresseEnlevementId], references: [id])
 
-  destinataireNom        String   @map("destinataire_nom")
-  destinataireTelephone  String   @map("destinataire_telephone")
-  adresseLivraison       String   @map("adresse_livraison")
-  pointDeRepereLivraison String   @map("point_de_repere_livraison")
-  latitudeLivraison      Decimal? @map("latitude_livraison") @db.Decimal(10, 7)
-  longitudeLivraison     Decimal? @map("longitude_livraison") @db.Decimal(10, 7)
+  destinataireNom        String    @map("destinataire_nom")
+  destinataireTelephone  String    @map("destinataire_telephone")
+  adresseLivraison       String    @map("adresse_livraison")
+  pointDeRepereLivraison String    @map("point_de_repere_livraison")
+  latitudeLivraison      Decimal?  @map("latitude_livraison") @db.Decimal(10, 7)
+  longitudeLivraison     Decimal?  @map("longitude_livraison") @db.Decimal(10, 7)
+  // Recipient's neighbourhood: sets the price (Q-28, 13/10). Null only for
+  // parcels created before then.
+  quartierLivraisonId    String?   @map("quartier_livraison_id")
+  quartierLivraison      Quartier? @relation(fields: [quartierLivraisonId], references: [id])
 
   // Zone d'enlèvement, transmise explicitement par l'appelant à la création
   // (estimation et création) : Adresse n'a pas de zoneId aujourd'hui (seuls
@@ -779,7 +812,11 @@ model EtapeCourseExpress {
   // Texte libre ("Boutique X, quartier Y") ; pointDeRepere obligatoire,
   // contrainte d'adressage approximatif commune au projet.
   adresse       String?
-  pointDeRepere String  @map("point_de_repere")
+  pointDeRepere String    @map("point_de_repere")
+  // Neighbourhood of the stop: the dearest one prices the course (Q-28,
+  // 13/10). Null only for courses created before then.
+  quartierId    String?   @map("quartier_id")
+  quartier      Quartier? @relation(fields: [quartierId], references: [id])
 
   // Aucune preuve formalisée par étape au-delà du passage à "réalisée"
   // (RG-07, [DÉDUIT]).

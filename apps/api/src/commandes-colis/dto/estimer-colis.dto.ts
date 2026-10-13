@@ -1,11 +1,8 @@
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
-import { TailleColis } from '@prisma/client';
+import { IsNotEmpty, IsString } from 'class-validator';
 
+/** The price only depends on the delivery neighbourhood (Q-28, 13/10). */
 export class EstimerColisDto {
   @IsString()
   @IsNotEmpty()
-  zoneId!: string;
-
-  @IsEnum(TailleColis)
-  taille!: TailleColis;
+  quartierLivraisonId!: string;
 }

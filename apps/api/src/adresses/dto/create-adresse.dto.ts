@@ -18,6 +18,12 @@ export class CreateAdresseDto {
   @MaxLength(180)
   adresse?: string;
 
+  /** Priced neighbourhood (GET /quartiers) — mandatory since 13/10 (Q-28). */
+  @IsString()
+  @IsNotEmpty()
+  quartierId!: string;
+
+  /** Name typed by the client; required when quartierId is "Autre quartier". */
   @IsOptional()
   @IsString()
   @MaxLength(100)

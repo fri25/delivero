@@ -46,7 +46,7 @@ export function RepasHomePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-heading text-2xl leading-tight font-semibold text-foreground">
+        <h1 className="font-heading text-2xl leading-tight font-semibold text-foreground lg:text-3xl">
           Natitingou a faim ? On s'en occupe.
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -55,7 +55,7 @@ export function RepasHomePage() {
         </p>
       </div>
 
-      <div className="sticky top-14 z-10 -mx-4 bg-background/90 px-4 py-2.5 backdrop-blur-md">
+      <div className="sticky top-14 z-10 md:top-16 -mx-4 bg-background/90 px-4 py-2.5 backdrop-blur-md">
         <div className="relative">
           <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -112,7 +112,7 @@ export function RepasHomePage() {
         </h2>
 
         {isPending && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
             {Array.from({ length: 4 }).map((_, i) => (
               <RestaurantCardSkeleton key={i} />
             ))}
@@ -151,7 +151,7 @@ export function RepasHomePage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
           {visibleRestaurants.map((restaurant, index) => (
             <RestaurantCard key={restaurant.id} restaurant={restaurant} index={index} priority={index < 2} />
           ))}

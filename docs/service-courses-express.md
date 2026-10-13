@@ -63,9 +63,10 @@ des endpoints. Décisions prises pendant l'implémentation :
   commande est `en_cours` ou `etape_realisee` (les deux "en cours
   d'exécution"), jamais depuis `confirmee`/`terminee`/`litige`/`annulee`.
   Réaliser une étape déjà réalisée est refusé (409), pas de double comptage.
-- **Tarification** : provisoire, tarif de base par zone + majoration fixe par
-  arrêt supplémentaire (constante en code) — non un chiffre validé par la
-  direction.
+- **Tarification** : depuis le 13/10, frais du quartier le plus cher parmi les
+  arrêts × nombre d'arrêts (chaque arrêt a un quartier obligatoire) — voir
+  [regles-gestion.md](regles-gestion.md) RG-08. Remplace le tarif de base par
+  zone + majoration par arrêt.
 
 ## Cas limites
 

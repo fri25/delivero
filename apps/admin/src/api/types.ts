@@ -30,6 +30,17 @@ export interface AdminCommandesPage {
   pageSize: number;
 }
 
+/** Priced neighbourhood (Q-28, decided 13/10): sets delivery prices. */
+export interface Quartier {
+  id: string;
+  nom: string;
+  /** FCFA, Decimal serialised as a string. */
+  fraisLivraison: string;
+  /** "Autre quartier": catch-all, the client types the name. */
+  autre: boolean;
+  actif: boolean;
+}
+
 export interface Zone {
   id: string;
   nom: string;

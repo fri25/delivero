@@ -19,6 +19,7 @@ raisonnement. Résumé :
 | Q-12 | Principe retenu : blocage par défaut avec délai d'attente maximum — comportement après expiration renvoyé à Q-26 | 2026-08-23 | [regles-gestion.md](regles-gestion.md) RG-05 |
 | Q-20 | Confirmé : aucune extension au lancement, à revisiter après mise en production | 2026-08-23 | [pwa-offline.md](pwa-offline.md) |
 | Q-03 (Repas) | Commission Repas : 15 % facturé au client sur (plats + livraison), restaurant payé plein tarif ; extension aux autres services encore ouverte | 2026-08-25 | [regles-gestion.md](regles-gestion.md) RG-08 |
+| Q-28 | Frais de livraison par liste de quartiers (500 / 1 000 FCFA), quartier du client obligatoire ; appliqué aussi à Colis et Courses express | 2026-10-13 | [regles-gestion.md](regles-gestion.md) RG-08 |
 
 ## Produit et phasage
 
@@ -145,6 +146,11 @@ budget d'exploitation. **Qui tranche** : Direction ChapExpress. Voir
 [service-repas.md](service-repas.md), [regles-gestion.md](regles-gestion.md) RG-08.
 
 ### Q-28 — Définition de la limite entre zone centre-ville et zone éloignée (frais de livraison Repas)
+**✅ Décidé (2026-10-13)** — liste explicite de quartiers, gérée dans le
+back-office ; le client indique obligatoirement son quartier, qui fixe le prix
+de Repas, Colis et Courses express. Détail dans
+[regles-gestion.md](regles-gestion.md) RG-08.
+
 **Question** : la grille de frais de livraison Repas décidée (500 FCFA en zone
 centre-ville, 1 000 FCFA en zone plus éloignée — voir
 [regles-gestion.md](regles-gestion.md) RG-08) suppose une frontière entre les deux

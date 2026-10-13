@@ -13,34 +13,38 @@ export function CartItemRow({
   onRemove: (platId: string) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-border py-3 last:border-b-0">
-      <div>
-        <p className="font-medium">{item.nom}</p>
-        <p className="text-sm text-muted-foreground">{formatPrixFcfa(item.prixUnitaire)} / unité</p>
+    <div className="flex items-center justify-between gap-3 py-3 first:pt-0">
+      <div className="min-w-0">
+        <p className="font-semibold leading-snug">{item.nom}</p>
+        <p className="text-sm text-muted-foreground">
+          {formatPrixFcfa(item.prixUnitaire)} × {item.quantite} ={' '}
+          <span className="font-medium text-foreground">{formatPrixFcfa(item.prixUnitaire * item.quantite)}</span>
+        </p>
         {item.instructions && <p className="text-sm text-muted-foreground">« {item.instructions} »</p>}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1 rounded-full bg-secondary p-0.5">
         <Button
           variant="ghost"
-          size="icon"
-          aria-label={item.quantite <= 1 ? 'Retirer du panier' : 'Diminuer la quantité'}
+          size="icon-sm"
+          className="rounded-full"
+          aria-label={item.quantite <= 1 ? `Retirer ${item.nom} du panier` : `Un ${item.nom} de moins`}
           onClick={() =>
-            item.quantite <= 1
-              ? onRemove(item.platId)
-              : onUpdateQuantity(item.platId, item.quantite - 1)
+            item.quantite <= 1 ? onRemove(item.platId) : onUpdateQuantity(item.platId, item.quantite - 1)
           }
         >
-          <Minus className="size-4" />
+          <Minus />
         </Button>
-        <span className="w-8 text-center text-lg font-semibold">{item.quantite}</span>
+        <span className="w-5 text-center text-sm font-semibold" aria-live="polite">
+          {item.quantite}
+        </span>
         <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Augmenter la quantité"
+          size="icon-sm"
+          className="rounded-full"
+          aria-label={`Un ${item.nom} de plus`}
           onClick={() => onUpdateQuantity(item.platId, item.quantite + 1)}
         >
-          <Plus className="size-4" />
+          <Plus />
         </Button>
       </div>
     </div>

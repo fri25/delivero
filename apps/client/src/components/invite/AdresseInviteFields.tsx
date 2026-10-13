@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { AdresseInvite } from '@/api/invite';
 import { lienGoogleMaps, lirePositionGps } from '@/lib/geolocalisation';
+import { QuartierField } from '@/components/adresses/QuartierField';
 
 /**
- * Inline address for a guest (no address book). Landmark mandatory, GPS
- * optional — same local rule as AddressForm.
+ * Inline address for a guest (no address book). Neighbourhood and landmark
+ * mandatory, GPS optional — same rules as AddressForm.
  */
 export function AdresseInviteFields({
   id,
@@ -27,6 +28,11 @@ export function AdresseInviteFields({
 
   return (
     <div className="space-y-2">
+      <QuartierField
+        id={`${id}-quartier`}
+        value={{ quartierId: value.quartierId, precision: value.quartier ?? '' }}
+        onChange={(choix) => onChange({ ...value, quartierId: choix.quartierId, quartier: choix.precision })}
+      />
       <div className="space-y-1.5">
         <Label htmlFor={id}>{label}</Label>
         <Input
@@ -52,7 +58,7 @@ export function AdresseInviteFields({
             variant="ghost"
             size="icon-sm"
             aria-label="Retirer la position"
-            onClick={() => onChange({ pointDeRepere: value.pointDeRepere })}
+            onClick={() => onChange({ ...value, latitude: undefined, longitude: undefined })}
           >
             <X className="size-4" />
           </Button>

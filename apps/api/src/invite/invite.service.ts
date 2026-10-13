@@ -14,6 +14,7 @@ import { JetonInviteService } from '../notifications/jeton-invite.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PaiementsService } from '../paiements/paiements.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { QuartiersService } from '../quartiers/quartiers.service';
 import {
   AdresseInviteDto,
   ContactInviteDto,
@@ -44,6 +45,7 @@ export class InviteService {
     private readonly notations: NotationsService,
     private readonly notifications: NotificationsService,
     private readonly jetonInvite: JetonInviteService,
+    private readonly quartiers: QuartiersService,
   ) {}
 
   async creerRepas(dto: CreateCommandeRepasInviteDto) {
@@ -186,10 +188,16 @@ export class InviteService {
   }
 
   private async creerAdresse(adresse: AdresseInviteDto): Promise<string> {
+    const { quartier, nom } = await this.quartiers.resoudre(
+      adresse.quartierId,
+      adresse.quartier,
+    );
     const creee = await this.prisma.adresse.create({
       data: {
         userId: null,
         libelle: LIBELLE_ADRESSE_INVITE,
+        quartierId: quartier.id,
+        quartier: nom,
         pointDeRepere: adresse.pointDeRepere.trim(),
         latitude: adresse.latitude,
         longitude: adresse.longitude,

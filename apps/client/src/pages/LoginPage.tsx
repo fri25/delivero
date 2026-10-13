@@ -24,7 +24,12 @@ export function LoginPage() {
 
   return (
     <div className="mx-auto max-w-sm space-y-6">
-      <h1 className="text-xl font-semibold">Connexion</h1>
+      <div>
+        <h1 className="font-heading text-2xl font-semibold">Connexion</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Entrez votre numéro : vous recevez un code par WhatsApp ou SMS. Pas de mot de passe à retenir.
+        </p>
+      </div>
 
       {mode === 'code' ? (
         <OtpLoginForm

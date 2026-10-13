@@ -3,17 +3,31 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, StatutColis, StatutCoursesExpress, StatutRepas, TypeService } from '@prisma/client';
+import {
+  Prisma,
+  StatutColis,
+  StatutCoursesExpress,
+  StatutRepas,
+  TypeService,
+} from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAvisDto } from './dto/create-avis.dto';
 
 const COMMANDE_INCLUDE = {
-  commandeRepas: { select: { statut: true, partenaireId: true, partenaire: { select: { nom: true } } } },
+  commandeRepas: {
+    select: {
+      statut: true,
+      partenaireId: true,
+      partenaire: { select: { nom: true } },
+    },
+  },
   commandeColis: { select: { statut: true } },
   commandeCoursesExpress: { select: { statut: true } },
   livreur: { include: { user: { select: { nom: true } } } },
   avisPartenaire: { include: { partenaire: { select: { nom: true } } } },
-  avisLivreur: { include: { livreur: { include: { user: { select: { nom: true } } } } } },
+  avisLivreur: {
+    include: { livreur: { include: { user: { select: { nom: true } } } } },
+  },
 } satisfies Prisma.CommandeInclude;
 
 @Injectable()
@@ -61,7 +75,9 @@ export class AvisService {
   async create(clientId: string, commandeId: string, dto: CreateAvisDto) {
     const commande = await this.getOwnedOrder(clientId, commandeId);
     if (!this.isCompleted(commande)) {
-      throw new ConflictException('Vous pourrez laisser un avis après la livraison.');
+      throw new ConflictException(
+        'Vous pourrez laisser un avis après la livraison.',
+      );
     }
 
     const commentaire = dto.commentaire?.trim() || null;
@@ -69,7 +85,9 @@ export class AvisService {
       if (dto.cible === 'partenaire') {
         const partenaireId = commande.commandeRepas?.partenaireId;
         if (!partenaireId) {
-          throw new ConflictException('Cette commande ne permet pas de noter un partenaire.');
+          throw new ConflictException(
+            'Cette commande ne permet pas de noter un partenaire.',
+          );
         }
         return await this.prisma.$transaction(async (tx) => {
           const avis = await tx.avisPartenaire.create({
@@ -88,11 +106,18 @@ export class AvisService {
       }
 
       if (!commande.livreurId) {
-        throw new ConflictException('Aucun livreur n’est encore associé à cette commande.');
+        throw new ConflictException(
+          'Aucun livreur n’est encore associé à cette commande.',
+        );
       }
       return await this.prisma.$transaction(async (tx) => {
         const avis = await tx.avisLivreur.create({
-          data: { commandeId, livreurId: commande.livreurId!, note: dto.note, commentaire },
+          data: {
+            commandeId,
+            livreurId: commande.livreurId!,
+            note: dto.note,
+            commentaire,
+          },
         });
         const moyenne = await tx.avisLivreur.aggregate({
           where: { livreurId: commande.livreurId! },
@@ -105,8 +130,13 @@ export class AvisService {
         return avis;
       });
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException('Un avis a déjà été envoyé pour cette commande.');
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'Un avis a déjà été envoyé pour cette commande.',
+        );
       }
       throw error;
     }
@@ -121,7 +151,9 @@ export class AvisService {
     return commande;
   }
 
-  private isCompleted(commande: Prisma.CommandeGetPayload<{ include: typeof COMMANDE_INCLUDE }>) {
+  private isCompleted(
+    commande: Prisma.CommandeGetPayload<{ include: typeof COMMANDE_INCLUDE }>,
+  ) {
     if (commande.typeService === TypeService.repas) {
       return commande.commandeRepas?.statut === StatutRepas.livree;
     }
@@ -129,7 +161,10 @@ export class AvisService {
       return commande.commandeColis?.statut === StatutColis.livre;
     }
     if (commande.typeService === TypeService.courses_express) {
-      return commande.commandeCoursesExpress?.statut === StatutCoursesExpress.terminee;
+      return (
+        commande.commandeCoursesExpress?.statut ===
+        StatutCoursesExpress.terminee
+      );
     }
     return false;
   }

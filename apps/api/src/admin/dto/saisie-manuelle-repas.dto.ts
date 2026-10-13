@@ -8,6 +8,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -43,6 +44,17 @@ export class SaisieManuelleRepasDto {
   @IsString()
   @IsNotEmpty()
   pointDeRepere!: string;
+
+  /** Priced neighbourhood (GET /quartiers) — Q-28, 13/10. */
+  @IsString()
+  @IsNotEmpty()
+  quartierId!: string;
+
+  /** Name typed for "Autre quartier". */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  quartier?: string;
 
   @IsOptional()
   @IsNumber()

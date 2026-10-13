@@ -1,8 +1,9 @@
-import { ExternalLink, Phone } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { PhotosCommande } from '@/components/medias/PhotosCommande';
 import { formatPrixFcfa, googleMapsRouteUrl } from '@/lib/format';
 import type { CommandeColis } from '@/api/types';
+import { ContactLigne } from '@/components/contact/ContactLigne';
 
 export function ColisInfo({ commande }: { commande: CommandeColis }) {
   const { adresseEnlevement, destinataireNom, destinataireTelephone, pointDeRepereLivraison, adresseLivraison } =
@@ -41,15 +42,7 @@ export function ColisInfo({ commande }: { commande: CommandeColis }) {
       </div>
 
       {destinataireNom && destinataireTelephone && (
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">{destinataireNom}</span>
-          <a
-            href={`tel:${destinataireTelephone}`}
-            className="inline-flex items-center gap-1 text-brand-blue hover:underline"
-          >
-            <Phone className="size-3.5" /> {destinataireTelephone}
-          </a>
-        </div>
+        <ContactLigne nom={destinataireNom} telephone={destinataireTelephone} />
       )}
 
       {commande.montantContreRemboursement && (

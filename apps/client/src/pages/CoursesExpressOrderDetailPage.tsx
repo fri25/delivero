@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
-import { RotateCcw } from 'lucide-react';
+import { Check, RotateCcw } from 'lucide-react';
 import { modeleCoursesExpress } from '@/lib/recommander';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -11,41 +11,20 @@ import {
 import { PaiementStatus } from '@/components/paiement/PaiementStatus';
 import { LivreurCard } from '@/components/orders/LivreurCard';
 import { NotationCard } from '@/components/orders/NotationCard';
+import { CarteDetail } from '@/components/orders/CarteDetail';
+import { DetailCommandeLayout } from '@/components/orders/DetailCommandeLayout';
 import { useNoterCommande } from '@/api/notations';
 import { isStatutCoursesExpressActif } from '@/lib/statut-courses-express';
 import { CoursesExpressStatusStepper } from '@/components/orders/CoursesExpressStatusStepper';
 import { formatPrixFcfa } from '@/lib/format';
 import { miniature } from '@/lib/medias';
-import type { EtapeCourseExpress } from '@/api/types';
-import { AvisCommandeSection } from '@/components/orders/AvisCommandeSection';
+import { cn } from '@/lib/utils';
 import { LoadError } from '@/components/layout/LoadError';
 
 const MODE_PAIEMENT_LABELS: Record<string, string> = {
   especes: 'Espèces à la remise',
   mobile_money: 'Mobile Money',
 };
-
-function EtapeRow({ etape }: { etape: EtapeCourseExpress }) {
-  return (
-    <div className="flex items-start justify-between gap-3 border-b border-border py-2 last:border-b-0">
-      <div>
-        <p className="text-sm font-medium">
-          Étape {etape.ordre} — {etape.description}
-        </p>
-        <p className="text-xs text-muted-foreground">{etape.pointDeRepere}</p>
-      </div>
-      <span
-        className={
-          etape.realisee
-            ? 'shrink-0 text-xs font-medium text-success'
-            : 'shrink-0 text-xs text-muted-foreground'
-        }
-      >
-        {etape.realisee ? 'Réalisée' : 'En attente'}
-      </span>
-    </div>
-  );
-}
 
 export function CoursesExpressOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -55,9 +34,10 @@ export function CoursesExpressOrderDetailPage() {
 
   if (isPending) {
     return (
-      <div className="space-y-3">
-        <Skeleton className="h-6 w-1/2" />
-        <Skeleton className="h-24 w-full" />
+      <div className="mx-auto max-w-2xl space-y-3">
+        <Skeleton className="h-8 w-1/2" />
+        <Skeleton className="h-24 w-full rounded-2xl" />
+        <Skeleton className="h-56 w-full rounded-2xl" />
       </div>
     );
   }
@@ -68,41 +48,53 @@ export function CoursesExpressOrderDetailPage() {
     return <p className="text-sm text-destructive">Commande introuvable.</p>;
   }
 
+  const actif = isStatutCoursesExpressActif(commande.statut);
+  const realisees = commande.etapes.filter((etape) => etape.realisee).length;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold">{commande.description}</h1>
-        <p className="text-sm text-muted-foreground">
-          Demandé le {new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Porto-Novo' }).format(new Date(commande.createdAt))}
-        </p>
-      </div>
-
-      <CoursesExpressStatusStepper statut={commande.statut} motif={commande.motif} />
-
-      {commande.photoUrls.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {commande.photoUrls.map((url) => (
-            <a key={url} href={url} target="_blank" rel="noreferrer">
-              <img
-                src={miniature(url)}
-                alt="Photo jointe"
-                loading="lazy"
-                className="size-24 rounded-lg object-cover ring-1 ring-foreground/10"
-              />
-            </a>
-          ))}
-        </div>
-      )}
-
-      <PaiementStatus
-        commandeId={commande.commande.id}
-        paiement={commande.commande.paiement}
-        montantTotal={commande.commande.montantTotal}
-        commandeClose={commande.statut === 'annulee'}
-      />
-
-      <LivreurCard livreur={commande.commande.livreur} actif={isStatutCoursesExpressActif(commande.statut)} />
-
+    <DetailCommandeLayout
+      service="Course en ville"
+      titre={commande.description}
+      date={commande.createdAt}
+      reference={commande.commande.id}
+      suivi={
+        <CoursesExpressStatusStepper statut={commande.statut} motif={commande.motif} paiement={commande.commande.paiement} />
+      }
+      actions={
+        <>
+          <PaiementStatus
+            commandeId={commande.commande.id}
+            paiement={commande.commande.paiement}
+            montantTotal={commande.commande.montantTotal}
+            commandeClose={commande.statut === 'annulee'}
+          />
+          <LivreurCard livreur={commande.commande.livreur} actif={actif} />
+          {!actif && (
+            <Button asChild size="lg" className="w-full">
+              <Link to="/courses-express" state={{ modele: modeleCoursesExpress(commande) }}>
+                <RotateCcw aria-hidden="true" />
+                Refaire cette course
+              </Link>
+            </Button>
+          )}
+          {commande.statut === 'confirmee' && (
+            <Button
+              variant="outline"
+              className="w-full text-destructive hover:text-destructive"
+              disabled={annuler.isPending}
+              onClick={() => {
+                annuler.mutate(commande.id, {
+                  onSuccess: () => toast.success('Commande annulée.'),
+                  onError: (error) => toast.error(error.message),
+                });
+              }}
+            >
+              Annuler la course
+            </Button>
+          )}
+        </>
+      }
+    >
       <NotationCard
         livree={commande.statut === 'terminee'}
         cibles={[
@@ -115,53 +107,66 @@ export function CoursesExpressOrderDetailPage() {
         onNoter={(notes, callbacks) => noter.mutate({ commandeId: commande.commande.id, notes }, callbacks)}
       />
 
-      <div>
-        {commande.etapes.map((etape) => (
-          <EtapeRow key={etape.id} etape={etape} />
-        ))}
-      </div>
+      <CarteDetail
+        titre="Les arrêts"
+        action={
+          <span className="text-sm text-muted-foreground">
+            {realisees}/{commande.etapes.length} réalisé{realisees > 1 ? 's' : ''}
+          </span>
+        }
+      >
+        <ol className="space-y-3">
+          {commande.etapes.map((etape) => (
+            <li key={etape.id} className="flex items-start gap-3">
+              <span
+                className={cn(
+                  'flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
+                  etape.realisee ? 'bg-primary text-primary-foreground' : 'bg-secondary text-primary',
+                )}
+              >
+                {etape.realisee ? <Check className="size-4" aria-label="Réalisé" /> : etape.ordre}
+              </span>
+              <div className="min-w-0 pt-0.5 text-sm">
+                <p className="font-medium">{etape.description}</p>
+                <p className="text-muted-foreground">
+                  {etape.pointDeRepere}
+                  {etape.adresse ? ` — ${etape.adresse}` : ''}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ol>
 
-      <div className="space-y-1 border-t border-border pt-3 text-sm">
-        {commande.commande.paiement && (
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span>Mode de paiement</span>
-            <span>
-              {MODE_PAIEMENT_LABELS[commande.commande.paiement.mode] ?? commande.commande.paiement.mode}
-            </span>
+        {commande.photoUrls.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {commande.photoUrls.map((url) => (
+              <a key={url} href={url} target="_blank" rel="noreferrer">
+                <img
+                  src={miniature(url)}
+                  alt="Photo jointe"
+                  loading="lazy"
+                  className="size-20 rounded-xl object-cover ring-1 ring-foreground/10"
+                />
+              </a>
+            ))}
           </div>
         )}
-        <div className="flex items-center justify-between pt-1 font-medium text-foreground">
-          <span>Total</span>
-          <span>{commande.commande.montantTotal ? formatPrixFcfa(commande.commande.montantTotal) : '—'}</span>
-        </div>
-      </div>
 
-      <AvisCommandeSection commandeId={commande.id} prestationTerminee={commande.statut === 'terminee'} />
-
-      {!isStatutCoursesExpressActif(commande.statut) && (
-        <Button asChild className="w-full">
-          <Link to="/courses-express" state={{ modele: modeleCoursesExpress(commande) }}>
-            <RotateCcw className="size-4" aria-hidden="true" />
-            Refaire cette course
-          </Link>
-        </Button>
-      )}
-
-      {commande.statut === 'confirmee' && (
-        <Button
-          variant="outline"
-          className="w-full"
-          disabled={annuler.isPending}
-          onClick={() => {
-            annuler.mutate(commande.id, {
-              onSuccess: () => toast.success('Commande annulée.'),
-              onError: (error) => toast.error(error.message),
-            });
-          }}
-        >
-          Annuler la commande
-        </Button>
-      )}
-    </div>
+        <dl className="mt-4 space-y-1.5 border-t border-border pt-3 text-sm">
+          {commande.commande.paiement && (
+            <div className="flex justify-between text-muted-foreground">
+              <dt>Paiement</dt>
+              <dd>{MODE_PAIEMENT_LABELS[commande.commande.paiement.mode] ?? commande.commande.paiement.mode}</dd>
+            </div>
+          )}
+          <div className="flex items-baseline justify-between text-foreground">
+            <dt className="font-semibold">Total</dt>
+            <dd className="font-heading text-xl font-semibold">
+              {commande.commande.montantTotal ? formatPrixFcfa(commande.commande.montantTotal) : '—'}
+            </dd>
+          </div>
+        </dl>
+      </CarteDetail>
+    </DetailCommandeLayout>
   );
 }

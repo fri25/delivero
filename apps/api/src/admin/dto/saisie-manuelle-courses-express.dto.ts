@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 import { ModePaiement } from '@prisma/client';
@@ -22,6 +23,17 @@ export class SaisieManuelleEtapeDto {
   @IsOptional()
   @IsString()
   adresse?: string;
+
+  /** Priced neighbourhood (GET /quartiers) — Q-28, 13/10. */
+  @IsString()
+  @IsNotEmpty()
+  quartierId!: string;
+
+  /** Name typed for "Autre quartier". */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  quartier?: string;
 }
 
 // F-ADM-04 : identique à CreateCommandeCoursesExpressDto — ce service n'a

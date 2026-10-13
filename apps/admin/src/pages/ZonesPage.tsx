@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -201,6 +202,14 @@ export function ZonesPage() {
         <h1 className="text-xl font-semibold">Zones et grilles tarifaires</h1>
         <p className="text-sm text-muted-foreground">
           Frais de livraison Repas et tarifs de base Colis / Courses express, par zone (F-ADM-10).
+        </p>
+        {/* Q-28, decided 13/10: Repas, Colis and Courses express are priced by neighbourhood. */}
+        <p className="mt-2 rounded-lg bg-muted px-3 py-2 text-sm">
+          Depuis le 13/10, les prix Repas, Colis et Courses express se règlent par quartier (page{' '}
+          <Link to="/quartiers" className="font-medium underline">
+            Quartiers
+          </Link>
+          ). Les montants ci-dessous ne s’appliquent plus qu’aux Emplettes (hors V1).
         </p>
       </div>
 

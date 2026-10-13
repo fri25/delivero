@@ -68,7 +68,10 @@ export function RestaurantCard({
                 {restaurant.typesCuisine?.length ? restaurant.typesCuisine.join(' · ') : restaurant.specialiteCuisine}
               </span>
             )}
-            {restaurant.prixMoyen != null && <span>Menu moyen {formatPrixFcfa(restaurant.prixMoyen)}</span>}
+            {/* An average: rounded so it reads as an order of magnitude, not a price. */}
+            {restaurant.prixMoyen != null && (
+              <span>Plat moyen ≈ {formatPrixFcfa(Math.round(restaurant.prixMoyen / 50) * 50)}</span>
+            )}
           </div>
         </div>
       </article>

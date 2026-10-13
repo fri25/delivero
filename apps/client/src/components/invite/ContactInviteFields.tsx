@@ -29,7 +29,7 @@ export function ContactInviteFields({
           type="tel"
           inputMode="tel"
           autoComplete="tel"
-          placeholder="01 57 86 69 59"
+          placeholder="01 XX XX XX XX"
           value={value.telephone}
           onChange={(event) => onChange({ ...value, telephone: event.target.value })}
           required

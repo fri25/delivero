@@ -16,7 +16,6 @@ import {
   Prisma,
   StatutColis,
   StatutPaiement,
-  TailleColis,
   TypeService,
 } from '@prisma/client';
 import { PerimetreV1Service } from '../config/perimetre-v1.service';
@@ -25,6 +24,8 @@ import {
   HISTORIQUE_LIVREUR_MAX,
 } from '../livreurs/periode-livreur';
 import { PrismaService } from '../prisma/prisma.service';
+import { QuartiersService } from '../quartiers/quartiers.service';
+import { tarifQuartier } from '../quartiers/tarification';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
 import { MediasService } from '../medias/medias.service';
 import {
@@ -107,16 +108,6 @@ const SUIVI_PUBLIC_SELECT = {
 
 const ADMIN_ROLE_NAME = 'admin_dispatcher';
 
-// Majoration provisoire par taille, appliquée au tarif de base par zone
-// (GrilleTarifaireColis.tarifBase, lui-même provisoire — voir schema.prisma).
-// Vit en code, pas en base : seule la composante par zone doit être
-// ajustable sans déploiement pour l'instant. Non validé par la direction.
-const MAJORATION_TAILLE: Record<TailleColis, number> = {
-  petit: 1,
-  moyen: 1.5,
-  grand: 2,
-};
-
 @Injectable()
 export class CommandesColisService {
   constructor(
@@ -126,6 +117,7 @@ export class CommandesColisService {
     private readonly notifications: NotificationsService,
     private readonly medias: MediasService,
     private readonly perimetre: PerimetreV1Service,
+    private readonly quartiers: QuartiersService,
   ) {}
 
   // F-CLI-05 : voir même principe que commandes-repas.service.ts.
@@ -147,9 +139,16 @@ export class CommandesColisService {
     this.notifications.commandeModifiee(commande, 'colis', commandeId, statut);
   }
 
-  async estimer(zoneId: string, taille: TailleColis) {
-    const tarif = await this.calculerTarif(zoneId, taille);
-    return { zoneId, taille, tarif };
+  // Price = fee of the recipient's neighbourhood (Q-28, decided 13/10; the
+  // former zone grid × size surcharge is no longer used).
+  async estimer(quartierLivraisonId: string) {
+    const quartiers = await this.quartiers.resoudrePlusieurs([
+      quartierLivraisonId,
+    ]);
+    return {
+      quartierLivraisonId,
+      tarif: tarifQuartier(Number(quartiers[0].fraisLivraison)),
+    };
   }
 
   /**
@@ -188,8 +187,15 @@ export class CommandesColisService {
     }
 
     // Le tarif est toujours recalculé côté serveur : aucun montant envoyé par
-    // le client n'est pris en compte.
-    const tarif = await this.calculerTarif(dto.zoneId, dto.taille);
+    // le client n'est pris en compte. Prix = quartier de livraison (Q-28).
+    const livraison = await this.quartiers.resoudre(
+      dto.quartierLivraisonId,
+      dto.quartierLivraison,
+    );
+    const tarif = tarifQuartier(Number(livraison.quartier.fraisLivraison));
+    const adresseLivraison = [livraison.nom, dto.adresseLivraison?.trim()]
+      .filter(Boolean)
+      .join(' — ');
     const codeOtp = generateCodeOtp();
 
     const commandeColis = await this.prisma.$transaction(async (tx) => {
@@ -225,7 +231,8 @@ export class CommandesColisService {
           taille: dto.taille,
           destinataireNom: dto.destinataireNom,
           destinataireTelephone: dto.destinataireTelephone,
-          adresseLivraison: dto.adresseLivraison,
+          adresseLivraison,
+          quartierLivraisonId: livraison.quartier.id,
           pointDeRepereLivraison: dto.pointDeRepereLivraison,
           latitudeLivraison: dto.latitudeLivraison,
           longitudeLivraison: dto.longitudeLivraison,
@@ -526,18 +533,6 @@ export class CommandesColisService {
       throw new NotFoundException('Colis introuvable.');
     }
     return commandeColis;
-  }
-
-  private async calculerTarif(zoneId: string, taille: TailleColis) {
-    const grille = await this.prisma.grilleTarifaireColis.findUnique({
-      where: { zoneId },
-    });
-    if (!grille) {
-      throw new NotFoundException(
-        'Aucune grille tarifaire Colis pour cette zone.',
-      );
-    }
-    return Math.round(Number(grille.tarifBase) * MAJORATION_TAILLE[taille]);
   }
 
   /** Guest tracking page (F-CLI-02); the caller has verified the link. */

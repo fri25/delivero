@@ -9,7 +9,20 @@
     <title>ChapExpress — Client</title>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Static shell, painted before the JS runs (several seconds on a slow
+         3G phone): navy header + a loading line, or the top of the home page
+         on phones (filled by vite.config.ts, preloadAccueil). React replaces
+         it on mount. -->
+    <div id="root">
+      <div style="min-height: 100vh; background: #f6f8fc">
+        <div style="display: flex; align-items: center; height: 56px; padding: 0 16px; background: #002050; color: #fff; font: 600 18px system-ui, sans-serif">
+          ChapExpress
+        </div>
+        <div id="coquille-contenu">
+          <p style="margin: 0; padding: 24px 16px; color: #5b6b82; font: 15px system-ui, sans-serif">Chargement…</p>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -1,13 +1,17 @@
-import { Type } from 'class-transformer';
-import { IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsString } from 'class-validator';
 
+/**
+ * One neighbourhood id per stop, in order: `?quartierIds=a,b` (Q-28, 13/10 —
+ * the dearest neighbourhood × the number of stops).
+ */
 export class EstimerCoursesExpressDto {
-  @IsString()
-  @IsNotEmpty()
-  zoneId!: string;
-
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  nombreEtapes!: number;
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.split(',').filter(Boolean) : value,
+  )
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  quartierIds!: string[];
 }

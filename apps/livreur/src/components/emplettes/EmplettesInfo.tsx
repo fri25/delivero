@@ -1,4 +1,5 @@
-import { ExternalLink, Phone } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
+import { ContactLigne } from '@/components/contact/ContactLigne';
 import { formatPrixFcfa, googleMapsRouteUrl } from '@/lib/format';
 import type { CommandeEmplettes } from '@/api/types';
 
@@ -33,15 +34,7 @@ export function EmplettesInfo({ commande }: { commande: CommandeEmplettes }) {
       </div>
 
       {commandeGenerique.client && (
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">{commandeGenerique.client.nom}</span>
-          <a
-            href={`tel:${commandeGenerique.client.telephone}`}
-            className="inline-flex items-center gap-1 text-brand-blue hover:underline"
-          >
-            <Phone className="size-3.5" /> {commandeGenerique.client.telephone}
-          </a>
-        </div>
+        <ContactLigne nom={commandeGenerique.client.nom} telephone={commandeGenerique.client.telephone} />
       )}
 
       <p className="rounded-md bg-muted/60 px-2 py-1.5 font-medium">

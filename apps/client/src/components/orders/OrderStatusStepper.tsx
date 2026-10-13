@@ -1,65 +1,30 @@
-import { Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { StatutRepas } from '@/api/types';
+import type { PaiementResume, StatutRepas } from '@/api/types';
+import { StatutHero } from '@/components/orders/StatutHero';
+import { SuiviEtapes } from '@/components/orders/SuiviEtapes';
+import { suiviRepas } from '@/lib/suivi';
 
-// Le suivi livreur (recuperee_par_livreur / en_route / livree) n'est pas encore
-// pilotable depuis l'API — voir docs/service-repas.md et le module Livreur à venir.
-// Le stepper s'arrête donc à « Prête ».
-const STEPS: { key: StatutRepas; label: string }[] = [
-  { key: 'en_attente_acceptation', label: 'En attente' },
-  { key: 'confirmee', label: 'Confirmée' },
-  { key: 'en_preparation', label: 'En préparation' },
-  { key: 'prete', label: 'Prête' },
-];
-
-export function OrderStatusStepper({ statut, motifRefus }: { statut: StatutRepas; motifRefus: string | null }) {
-  if (statut === 'refusee') {
-    return (
-      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-destructive">
-        <p className="font-medium">Commande refusée</p>
-        {motifRefus && <p className="text-sm">{motifRefus}</p>}
-      </div>
-    );
-  }
-
-  if (statut === 'annulee') {
-    return (
-      <div className="rounded-lg border border-border bg-muted p-4 text-muted-foreground">
-        <p className="font-medium">Commande annulée</p>
-      </div>
-    );
-  }
-
-  const currentIndex = STEPS.findIndex((step) => step.key === statut);
-
+/**
+ * Repas tracking: plain-language status + full timeline, up to delivery (the
+ * livreur app drives recuperee_par_livreur / en_route / livree).
+ */
+export function OrderStatusStepper({
+  statut,
+  motifRefus,
+  paiement,
+}: {
+  statut: StatutRepas;
+  motifRefus: string | null;
+  paiement?: PaiementResume | null;
+}) {
+  const suivi = suiviRepas(statut, paiement);
   return (
-    <ol className="flex items-center">
-      {STEPS.map((step, index) => {
-        const done = currentIndex >= 0 && index <= currentIndex;
-        const isLast = index === STEPS.length - 1;
-        return (
-          <li key={step.key} className={cn('flex items-center', !isLast && 'flex-1')}>
-            <div className="flex flex-col items-center gap-1">
-              <div
-                className={cn(
-                  'flex size-7 items-center justify-center rounded-full border text-xs',
-                  done
-                    ? 'border-success bg-success text-success-foreground'
-                    : 'border-border bg-background text-muted-foreground',
-                )}
-              >
-                {done ? <Check className="size-4" /> : index + 1}
-              </div>
-              <span className={cn('text-xs', done ? 'text-foreground' : 'text-muted-foreground')}>
-                {step.label}
-              </span>
-            </div>
-            {!isLast && (
-              <div className={cn('mx-2 h-px flex-1', done ? 'bg-success' : 'bg-border')} />
-            )}
-          </li>
-        );
-      })}
-    </ol>
+    <div className="space-y-4">
+      <StatutHero ton={suivi.ton} titre={suivi.titre} message={suivi.message} motif={statut === 'refusee' ? motifRefus : null} />
+      {suivi.indexCourant >= 0 && (
+        <div className="rounded-2xl bg-card p-4 ring-1 ring-foreground/10 sm:p-5">
+          <SuiviEtapes etapes={suivi.etapes} indexCourant={suivi.indexCourant} termine={suivi.termine} />
+        </div>
+      )}
+    </div>
   );
 }

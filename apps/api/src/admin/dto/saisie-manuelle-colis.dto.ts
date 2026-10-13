@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsPositive,
   IsString,
+  MaxLength,
   Min,
 } from 'class-validator';
 import { ModePaiement, TailleColis } from '@prisma/client';
@@ -52,8 +53,19 @@ export class SaisieManuelleColisDto {
   destinataireTelephone!: string;
 
   @IsString()
+  @IsOptional()
+  adresseLivraison?: string;
+
+  /** Recipient's neighbourhood: sets the price (Q-28, 13/10). */
+  @IsString()
   @IsNotEmpty()
-  adresseLivraison!: string;
+  quartierLivraisonId!: string;
+
+  /** Name typed for "Autre quartier". */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  quartierLivraison?: string;
 
   @IsString()
   @IsNotEmpty()

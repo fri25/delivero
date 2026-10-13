@@ -9,7 +9,7 @@ particuliers, entreprises et e-commerçants, avec option de contre-remboursement
 flowchart TD
     A[Accueil : choix du service Colis] --> B[Adresse d'enlèvement + adresse de livraison\ncoordonnées du destinataire]
     B --> C[Description du colis : nature, taille approximative\npetit/moyen/grand, valeur déclarée, photo facultative, option fragile]
-    C --> D[Estimation immédiate du tarif\nzone/distance + taille]
+    C --> D[Estimation immédiate du tarif\nquartier de livraison]
     D --> E{Contre-remboursement ?}
     E -- Oui --> F[Montant à encaisser auprès du destinataire]
     E -- Non --> G[Programmation : immédiat ou planifié\ndate + créneau]

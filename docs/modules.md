@@ -61,7 +61,10 @@ Repas → Colis → Emplettes → Courses express) :
       téléphone en complément du point de repère, avec lien de vérification
       Google Maps ; **pas de carte affichée** dans l'app, faute de clé Maps
       Platform. Suppression = archivage (`Adresse.archiveeAt`) : les
-      commandes gardent leur adresse)*
+      commandes gardent leur adresse. 13/10 : **quartier obligatoire** choisi
+      dans la liste (fixe les prix, Q-28) ; décision : pas de carte en V1 ;
+      les adresses antérieures sans quartier sont à compléter avant de
+      commander)*
 - [ ] F-CLI-04 — Choix du paiement (Mobile Money ou espèces à la livraison) —
       *(partiel : **V1 : plus de choix**, Mobile Money imposé, espèces retirées
       — voir RG-01. Depuis le 05/10, la commande enchaîne sur la page FedaPay ;
@@ -86,19 +89,29 @@ Repas → Colis → Emplettes → Courses express) :
       *(06/10 : 1 à 5 étoiles + commentaire facultatif, une note par cible et
       par commande, seulement après livraison ; le partenaire ne se note que
       pour Repas. Recalcule `noteMoyenne` du partenaire et du livreur —
-      `apps/api/src/notations/` et avis)*
+      `apps/api/src/notations/`. **Doublon à résoudre** : la branche
+      `berghinos` a ajouté un second système (`apps/api/src/avis/`, tables
+      `AvisPartenaire`/`AvisLivreur`) qui recalcule lui aussi `noteMoyenne`,
+      chacun écrasant la moyenne de l'autre. Le 12/10, l'app client n'affiche
+      plus que « Notations » (décision utilisateur) ; l'API avis reste en
+      place en attendant d'être retirée ou fusionnée)*
 - [ ] F-CLI-09 — Notifications SMS/WhatsApp/e-mail aux étapes clés — *(partiel,
       05/10 : Web Push (VAPID) sur l'app client + repli WhatsApp/SMS dès
       qu'aucun push n'est remis, aux étapes clés des 4 services, au paiement
       reçu et à la nouvelle commande restaurant — voir
-      `apps/api/src/notifications/`. Fournisseur WhatsApp/SMS **non choisi**
-      (couche `Messagerie` abstraite, pilote `console` qui écrit dans les
-      logs) ; clés VAPID à générer. Pas d'e-mail ; push non proposé dans les
-      apps partenaires/livreur)*
+      `apps/api/src/notifications/`. Fournisseur choisi le 13/10 : **Twilio**
+      (pilote `TwilioMessagerie`, WhatsApp puis repli SMS,
+      `MESSAGERIE_FOURNISSEUR="twilio"`) — **identifiants Twilio à fournir**,
+      `console` par défaut en attendant. Clés VAPID à générer par
+      environnement (faites en dev local le 13/10). Pas d'e-mail ; push non
+      proposé dans les apps partenaires/livreur)*
 - [x] F-CLI-10 — Accueil présentant les 4 services et orientant vers le bon parcours
-      — *(`ServicesHubPage` est désormais la route `/`, une tuile par service ;
-      raccourcis actifs : « Mes commandes », « Mes adresses », « Aide et contact »
-      et « Aide WhatsApp »)*
+      — *(`ServicesHubPage` est la route `/`, une carte photo par service
+      (Colis / Courses express : photos Pexels provisoires), « Comment ça
+      marche » en 3 étapes et contact WhatsApp. Refonte du 12/10 : barre
+      d'onglets mobile (Accueil, Commandes, Panier, Compte), page `/compte`
+      qui regroupe adresses, aide et déconnexion, version PC (en-tête avec
+      liens services, pied de page, formulaires sur deux colonnes)*
 
 ### Repas
 - [x] F-CLI-11 — Catalogue des restaurants (recherche, filtres cuisine/prix/note/délai)
@@ -117,7 +130,8 @@ Repas → Colis → Emplettes → Courses express) :
 - [x] F-CLI-16 — Description du colis (nature, taille, valeur déclarée, photo, fragile)
       — *(partiel : taille/valeur déclarée/fragile + photo (Cloudinary, 06/10)
       faits ; pas de champ "nature")*
-- [x] F-CLI-17 — Estimation immédiate du tarif
+- [x] F-CLI-17 — Estimation immédiate du tarif — *(13/10 : prix = quartier de
+      livraison du destinataire, calculé dès le choix du quartier, aussi sans compte)*
 - [x] F-CLI-18 — Option contre-remboursement — *(implémenté et testé, mais
       **masqué en V1** : suppose un encaissement espèces auprès du destinataire,
       voir RG-04)*
@@ -146,12 +160,13 @@ aucun stockage S3 intégré.)*
 - [x] F-CLI-25 — Estimation du tarif + validation avant confirmation —
       *(estimation faite ; le tarif est de toute façon recalculé et fixé côté
       serveur à la création, pas de "validation" distincte d'un montant
-      variable)*
+      variable. 13/10 : quartier le plus cher des arrêts × nombre d'arrêts)*
 - [ ] F-CLI-26 — Échange direct client ↔ livreur (appel/messagerie) —
       *(partiel : appel dans les deux sens — lien `tel:` vers le client côté
       livreur, et depuis le 05/10 carte « Votre livreur » (nom + Appeler) sur
-      le détail de commande côté client, 4 services. Pas de messagerie
-      intégrée)*
+      le détail de commande côté client, 4 services. 13/10 : bouton WhatsApp
+      (lien wa.me) à côté de l'appel, des deux côtés — décision : pas de
+      messagerie intégrée en V1, `packages/config/whatsapp.ts`)*
 - [x] F-CLI-27 — Suivi de statut Courses express
 
 *(Backend + écrans client/livreur livrés le 2026-08-27, voir
@@ -349,7 +364,10 @@ Compte de démo : `+22900000004` / `demo12345` (rôle `admin_dispatcher`, voir
       stockage S3 — ni de statistiques de performance)*
 - [x] F-ADM-10 — Gestion des zones et des grilles tarifaires par service —
       *(création/modification d'une zone avec ses 3 tarifs — Repas, Colis,
-      Courses express — en une fois)*
+      Courses express — en une fois. 13/10 : page « Quartiers » (ajout, prix,
+      masquer/réactiver) qui fixe désormais les prix Repas / Colis / Courses ;
+      les tarifs par zone ne servent plus qu'à Emplettes. La saisie manuelle
+      demande le quartier)*
 - [ ] F-ADM-11 — Gestion des promotions (codes promo, réductions, livraison offerte)
 - [ ] F-ADM-12 — Rapprochement de caisse (avances, encaissements espèces,
       contre-remboursements) — *(partiel, ajouté le 30/08 : page "Caisse"

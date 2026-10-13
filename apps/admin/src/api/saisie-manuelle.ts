@@ -13,6 +13,9 @@ interface SaisieManuelleRepasInput {
   clientNom: string;
   clientTelephone: string;
   pointDeRepere: string;
+  /** Priced neighbourhood (Q-28). */
+  quartierId: string;
+  quartier?: string;
   partenaireId: string;
   modePaiement: ModePaiement;
   lignes: { platId: string; quantite: number; instructions?: string }[];
@@ -26,7 +29,9 @@ interface SaisieManuelleColisInput {
   taille: TailleColis;
   destinataireNom: string;
   destinataireTelephone: string;
-  adresseLivraison: string;
+  quartierLivraisonId: string;
+  quartierLivraison?: string;
+  adresseLivraison?: string;
   pointDeRepereLivraison: string;
   valeurDeclaree?: number;
   fragile?: boolean;
@@ -53,7 +58,7 @@ interface SaisieManuelleCoursesExpressInput {
   description: string;
   zoneId: string;
   modePaiement: ModePaiement;
-  etapes: { description: string; pointDeRepere: string; adresse?: string }[];
+  etapes: { description: string; pointDeRepere: string; adresse?: string; quartierId: string; quartier?: string }[];
 }
 
 // Une commande créée, quel que soit le service : invalide la vue d'ensemble

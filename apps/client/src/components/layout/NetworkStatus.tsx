@@ -16,7 +16,7 @@ export function NetworkStatus() {
 
   if (online) return null;
   return (
-    <div role="status" className="sticky top-14 z-30 flex min-h-11 items-center justify-center gap-2 bg-brand-navy px-4 text-center text-sm font-medium text-white">
+    <div role="status" className="sticky top-14 z-30 md:top-16 flex min-h-11 items-center justify-center gap-2 bg-brand-navy px-4 text-center text-sm font-medium text-white">
       <WifiOff className="size-4" aria-hidden="true" /> Vous êtes hors ligne. Votre panier reste enregistré sur cet appareil.
     </div>
   );

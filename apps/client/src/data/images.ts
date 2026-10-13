@@ -49,7 +49,7 @@ function toVariant(entries: RawVariant[]): ImageVariant | undefined {
   };
 }
 
-interface DemoImage {
+export interface DemoImage {
   square?: ImageVariant;
   wide?: ImageVariant;
 }
@@ -155,4 +155,16 @@ export function getRestaurantImage(nom: string): ImageVariant | undefined {
 export function getPlatImage(nom: string): ImageVariant | undefined {
   const key = PLAT_IMAGE_BY_NOM[nom.trim()];
   return key ? IMAGES[key]?.square : undefined;
+}
+
+/**
+ * Photos des cartes de service de l'accueil (Colis, Courses express) :
+ * photos Pexels (licence Pexels : usage commercial libre, sans attribution
+ * obligatoire), en attendant de vraies photos de livreurs ChapExpress.
+ * Carré pour le mobile, 3:2 pour le PC.
+ * - colis.jpg : Kindel Media, https://www.pexels.com/photo/6867941/
+ * - courses-express.jpg : MC G'Zay, https://www.pexels.com/photo/30661401/
+ */
+export function getServiceImage(service: 'colis' | 'courses-express'): DemoImage {
+  return IMAGES[service] ?? {};
 }

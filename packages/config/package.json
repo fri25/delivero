@@ -6,6 +6,7 @@
     "./tsconfig.base.json": "./tsconfig.base.json",
     "./tailwind-theme.css": "./tailwind-theme.css",
     "./perimetre-v1": "./perimetre-v1.ts",
-    "./types-cuisine": "./types-cuisine.ts"
+    "./types-cuisine": "./types-cuisine.ts",
+    "./whatsapp": "./whatsapp.ts"
   }
 }

@@ -28,7 +28,7 @@ export class CommandesColisController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('client')
   estimer(@Query() dto: EstimerColisDto) {
-    return this.commandesColisService.estimer(dto.zoneId, dto.taille);
+    return this.commandesColisService.estimer(dto.quartierLivraisonId);
   }
 
   @Post()

@@ -45,11 +45,25 @@ export interface RestaurantDetail extends Omit<RestaurantSummary, 'prixMoyen'> {
   fraisLivraison: string;
 }
 
+/** Priced neighbourhood (GET /quartiers). */
+export interface Quartier {
+  id: string;
+  nom: string;
+  /** FCFA, Decimal serialised as a string. */
+  fraisLivraison: string;
+  /** "Autre quartier": the client types the name of their neighbourhood. */
+  autre: boolean;
+}
+
 export interface Adresse {
   id: string;
   libelle: string;
   adresse?: string | null;
+  /** Name as given by the client (list name, or typed for "Autre quartier"). */
   quartier?: string | null;
+  quartierId?: string | null;
+  /** Null for addresses saved before 13/10: ordering asks to complete them. */
+  quartierTarifaire?: Quartier | null;
   pointDeRepere: string;
   latitude: string | null;
   longitude: string | null;
@@ -154,6 +168,8 @@ export interface CommandeColis {
   destinataireNom: string;
   destinataireTelephone: string;
   adresseLivraison: string;
+  /** Null for parcels created before 13/10 (Q-28). */
+  quartierLivraisonId?: string | null;
   pointDeRepereLivraison: string;
   programmationAt: string | null;
   nomReceptionnaire: string | null;
@@ -258,6 +274,8 @@ export interface EtapeCourseExpress {
   description: string;
   adresse: string | null;
   pointDeRepere: string;
+  /** Null for courses created before 13/10 (Q-28). */
+  quartierId?: string | null;
   realisee: boolean;
   realiseeAt: string | null;
 }

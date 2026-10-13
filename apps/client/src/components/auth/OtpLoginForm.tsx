@@ -46,7 +46,7 @@ export function OtpLoginForm({ onConnecte }: { onConnecte: (session: AuthRespons
             autoComplete="tel"
             value={telephone}
             onChange={(event) => setTelephone(event.target.value)}
-            placeholder="01 57 86 69 59"
+            placeholder="01 XX XX XX XX"
             required
           />
         </div>

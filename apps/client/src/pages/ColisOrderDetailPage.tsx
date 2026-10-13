@@ -11,17 +11,20 @@ import { CopyableValue } from '@/components/colis/CopyableValue';
 import { PaiementStatus } from '@/components/paiement/PaiementStatus';
 import { LivreurCard } from '@/components/orders/LivreurCard';
 import { NotationCard } from '@/components/orders/NotationCard';
+import { CarteDetail } from '@/components/orders/CarteDetail';
+import { DetailCommandeLayout } from '@/components/orders/DetailCommandeLayout';
 import { useNoterCommande } from '@/api/notations';
 import { isStatutColisActif } from '@/lib/statut-colis';
 import { formatPrixFcfa } from '@/lib/format';
 import { miniature } from '@/lib/medias';
-import { AvisCommandeSection } from '@/components/orders/AvisCommandeSection';
 import { LoadError } from '@/components/layout/LoadError';
 
 const MODE_PAIEMENT_LABELS: Record<string, string> = {
   especes: 'Espèces à la livraison',
   mobile_money: 'Mobile Money',
 };
+
+const TAILLE_LABELS: Record<string, string> = { petit: 'Petit', moyen: 'Moyen', grand: 'Grand' };
 
 export function ColisOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -31,9 +34,10 @@ export function ColisOrderDetailPage() {
 
   if (isPending) {
     return (
-      <div className="space-y-3">
-        <Skeleton className="h-6 w-1/2" />
-        <Skeleton className="h-24 w-full" />
+      <div className="mx-auto max-w-2xl space-y-3">
+        <Skeleton className="h-8 w-1/2" />
+        <Skeleton className="h-24 w-full rounded-2xl" />
+        <Skeleton className="h-56 w-full rounded-2xl" />
       </div>
     );
   }
@@ -44,59 +48,70 @@ export function ColisOrderDetailPage() {
     return <p className="text-sm text-destructive">Commande introuvable.</p>;
   }
 
+  const actif = isStatutColisActif(commande.statut);
   const lienSuivi = `${window.location.origin}/colis/suivi/${commande.id}`;
+  const dateRemise = new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'Africa/Porto-Novo',
+  }).format(new Date(commande.updatedAt));
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Colis pour {commande.destinataireNom}</h1>
-          <p className="text-sm text-muted-foreground">
-            Envoyé le {new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Porto-Novo' }).format(new Date(commande.createdAt))}
-          </p>
-        </div>
-        {commande.fragile && <Badge variant="outline">Fragile</Badge>}
-      </div>
+    <DetailCommandeLayout
+      service="Colis"
+      titre={`Colis pour ${commande.destinataireNom}`}
+      date={commande.createdAt}
+      reference={commande.commande.id}
+      suivi={<ColisStatusStepper statut={commande.statut} motif={commande.motif} paiement={commande.commande.paiement} />}
+      actions={
+        <>
+          <PaiementStatus
+            commandeId={commande.commande.id}
+            paiement={commande.commande.paiement}
+            montantTotal={commande.commande.montantTotal}
+            commandeClose={commande.statut === 'annulee'}
+          />
+          <LivreurCard livreur={commande.commande.livreur} actif={actif} />
 
-      <ColisStatusStepper statut={commande.statut} motif={commande.motif} />
+          {/* RG-07 : le destinataire donne ce code au livreur à la remise. */}
+          {commande.codeOtp && actif && (
+            <CarteDetail titre="À transmettre au destinataire">
+              <p className="mb-3 text-sm text-muted-foreground">
+                Il devra donner ce code au livreur pour recevoir le colis. Envoyez-lui aussi le lien de suivi.
+              </p>
+              <div className="space-y-3">
+                <CopyableValue label="Code de remise" value={commande.codeOtp} />
+                <CopyableValue label="Lien de suivi" value={lienSuivi} />
+              </div>
+            </CarteDetail>
+          )}
 
-      {commande.photoUrl && (
-        <div className="flex flex-wrap gap-2">
-          {[commande.photoUrl].map((url) => (
-            <a key={url} href={url} target="_blank" rel="noreferrer">
-              <img
-                src={miniature(url)}
-                alt="Photo du colis"
-                loading="lazy"
-                className="size-24 rounded-lg object-cover ring-1 ring-foreground/10"
-              />
-            </a>
-          ))}
-        </div>
-      )}
-
-      <PaiementStatus
-        commandeId={commande.commande.id}
-        paiement={commande.commande.paiement}
-        montantTotal={commande.commande.montantTotal}
-        commandeClose={commande.statut === 'annulee'}
-      />
-
-      {/* F-CLI-22 : preuve de remise. Le code de remise est obligatoire à la
-          livraison (RG-07) ; pas de photo tant que le stockage S3 manque. */}
-      {commande.statut === 'livre' && (
-        <div className="space-y-1 rounded-lg border border-border p-3 text-sm">
-          <p className="font-medium">Preuve de livraison</p>
-          <p className="text-muted-foreground">
-            Remis le {new Date(commande.updatedAt).toLocaleString('fr-FR')}
-            {commande.nomReceptionnaire ? ` à ${commande.nomReceptionnaire}` : ''}.
-          </p>
-          <p className="text-muted-foreground">Remise confirmée par le code de remise du destinataire.</p>
-        </div>
-      )}
-
-      <LivreurCard livreur={commande.commande.livreur} actif={isStatutColisActif(commande.statut)} />
-
+          {!actif && (
+            <Button asChild size="lg" className="w-full">
+              <Link to="/colis" state={{ modele: modeleColis(commande) }}>
+                <RotateCcw aria-hidden="true" />
+                Envoyer un colis similaire
+              </Link>
+            </Button>
+          )}
+          {commande.statut === 'confirmee' && (
+            <Button
+              variant="outline"
+              className="w-full text-destructive hover:text-destructive"
+              disabled={annuler.isPending}
+              onClick={() => {
+                annuler.mutate(commande.id, {
+                  onSuccess: () => toast.success('Commande annulée.'),
+                  onError: (error) => toast.error(error.message),
+                });
+              }}
+            >
+              Annuler l’envoi
+            </Button>
+          )}
+        </>
+      }
+    >
       <NotationCard
         livree={commande.statut === 'livre'}
         cibles={[
@@ -109,95 +124,90 @@ export function ColisOrderDetailPage() {
         onNoter={(notes, callbacks) => noter.mutate({ commandeId: commande.commande.id, notes }, callbacks)}
       />
 
-      <div className="space-y-1 border-t border-border pt-3 text-sm">
-        <div className="flex items-center justify-between text-muted-foreground">
-          <span>Adresse d'enlèvement</span>
-          <span className="text-right">{commande.adresseEnlevement.pointDeRepere}</span>
-        </div>
-        <div className="flex items-center justify-between text-muted-foreground">
-          <span>Livraison</span>
-          <span className="text-right">{commande.pointDeRepereLivraison}</span>
-        </div>
-        <div className="flex items-center justify-between text-muted-foreground">
-          <span>Taille</span>
-          <span className="text-right capitalize">{commande.taille}</span>
-        </div>
-        {commande.valeurDeclaree && (
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span>Valeur déclarée</span>
-            <span>{formatPrixFcfa(commande.valeurDeclaree)}</span>
-          </div>
-        )}
-        {commande.montantContreRemboursement && (
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span>Contre-remboursement à encaisser</span>
-            <span>{formatPrixFcfa(commande.montantContreRemboursement)}</span>
-          </div>
-        )}
-        {commande.commande.paiement && (
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span>Mode de paiement</span>
-            <span>{MODE_PAIEMENT_LABELS[commande.commande.paiement.mode] ?? commande.commande.paiement.mode}</span>
-          </div>
-        )}
-        <div className="flex items-center justify-between pt-1 font-medium text-foreground">
-          <span>Total</span>
-          <span>{commande.commande.montantTotal ? formatPrixFcfa(commande.commande.montantTotal) : '—'}</span>
-        </div>
-      </div>
-
+      {/* F-CLI-22 : preuve de remise (code obligatoire à la livraison, RG-07). */}
       {commande.statut === 'livre' && (
-        <section className="space-y-3 rounded-2xl border border-primary/20 bg-secondary/50 p-4" aria-labelledby="preuve-livraison">
+        <CarteDetail titre="Preuve de remise">
+          <p className="text-sm text-muted-foreground">Remis le {dateRemise}.</p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl bg-secondary/60 p-3">
+              <p className="text-xs text-muted-foreground">Réceptionnaire</p>
+              <p className="mt-1 font-semibold">{commande.nomReceptionnaire || 'Nom non renseigné'}</p>
+            </div>
+            {commande.codeOtp && (
+              <div className="rounded-xl bg-secondary/60 p-3">
+                <p className="text-xs text-muted-foreground">Code de remise vérifié</p>
+                <p className="mt-1 font-mono text-lg font-semibold tracking-[0.2em]">{commande.codeOtp}</p>
+              </div>
+            )}
+          </div>
+        </CarteDetail>
+      )}
+
+      <CarteDetail
+        titre="Détails de l’envoi"
+        action={commande.fragile ? <Badge variant="outline">Fragile</Badge> : undefined}
+      >
+        <dl className="space-y-3 text-sm">
           <div>
-            <h2 id="preuve-livraison" className="font-heading text-lg font-semibold">Preuve de remise</h2>
-            <p className="text-sm text-muted-foreground">
-              Remis le {new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Porto-Novo' }).format(new Date(commande.updatedAt))}.
-            </p>
+            <dt className="text-xs text-muted-foreground">Enlèvement</dt>
+            <dd className="mt-0.5">{commande.adresseEnlevement.pointDeRepere}</dd>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl bg-card p-3"><p className="text-xs text-muted-foreground">Réceptionnaire</p><p className="mt-1 font-semibold">{commande.nomReceptionnaire || 'Nom non renseigné'}</p></div>
-            {commande.codeOtp && <div className="rounded-xl bg-card p-3"><p className="text-xs text-muted-foreground">Code de remise vérifié</p><p className="mt-1 font-mono text-lg font-semibold tracking-[0.2em]">{commande.codeOtp}</p></div>}
+          <div>
+            <dt className="text-xs text-muted-foreground">Livraison</dt>
+            <dd className="mt-0.5">
+              {commande.destinataireNom} · {commande.destinataireTelephone}
+              <span className="block text-muted-foreground">
+                {commande.pointDeRepereLivraison}
+                {commande.adresseLivraison ? ` — ${commande.adresseLivraison}` : ''}
+              </span>
+            </dd>
           </div>
-        </section>
-      )}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <dt className="text-xs text-muted-foreground">Taille</dt>
+              <dd className="mt-0.5">{TAILLE_LABELS[commande.taille] ?? commande.taille}</dd>
+            </div>
+            {commande.valeurDeclaree && (
+              <div>
+                <dt className="text-xs text-muted-foreground">Valeur déclarée</dt>
+                <dd className="mt-0.5">{formatPrixFcfa(commande.valeurDeclaree)}</dd>
+              </div>
+            )}
+          </div>
+          {commande.montantContreRemboursement && (
+            <div>
+              <dt className="text-xs text-muted-foreground">Contre-remboursement à encaisser</dt>
+              <dd className="mt-0.5">{formatPrixFcfa(commande.montantContreRemboursement)}</dd>
+            </div>
+          )}
+        </dl>
 
-      {commande.codeOtp && commande.statut !== 'livre' && (
-        <div className="space-y-3 rounded-lg border border-border p-3">
-          <p className="text-sm text-muted-foreground">
-            Aucune notification automatique n'est envoyée au destinataire pour l'instant : transmettez-lui
-            vous-même ce code, il devra le communiquer au livreur à la remise.
-          </p>
-          <CopyableValue label="Code de remise" value={commande.codeOtp} />
-          <CopyableValue label="Lien de suivi à transmettre au destinataire" value={lienSuivi} />
-        </div>
-      )}
+        {commande.photoUrl && (
+          <a href={commande.photoUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block">
+            <img
+              src={miniature(commande.photoUrl)}
+              alt="Photo du colis"
+              loading="lazy"
+              className="size-24 rounded-xl object-cover ring-1 ring-foreground/10"
+            />
+          </a>
+        )}
 
-      <AvisCommandeSection commandeId={commande.id} prestationTerminee={commande.statut === 'livre'} />
-
-      {!isStatutColisActif(commande.statut) && (
-        <Button asChild className="w-full">
-          <Link to="/colis" state={{ modele: modeleColis(commande) }}>
-            <RotateCcw className="size-4" aria-hidden="true" />
-            Envoyer un colis similaire
-          </Link>
-        </Button>
-      )}
-
-      {commande.statut === 'confirmee' && (
-        <Button
-          variant="outline"
-          className="w-full"
-          disabled={annuler.isPending}
-          onClick={() => {
-            annuler.mutate(commande.id, {
-              onSuccess: () => toast.success('Commande annulée.'),
-              onError: (error) => toast.error(error.message),
-            });
-          }}
-        >
-          Annuler la commande
-        </Button>
-      )}
-    </div>
+        <dl className="mt-3 space-y-1.5 border-t border-border pt-3 text-sm">
+          {commande.commande.paiement && (
+            <div className="flex justify-between text-muted-foreground">
+              <dt>Paiement</dt>
+              <dd>{MODE_PAIEMENT_LABELS[commande.commande.paiement.mode] ?? commande.commande.paiement.mode}</dd>
+            </div>
+          )}
+          <div className="flex items-baseline justify-between text-foreground">
+            <dt className="font-semibold">Total</dt>
+            <dd className="font-heading text-xl font-semibold">
+              {commande.commande.montantTotal ? formatPrixFcfa(commande.commande.montantTotal) : '—'}
+            </dd>
+          </div>
+        </dl>
+      </CarteDetail>
+    </DetailCommandeLayout>
   );
 }
