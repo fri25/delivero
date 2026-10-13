@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreatePlat } from '@/api/restaurant';
 
-export function AjouterPlatForm() {
+/** Collapsed form: the menu itself stays the first thing on screen. */
+export function AjouterPlatForm({ onTermine }: { onTermine: () => void }) {
   const [nom, setNom] = useState('');
   const [categorie, setCategorie] = useState('');
   const [description, setDescription] = useState('');
@@ -15,7 +16,7 @@ export function AjouterPlatForm() {
 
   return (
     <form
-      className="space-y-2 rounded-lg border border-dashed border-border p-3"
+      className="space-y-3 rounded-2xl bg-card p-4 ring-1 ring-foreground/10"
       onSubmit={(event) => {
         event.preventDefault();
         const prixNombre = Number(prix);
@@ -37,13 +38,14 @@ export function AjouterPlatForm() {
               setCategorie('');
               setDescription('');
               setPrix('');
+              onTermine();
             },
             onError: (error) => toast.error(error.message),
           },
         );
       }}
     >
-      <p className="text-sm font-medium">Ajouter un plat</p>
+      <p className="font-heading font-semibold">Nouveau plat</p>
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="space-y-1">
           <Label htmlFor="nouveau-nom">Nom</Label>
@@ -53,6 +55,7 @@ export function AjouterPlatForm() {
           <Label htmlFor="nouvelle-categorie">Catégorie</Label>
           <Input
             id="nouvelle-categorie"
+            list="categories-menu"
             placeholder="ex. Grillades"
             value={categorie}
             onChange={(event) => setCategorie(event.target.value)}
@@ -72,6 +75,7 @@ export function AjouterPlatForm() {
         <Input
           id="nouveau-prix"
           type="number"
+          inputMode="numeric"
           min="1"
           step="1"
           value={prix}
@@ -79,9 +83,14 @@ export function AjouterPlatForm() {
           required
         />
       </div>
-      <Button type="submit" className="w-full" disabled={createPlat.isPending}>
-        {createPlat.isPending ? 'Ajout...' : 'Ajouter au menu'}
-      </Button>
+      <div className="flex gap-2">
+        <Button type="submit" className="h-11 flex-1" disabled={createPlat.isPending}>
+          {createPlat.isPending ? 'Ajout...' : 'Ajouter au menu'}
+        </Button>
+        <Button type="button" variant="ghost" className="h-11" onClick={onTermine}>
+          Annuler
+        </Button>
+      </div>
     </form>
   );
 }

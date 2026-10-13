@@ -142,7 +142,7 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Paramètres</h1>
+      <h1 className="font-heading text-xl font-semibold">Réglages</h1>
 
       <SettingsForm key={restaurant.id} restaurant={restaurant} />
 
@@ -157,8 +157,7 @@ export function SettingsPage() {
           <p className="text-muted-foreground">Note moyenne : {restaurant.noteMoyenne} / 5</p>
         )}
         <p className="text-muted-foreground">
-          Pour rappel, l'ouverture/fermeture du restaurant se change directement depuis l'en-tête —
-          les commandes ne sont proposées aux clients que si le restaurant est marqué « Ouvert ».
+          Le bouton « Ouvert / Fermé » en haut de l'écran ouvre ou ferme le restaurant aux commandes.
         </p>
       </div>
     </div>

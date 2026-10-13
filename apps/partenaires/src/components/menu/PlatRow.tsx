@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
+import { Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useRemovePlat, useTogglePlatDisponibilite, useUpdatePlat } from '@/api/restaurant';
 import { formatPrixFcfa } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import type { Plat } from '@/api/types';
 
 export function PlatRow({ plat }: { plat: Plat }) {
@@ -23,8 +24,9 @@ export function PlatRow({ plat }: { plat: Plat }) {
 
   if (modeEdition) {
     return (
+      <li>
       <form
-        className="space-y-2 rounded-lg border border-border p-3"
+        className="space-y-2 rounded-2xl bg-card p-3 ring-2 ring-primary"
         onSubmit={(event) => {
           event.preventDefault();
           const prixNombre = Number(prix);
@@ -61,6 +63,7 @@ export function PlatRow({ plat }: { plat: Plat }) {
             <Label htmlFor={`categorie-${plat.id}`}>Catégorie</Label>
             <Input
               id={`categorie-${plat.id}`}
+              list="categories-menu"
               value={categorie}
               onChange={(event) => setCategorie(event.target.value)}
             />
@@ -95,26 +98,29 @@ export function PlatRow({ plat }: { plat: Plat }) {
           </Button>
         </div>
       </form>
+      </li>
     );
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate font-medium">{plat.nom}</p>
-          {plat.categorie && (
-            <Badge variant="outline" className="shrink-0">
-              {plat.categorie}
-            </Badge>
-          )}
-        </div>
+    <li
+      className={cn(
+        'flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-2xl bg-card p-3 ring-1 ring-foreground/10',
+        !plat.disponible && 'bg-muted/60',
+      )}
+    >
+      {/* Wraps the controls under the name on a narrow phone rather than cutting the name. */}
+      <div className="min-w-0 flex-[1_1_11rem]">
+        <p className={cn('font-medium', !plat.disponible && 'text-muted-foreground line-through')}>
+          {plat.nom}
+        </p>
         {plat.description && <p className="truncate text-sm text-muted-foreground">{plat.description}</p>}
-        <p className="text-sm">{formatPrixFcfa(plat.prix)}</p>
+        <p className="text-sm font-semibold tabular-nums">{formatPrixFcfa(plat.prix)}</p>
       </div>
 
       {confirmSuppression ? (
-        <div className="flex shrink-0 gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
+          <span className="text-sm">Supprimer ?</span>
           <Button
             size="sm"
             variant="destructive"
@@ -126,36 +132,65 @@ export function PlatRow({ plat }: { plat: Plat }) {
               });
             }}
           >
-            Confirmer
+            Oui
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setConfirmSuppression(false)}>
-            Annuler
+            Non
           </Button>
         </div>
       ) : (
-        <div className="flex shrink-0 items-center gap-1.5">
-          <Button
-            size="sm"
-            variant={plat.disponible ? 'default' : 'outline'}
-            className={plat.disponible ? 'bg-success hover:bg-success/85' : ''}
+        <div className="flex shrink-0 items-center gap-1">
+          {/* F-RES-05: out of stock in one tap, hidden from clients at once. */}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={plat.disponible}
+            aria-label={`${plat.nom} disponible`}
             disabled={toggleDisponibilite.isPending}
             onClick={() => {
               toggleDisponibilite.mutate(
                 { id: plat.id, disponible: !plat.disponible },
-                { onError: (error) => toast.error(error.message) },
+                {
+                  onSuccess: (data) =>
+                    toast.success(data.disponible ? `${plat.nom} : de nouveau disponible.` : `${plat.nom} : en rupture.`),
+                  onError: (error) => toast.error(error.message),
+                },
               );
             }}
+            className={cn(
+              'flex h-9 items-center gap-2 rounded-full px-3 text-sm font-medium transition-colors disabled:opacity-60',
+              plat.disponible ? 'bg-success/15 text-success' : 'bg-destructive/10 text-destructive',
+            )}
           >
-            {plat.disponible ? 'Disponible' : 'Indisponible'}
+            <span
+              className={cn(
+                'relative h-5 w-9 rounded-full transition-colors',
+                plat.disponible ? 'bg-success' : 'bg-muted-foreground/40',
+              )}
+              aria-hidden="true"
+            >
+              <span
+                className={cn(
+                  'absolute top-0.5 size-4 rounded-full bg-white shadow transition-all',
+                  plat.disponible ? 'left-4.5' : 'left-0.5',
+                )}
+              />
+            </span>
+            {plat.disponible ? 'Disponible' : 'Rupture'}
+          </button>
+          <Button size="icon-sm" variant="ghost" aria-label={`Modifier ${plat.nom}`} onClick={() => setModeEdition(true)}>
+            <Pencil className="size-4" />
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setModeEdition(true)}>
-            Modifier
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => setConfirmSuppression(true)}>
-            Supprimer
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            aria-label={`Supprimer ${plat.nom}`}
+            onClick={() => setConfirmSuppression(true)}
+          >
+            <Trash2 className="size-4" />
           </Button>
         </div>
       )}
-    </div>
+    </li>
   );
 }

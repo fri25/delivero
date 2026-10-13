@@ -26,7 +26,9 @@ articles d'emplettes...) sont rattachées à la commande générique.
 - **Adresse** — carnet d'adresses du client : libellé, adresse/rue, quartier,
   point de repère (texte obligatoire), coordonnées carte optionnelles, adresse par défaut.
 - **RestaurantPartenaire** — nom, description, horaires, spécialité cuisine, délai
-  moyen de préparation, statut d'ouverture, taux de commission, note moyenne. Le champ `taux_commission` n'est plus utilisé pour
+  moyen de préparation, statut d'ouverture, `suspendu` (posé par le back-office,
+  F-ADM-08 : masqué aux clients, plus aucune commande — distinct du statut
+  d'ouverture que le restaurant gère lui-même), taux de commission, note moyenne. Le champ `taux_commission` n'est plus utilisé pour
   Repas depuis le 2026-08-25 (commission désormais unique et calculée côté
   commande, voir [regles-gestion.md](regles-gestion.md) RG-08) ; il reste
   pertinent pour un partenaire suivant encore le modèle par défaut sur un autre
@@ -51,7 +53,9 @@ articles d'emplettes...) sont rattachées à la commande générique.
 ### Commande (entité générique) et spécialisations par service
 - **Commande** — id, `type_service` (enum), client, statut (valeurs dépendantes du
   service, voir ci-dessous), adresse(s), mode de paiement, montant total, livreur
-  attribué, dates de création/mise à jour. Pour Repas, `montant_total` se
+  attribué, dates de création/mise à jour, et pour une annulation par le
+  dispatcher (F-ADM-06) : `motif_annulation`, `annulee_at`, `annulee_par_id`.
+  Pour Repas, `montant_total` se
   décompose en sous-total plats, frais de livraison et commission (voir
   [regles-gestion.md](regles-gestion.md) RG-08) — **[DÉDUIT]** : à représenter soit
   par des colonnes dédiées sur `Commande`/`CommandeRepas`, soit par des lignes dans
@@ -85,7 +89,10 @@ articles d'emplettes...) sont rattachées à la commande générique.
 
 ### Finance
 - **Paiement** — commande, montant, mode (mobile money / espèces), statut, référence
-  de transaction agrégateur, date.
+  de transaction agrégateur, date. Remboursement manuel (statut `a_rembourser` →
+  `rembourse`) : `montant_rembourse` (peut être inférieur au montant payé),
+  `reference_remboursement` (envoi Mobile Money), `motif_remboursement`
+  (obligatoire si partiel), `rembourse_at`, `rembourse_par_id`.
 - **PortefeuilleLivreur** — livreur, solde avancé, solde encaissé, plafond d'avance,
   plafond de caisse.
 - **MouvementCaisse** — livreur, commande (nullable), type (avance / encaissement /

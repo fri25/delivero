@@ -19,6 +19,8 @@ export interface Restaurant {
   delaiMoyenMinutes?: number | null;
   horaires: string | null;
   statutOuverture: boolean;
+  /** Suspended by ChapExpress: hidden from clients, no new order. */
+  suspendu: boolean;
   tauxCommission: string | null;
   noteMoyenne: string | null;
   typesCuisine: string[];
@@ -68,6 +70,8 @@ export interface CommandeRepas {
     commission: string | null;
     montantTotal: string | null;
     adresseId: string | null;
+    /** Who picks the order up, once a livreur has taken it. */
+    livreur: { user: { nom: string; telephone: string } } | null;
   };
   partenaire: { id: string; nom: string; userId: string };
   lignes: LigneCommandeRepas[];

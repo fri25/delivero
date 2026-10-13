@@ -3,8 +3,8 @@ import { apiFetch } from './client';
 import { useAuthStore } from '../stores/auth-store';
 import type { CommandeRepas } from './types';
 
-// Pas de WebSocket ni de notification push in-app à ce stade (voir
-// docs/architecture.md) : on rafraîchit la liste par intervalle en attendant.
+// Polling safety net: the real-time event (api/realtime.ts) refreshes the
+// list at once; this catches up after a dropped socket on unstable 3G.
 const POLL_INTERVAL_MS = 8000;
 
 export function useMesCommandes() {

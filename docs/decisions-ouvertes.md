@@ -19,6 +19,7 @@ raisonnement. Résumé :
 | Q-12 | Principe retenu : blocage par défaut avec délai d'attente maximum — comportement après expiration renvoyé à Q-26 | 2026-08-23 | [regles-gestion.md](regles-gestion.md) RG-05 |
 | Q-20 | Confirmé : aucune extension au lancement, à revisiter après mise en production | 2026-08-23 | [pwa-offline.md](pwa-offline.md) |
 | Q-03 (Repas) | Commission Repas : 15 % facturé au client sur (plats + livraison), restaurant payé plein tarif ; extension aux autres services encore ouverte | 2026-08-25 | [regles-gestion.md](regles-gestion.md) RG-08 |
+| Q-13 (dispatcher) | Annulation par le dispatcher seulement avant le début du travail ; remboursement manuel, montant ajustable avec motif | 2026-10-13 | [regles-gestion.md](regles-gestion.md) RG-09 |
 | Q-28 | Frais de livraison par liste de quartiers (500 / 1 000 FCFA), quartier du client obligatoire ; appliqué aussi à Colis et Courses express | 2026-10-13 | [regles-gestion.md](regles-gestion.md) RG-08 |
 
 ## Produit et phasage
@@ -210,6 +211,12 @@ Voir [regles-gestion.md](regles-gestion.md) RG-05,
 [service-emplettes.md](service-emplettes.md).
 
 ### Q-13 — Règles d'annulation
+**✅ Décidé en partie (2026-10-13)** — Annulation par le dispatcher : seulement
+avant le début du travail (Repas avant la préparation, autres services avant la
+prise en charge par un livreur) ; remboursement manuel, montant ajustable avec
+motif obligatoire si partiel. Détail : [regles-gestion.md](regles-gestion.md) RG-09.
+**Reste ouvert** : délais d'annulation côté client par service, pénalités.
+
 **Question** : quels délais d'annulation sont autorisés par service, y a-t-il des
 pénalités, le remboursement est-il automatique ou validé manuellement ?
 **Impact** : expérience client, charge du dispatcher, trésorerie. **Qui tranche** :

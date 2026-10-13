@@ -5,6 +5,7 @@ import { LoginPage } from '@/pages/LoginPage';
 import { OrdersPage } from '@/pages/OrdersPage';
 import { MenuPage } from '@/pages/MenuPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { VentesPage } from '@/pages/VentesPage';
 
 export const router = createBrowserRouter([
   {
@@ -24,6 +25,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <MenuPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'ventes',
+        element: (
+          <ProtectedRoute>
+            <VentesPage />
           </ProtectedRoute>
         ),
       },

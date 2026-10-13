@@ -142,7 +142,12 @@ export class CommandesRepasService {
     this.perimetre.assertModePaiementOuvert(dto.modePaiement);
 
     const partenaire = await this.prisma.partenaire.findFirst({
-      where: { id: dto.partenaireId, type: TypePartenaire.restaurant },
+      // Suspended by ChapExpress (F-ADM-08): takes no order.
+      where: {
+        id: dto.partenaireId,
+        type: TypePartenaire.restaurant,
+        suspendu: false,
+      },
       include: { zone: true },
     });
     if (!partenaire) {

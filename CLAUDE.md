@@ -14,8 +14,10 @@ phasage a servi à l'ordre de développement, pas à limiter ce qui est livré.
 requis pour Emplettes en mode catalogue, est entièrement à faire). L'app `admin`
 (back-office) a une vue d'ensemble des commandes, un dispatch (automatique par
 rotation + réattribution manuelle) et une gestion des livreurs/zones depuis le
-28/08 ; caisse (clôture, rapprochement) et reversement restent à faire — voir
-F-ADM-12/13/18. Statut détaillé fonctionnalité par fonctionnalité :
+28/08 ; depuis le 13/10 : tableau de bord (F-ADM-14), restaurants (création de
+compte, suspension, F-ADM-08), annulation par le dispatcher et remboursements
+manuels (F-ADM-06). Litiges, journal des actions et reversement restent à faire —
+voir F-ADM-06/07/18. Statut détaillé fonctionnalité par fonctionnalité :
 [docs/modules.md](docs/modules.md), tenu à jour à chaque audit — le relire avant
 d'affirmer qu'une fonctionnalité existe ou non. Dernier audit :
 [docs/audit-chapexpress-2026-08-30.html](docs/audit-chapexpress-2026-08-30.html).
@@ -42,12 +44,13 @@ Choix tranchés (voir [docs/decisions-arbitrage.md](docs/decisions-arbitrage.md)
   client depuis le 05/10 (`apps/api/src/notifications/`). Fournisseur
   WhatsApp/SMS : **Twilio** (choisi le 13/10, pilote prêt), **identifiants à
   renseigner** — d'ici là pilote `console` (messages et codes OTP écrits dans
-  les logs). Push non proposé dans partenaires/livreur.
+  les logs). Push proposé aussi dans livreur et partenaires (restaurants) depuis le 13/10.
 - Paiement : agrégateur Mobile Money, FedaPay — intégré le 05/10 (page de
   paiement hébergée + webhook signé, `apps/api/src/paiements/`), **pas encore
   validé en sandbox**. Paiement à la commande : une commande Mobile Money non
   payée n'est transmise ni au restaurant ni aux livreurs. Remboursements
-  manuels (statut `a_rembourser`), sans écran back-office à ce jour.
+  manuels (statut `a_rembourser`), traités depuis la page Remboursements du
+  back-office (montant ajustable, référence Mobile Money).
 - Cartographie : pas de carte en V1 (décision du 13/10) ; le **quartier**
   (liste tenue au back-office) est obligatoire et fixe les prix Repas / Colis /
   Courses express — voir RG-08 (Q-28). Google Maps Platform reste la cible
@@ -90,7 +93,8 @@ pnpm --filter @delivero/api prisma:studio   # Prisma Studio
 `apps/client` a une suite Vitest + Testing Library (`pnpm --filter
 @delivero/client test`, depuis le 06/10). `apps/livreur` a une suite Vitest
 pour la logique hors ligne (`pnpm --filter @delivero/livreur test`, depuis le
-13/10). `partenaires` et `admin` n'ont toujours aucun test.
+13/10). `apps/partenaires` a une suite Vitest pour le calcul des ventes (`pnpm --filter
+@delivero/partenaires test`, depuis le 13/10). `admin` n'a toujours aucun test.
 
 ## Conventions
 

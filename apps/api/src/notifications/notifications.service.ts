@@ -162,6 +162,47 @@ export class NotificationsService implements OnModuleInit {
     });
   }
 
+  /**
+   * Cancelled by the dispatcher (F-ADM-06): the client hears it, with the
+   * reason, through push then WhatsApp/SMS (or the guest link).
+   */
+  commandeAnnuleeParChapExpress(commande: ContactCommande, motif: string) {
+    const notification: Notification = {
+      titre: 'Commande annulée',
+      message: `ChapExpress a annulé votre commande (${motif}). Si vous avez payé, vous serez remboursé.`,
+    };
+    if (commande.clientId) {
+      this.envoyerEnArrierePlan(commande.clientId, notification);
+    } else if (commande.clientTelephoneInvite) {
+      this.envoyerInviteEnArrierePlan(
+        commande.clientTelephoneInvite,
+        commande.id,
+        notification,
+      );
+    }
+  }
+
+  /** Manual refund sent (F-ADM-06): amount and Mobile Money reference. */
+  remboursementEffectue(
+    commande: ContactCommande,
+    montant: string,
+    reference: string | null,
+  ) {
+    const notification: Notification = {
+      titre: 'Remboursement envoyé',
+      message: `${montant} FCFA vous ont été renvoyés par Mobile Money${reference ? ` (réf. ${reference})` : ''}.`,
+    };
+    if (commande.clientId) {
+      this.envoyerEnArrierePlan(commande.clientId, notification);
+    } else if (commande.clientTelephoneInvite) {
+      this.envoyerInviteEnArrierePlan(
+        commande.clientTelephoneInvite,
+        commande.id,
+        notification,
+      );
+    }
+  }
+
   /** F-RES-01: new paid order for a restaurant. */
   nouvelleCommandeRestaurant(partenaireUserId: string) {
     this.envoyerEnArrierePlan(partenaireUserId, {

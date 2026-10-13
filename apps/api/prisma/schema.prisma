@@ -63,6 +63,8 @@ model User {
   otpCodes            OtpCode[]
   abonnementsPush     AbonnementPush[]
   cloturesRapprochees ClotureCaisse[]
+  commandesAnnulees   Commande[]       @relation("CommandeAnnuleePar")
+  paiementsRembourses Paiement[]       @relation("PaiementRembourseePar")
 
   @@map("users")
 }
@@ -238,6 +240,9 @@ model Partenaire {
   zoneId              String         @map("zone_id")
   zone                Zone           @relation(fields: [zoneId], references: [id])
   statutOuverture     Boolean        @default(true) @map("statut_ouverture")
+  // Suspended by ChapExpress (F-ADM-08): hidden from clients, takes no order.
+  // Unlike statutOuverture, the partner cannot lift it.
+  suspendu            Boolean        @default(false)
   tauxCommission      Decimal?       @map("taux_commission") @db.Decimal(5, 2)
   noteMoyenne         Decimal?       @map("note_moyenne") @db.Decimal(3, 2)
   // Catalogue filters (F-CLI-11). Values from TYPES_CUISINE
@@ -373,6 +378,14 @@ model Commande {
   fraisLivraison Decimal? @map("frais_livraison") @db.Decimal(12, 2)
   commission     Decimal? @map("commission") @db.Decimal(12, 2)
   montantTotal   Decimal? @map("montant_total") @db.Decimal(12, 2)
+
+  // Cancelled by the dispatcher (F-ADM-06): why, when and by whom. Allowed
+  // only before work starts (decision of 2026-10-13, Q-13). Null for a
+  // cancellation by the client.
+  motifAnnulation String?   @map("motif_annulation")
+  annuleeAt       DateTime? @map("annulee_at")
+  annuleeParId    String?   @map("annulee_par_id")
+  annuleePar      User?     @relation("CommandeAnnuleePar", fields: [annuleeParId], references: [id])
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -519,6 +532,15 @@ model Paiement {
   // retries a failed payment): the webhook matches on it.
   referenceTransaction String?        @unique @map("reference_transaction")
   createdAt            DateTime       @default(now()) @map("created_at")
+
+  // Manual refund (decision of 2026-10-13): the amount may be lower than
+  // `montant` (e.g. delivery fee kept), the reason is then required.
+  montantRembourse       Decimal?  @map("montant_rembourse") @db.Decimal(12, 2)
+  referenceRemboursement String?   @map("reference_remboursement")
+  motifRemboursement     String?   @map("motif_remboursement")
+  rembourseAt            DateTime? @map("rembourse_at")
+  rembourseParId         String?   @map("rembourse_par_id")
+  remboursePar           User?     @relation("PaiementRembourseePar", fields: [rembourseParId], references: [id])
 
   @@map("paiements")
 }

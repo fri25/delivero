@@ -7,6 +7,12 @@ import { AdminCaisseController } from './admin-caisse.controller';
 import { AdminCaisseService } from './admin-caisse.service';
 import { AdminCommandesController } from './admin-commandes.controller';
 import { AdminCommandesService } from './admin-commandes.service';
+import { AdminIncidentsController } from './admin-incidents.controller';
+import { AdminIncidentsService } from './admin-incidents.service';
+import { AdminPartenairesController } from './admin-partenaires.controller';
+import { AdminPartenairesService } from './admin-partenaires.service';
+import { AdminStatistiquesController } from './admin-statistiques.controller';
+import { AdminStatistiquesService } from './admin-statistiques.service';
 import { AdminLivreursController } from './admin-livreurs.controller';
 import { AdminLivreursService } from './admin-livreurs.service';
 import { AdminSaisieManuelleController } from './admin-saisie-manuelle.controller';
@@ -27,6 +33,9 @@ import { AdminZonesService } from './admin-zones.service';
     AdminZonesController,
     AdminCaisseController,
     AdminSaisieManuelleController,
+    AdminIncidentsController,
+    AdminPartenairesController,
+    AdminStatistiquesController,
   ],
   providers: [
     AdminCommandesService,
@@ -34,6 +43,9 @@ import { AdminZonesService } from './admin-zones.service';
     AdminZonesService,
     AdminCaisseService,
     AdminSaisieManuelleService,
+    AdminIncidentsService,
+    AdminPartenairesService,
+    AdminStatistiquesService,
   ],
 })
 export class AdminModule {}

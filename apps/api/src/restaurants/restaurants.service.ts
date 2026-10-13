@@ -31,6 +31,7 @@ export class RestaurantsService {
       where: {
         type: TypePartenaire.restaurant,
         statutOuverture: true,
+        suspendu: false,
         ...(search
           ? { nom: { contains: search, mode: 'insensitive' as const } }
           : {}),
@@ -65,7 +66,8 @@ export class RestaurantsService {
   // intégration Maps réelle — voir CLAUDE.md [À FAIRE]).
   async findOnePublic(id: string) {
     const restaurant = await this.prisma.partenaire.findFirst({
-      where: { id, type: TypePartenaire.restaurant },
+      // A suspended restaurant (F-ADM-08) no longer exists for clients.
+      where: { id, type: TypePartenaire.restaurant, suspendu: false },
       select: {
         id: true,
         nom: true,

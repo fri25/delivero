@@ -221,17 +221,35 @@ hors périmètre. 3ᵉ dans l'ordre de phasage, livré comme les 3 autres servic
 ## Module Restaurant (F-RES)
 
 - [x] F-RES-01 — Réception des commandes en temps réel, alerte sonore — *(WebSocket
-      ajouté le 27/08 : événement `commande:nouvelle` + bip généré (Web Audio,
-      pas de fichier son) côté `apps/partenaires` ; le polling sur `me/commandes`
-      reste en filet de secours)*
+      ajouté le 27/08 : événement `commande:nouvelle` ; le polling sur
+      `me/commandes` reste en filet de secours. Depuis le 13/10 : alarme (bip
+      Web Audio, sans fichier son) **répétée toutes les 6 s** tant qu'une
+      commande attend, sur tous les écrans, nombre en attente dans le titre
+      d'onglet et sur l'onglet Commandes ; bouton « Activer le son » tant que
+      le navigateur bloque l'audio (`lib/alarme.ts`, `api/alarme.ts`). Web Push
+      proposé dans l'app (carte « Activer les alertes », désabonnement à la
+      déconnexion), l'API retombant sur WhatsApp/SMS. Écran en tableau de
+      cuisine : À accepter / En cuisine / Prêtes / Parties / Terminées
+      aujourd'hui, N° court commun avec client et livreur, livreur affiché avec
+      bouton d'appel)*
 - [x] F-RES-02 — Acceptation ou refus motivé dans un délai imparti — *(acceptation/
-      refus avec motif faits ; le délai imparti n'est pas mis en œuvre)*
+      refus avec motif faits, motifs rapides proposés ; le délai imparti n'est
+      pas mis en œuvre)*
 - [x] F-RES-03 — Indication du temps de préparation, passage à « commande prête »
-- [x] F-RES-04 — Gestion du menu (plats, catégories, photos, prix, options)
+- [x] F-RES-04 — Gestion du menu (plats, catégories, photos, prix, options) —
+      *(plats regroupés par catégorie, catégories suggérées à la saisie ; les
+      photos de plats ne sont pas encore branchées sur Cloudinary, options non
+      faites)*
 - [x] F-RES-05 — Activation/désactivation d'un plat en un clic (rupture)
 - [x] F-RES-06 — Gestion des horaires d'ouverture, statut « temporairement fermé »
-- [ ] F-RES-07 — Tableau de bord des ventes (commandes du jour, CA, plats les plus
-      vendus)
+- [x] F-RES-07 — Tableau de bord des ventes (commandes du jour, CA, plats les plus
+      vendus) — *(13/10, onglet Ventes : aujourd'hui / 7 j / 30 j, évolution vs
+      période précédente, commandes servies, panier moyen, refusées/annulées,
+      ventes par jour, top 5 plats. Calculé côté app sur `me/commandes`
+      (`lib/ventes.ts`, testé) : montant des plats (`sousTotal`) des commandes
+      remises au livreur, jours en heure du Bénin. Aucun montant de reversement
+      tant que F-RES-08 n'est pas arbitré. Si l'historique grossit, prévoir un
+      endpoint agrégé côté API)*
 - [ ] F-RES-08 — Relevés de reversement détaillés
 - [ ] F-RES-09 — Canal de secours WhatsApp/SMS
 
@@ -381,13 +399,26 @@ Compte de démo : `+22900000004` / `demo12345` (rôle `admin_dispatcher`, voir
       normalement, son numéro est déjà pris, aucune fusion de compte prévue)*
 - [ ] F-ADM-05 — Validation des demandes sensibles
 - [ ] F-ADM-06 — Gestion des incidents (annulation, remboursement, litige, client
-      injoignable, colis refusé/endommagé, article contesté)
+      injoignable, colis refusé/endommagé, article contesté) — *(partiel, 13/10 :
+      **annulation** depuis la page Commandes (bouton « Annuler », motif
+      obligatoire avec motifs rapides), seulement avant le début du travail
+      (RG-09 / Q-13) ; client prévenu (push puis WhatsApp/SMS ou lien invité),
+      restaurant et livreur attribué prévenus en temps réel. **Remboursements** :
+      page dédiée listant les paiements `a_rembourser` (raison : annulation,
+      refus restaurant ou client), montant ajustable, référence Mobile Money,
+      motif si partiel, trace de qui/quand, client prévenu ; historique des 50
+      derniers. Voir `apps/api/src/admin/admin-incidents.service.ts`. Restent :
+      litiges, colis refusé/endommagé, article contesté, journal F-ADM-07)*
 - [ ] F-ADM-07 — Journal complet des actions (traçabilité)
 
 ### Administration et pilotage
 - [ ] F-ADM-08 — Gestion des partenaires (création, convention, taux de commission,
-      suspension) — *(partiel côté données : `Partenaire.tauxCommission` existe,
-      aucune interface d'administration)*
+      suspension) — *(partiel, 13/10 : page Restaurants — création du restaurant
+      et de son compte de connexion (numéro normalisé +229, créé fermé), point de
+      repère obligatoire, modification, nouveau mot de passe, suspension /
+      réactivation (masqué aux clients, plus de nouvelle commande, bandeau dans
+      l'app restaurant). Pas de taux de commission : sans effet pour Repas
+      (RG-08). Restent : commerces (module F-COM inexistant), convention)*
 - [ ] F-ADM-09 — Gestion des livreurs (enregistrement, pièces, zones, plafonds,
       performance) — *(partiel : enregistrement (création de compte + profil),
       zone et plafonds faits ; pas de gestion des pièces d'identité — aucun
@@ -414,8 +445,15 @@ Compte de démo : `+22900000004` / `demo12345` (rôle `admin_dispatcher`, voir
       UTC — `POST /livreurs/me/cloture-caisse`, voir
       `apps/api/src/portefeuille/portefeuille.service.ts` méthode
       `cloturerCaisse`)*
-- [ ] F-ADM-14 — Tableaux de bord (demandes, CA, panier moyen, taux d'annulation,
-      délais moyens, classement partenaires/livreurs)
+- [x] F-ADM-14 — Tableaux de bord (demandes, CA, panier moyen, taux d'annulation,
+      délais moyens, classement partenaires/livreurs) — *(13/10, page d'accueil
+      du back-office : aujourd'hui / 7 j / 30 j vs période précédente, montant
+      des commandes terminées, demandes, panier moyen, taux d'annulation, délai
+      moyen, détail par service, demandes par jour, top 5 restaurants et
+      livreurs, alerte remboursements en attente. `GET /admin/statistiques`,
+      calcul pur testé dans `apps/api/src/admin/statistiques.ts`. Limite : pas
+      d'horodatage de livraison, le délai moyen s'appuie sur la dernière mise à
+      jour de la commande terminée — estimation, affichée comme telle)*
 - [ ] F-ADM-15 — Export des données (Excel/CSV)
 
 ### Paiements (configuration transversale portée par le back-office)
@@ -428,8 +466,8 @@ Compte de démo : `+22900000004` / `demo12345` (rôle `admin_dispatcher`, voir
       restaurant, ni des livreurs, ni de l'attribution — et **remboursement
       manuel** : refus/annulation d'une commande payée => paiement
       `a_rembourser`. **Pas encore validé en sandbox** (clés à renseigner
-      dans `apps/api/.env`). Restent à faire : écran back-office des
-      remboursements, expiration des commandes jamais payées, paiement des
+      dans `apps/api/.env`). Écran back-office des remboursements fait
+      le 13/10 (F-ADM-06). Restent à faire : expiration des commandes jamais payées, paiement des
       commandes saisies par le dispatcher (F-ADM-04))*
 - [ ] F-ADM-17 — Calcul automatique des commissions par partenaire et par service
       (Emplettes : commission uniquement en mode (b) catalogue partenaire, aucune en

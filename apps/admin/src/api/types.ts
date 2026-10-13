@@ -21,6 +21,7 @@ export interface AdminCommandeRow {
   livreurId: string | null;
   client: { nom: string; telephone: string } | null;
   livreur: { nom: string; telephone: string } | null;
+  paiement: { mode: string; statut: string } | null;
 }
 
 export interface AdminCommandesPage {
@@ -98,4 +99,90 @@ export interface RestaurantDetail {
   id: string;
   nom: string;
   plats: Plat[];
+}
+
+/** Restaurant as the back-office manages it (F-ADM-08). */
+export interface PartenaireAdmin {
+  id: string;
+  nom: string;
+  description: string | null;
+  adresse: string | null;
+  pointDeRepere: string | null;
+  statutOuverture: boolean;
+  /** Set by ChapExpress: hidden from clients, takes no order. */
+  suspendu: boolean;
+  noteMoyenne: string | null;
+  createdAt: string;
+  user: { nom: string; telephone: string };
+  zone: { id: string; nom: string };
+  _count: { plats: number; commandesRepas: number };
+}
+
+type StatutService = { statut: string } | null;
+
+/** Payment collected then cancelled or refused: refunded by hand (F-ADM-06). */
+export interface Remboursement {
+  id: string;
+  montant: string;
+  mode: ModePaiement;
+  statut: 'a_rembourser' | 'rembourse';
+  referenceTransaction: string | null;
+  createdAt: string;
+  montantRembourse: string | null;
+  referenceRemboursement: string | null;
+  motifRemboursement: string | null;
+  rembourseAt: string | null;
+  remboursePar: { nom: string } | null;
+  commande: {
+    id: string;
+    typeService: TypeService;
+    createdAt: string;
+    clientNomInvite: string | null;
+    clientTelephoneInvite: string | null;
+    client: { nom: string; telephone: string } | null;
+    motifAnnulation: string | null;
+    annuleeAt: string | null;
+    annuleePar: { nom: string } | null;
+    commandeRepas: { statut: string; motifRefus: string | null; partenaire: { nom: string } } | null;
+    commandeColis: StatutService;
+    commandeEmplettes: StatutService;
+    commandeCoursesExpress: StatutService;
+  };
+}
+
+export interface Remboursements {
+  aRembourser: Remboursement[];
+  rembourses: Remboursement[];
+}
+
+export type Periode = 'jour' | '7j' | '30j';
+
+export interface BilanStatistique {
+  demandes: number;
+  terminees: number;
+  annulees: number;
+  enCours: number;
+  montantTermine: number;
+  panierMoyen: number | null;
+  tauxAnnulation: number | null;
+  delaiMoyenMinutes: number | null;
+}
+
+export interface ClassementStatistique {
+  id: string;
+  nom: string;
+  terminees: number;
+  montant: number;
+}
+
+/** F-ADM-14 dashboard, computed by the API for the period. */
+export interface Statistiques {
+  periode: Periode;
+  actuel: BilanStatistique;
+  precedent: BilanStatistique;
+  parService: (BilanStatistique & { typeService: TypeService })[];
+  parJour: { jour: string; demandes: number }[];
+  restaurants: ClassementStatistique[];
+  livreurs: ClassementStatistique[];
+  aRembourser: { nombre: number; montant: number };
 }

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AnnulerCommandeBouton } from '@/components/commandes/AnnulerCommandeBouton';
 import { useAttribuerCommande, useCommandesOverview } from '@/api/commandes';
 import { useLivreurs } from '@/api/livreurs';
 import { formatDateHeure, formatPrixFcfa } from '@/lib/format';
@@ -129,9 +130,9 @@ export function OverviewPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">Vue d'ensemble</h1>
+        <h1 className="font-heading text-xl font-semibold">Commandes</h1>
         <p className="text-sm text-muted-foreground">
-          Toutes les demandes, tous services confondus.
+          Toutes les demandes, tous services confondus : attribution, réattribution et annulation.
         </p>
       </div>
 
@@ -174,12 +175,12 @@ export function OverviewPage() {
                 <th className="px-3 py-2 font-medium">Livreur</th>
                 <th className="px-3 py-2 font-medium">Montant</th>
                 <th className="px-3 py-2 font-medium">Créée le</th>
-                <th className="px-3 py-2 font-medium">Attribution</th>
+                <th className="px-3 py-2 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {data.items.map((row) => (
-                <tr key={row.id} className="border-t border-border">
+                <tr key={row.id} data-commande={row.id} className="border-t border-border">
                   <td className="px-3 py-2">{SERVICE_LABELS[row.typeService]}</td>
                   <td className="px-3 py-2">
                     <Badge
@@ -215,7 +216,10 @@ export function OverviewPage() {
                     {formatDateHeure(row.createdAt)}
                   </td>
                   <td className="px-3 py-2">
-                    <AttributionCell row={row} />
+                    <div className="flex items-center gap-1">
+                      <AttributionCell row={row} />
+                      <AnnulerCommandeBouton row={row} />
+                    </div>
                   </td>
                 </tr>
               ))}

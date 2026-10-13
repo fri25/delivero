@@ -8,6 +8,9 @@ import { ZonesPage } from '@/pages/ZonesPage';
 import { QuartiersPage } from '@/pages/QuartiersPage';
 import { CaissePage } from '@/pages/CaissePage';
 import { SaisieManuellePage } from '@/pages/SaisieManuellePage';
+import { TableauDeBordPage } from '@/pages/TableauDeBordPage';
+import { RemboursementsPage } from '@/pages/RemboursementsPage';
+import { RestaurantsPage } from '@/pages/RestaurantsPage';
 
 export const router = createBrowserRouter([
   {
@@ -18,7 +21,31 @@ export const router = createBrowserRouter([
         index: true,
         element: (
           <ProtectedRoute>
+            <TableauDeBordPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'commandes',
+        element: (
+          <ProtectedRoute>
             <OverviewPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'remboursements',
+        element: (
+          <ProtectedRoute>
+            <RemboursementsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'restaurants',
+        element: (
+          <ProtectedRoute>
+            <RestaurantsPage />
           </ProtectedRoute>
         ),
       },

@@ -60,6 +60,13 @@ export function useAlertesLivreur() {
           duration: 10_000,
         });
       });
+
+      socket.on('livreur:course-annulee', () => {
+        // Cancelled by the dispatcher before the livreur started it.
+        for (const cle of [...MIENNES, ...DISPONIBLES]) void queryClient.invalidateQueries({ queryKey: [cle] });
+        vibrer();
+        toast.warning('Le dispatch a annulé une course qui vous était attribuée.', { duration: 10_000 });
+      });
     });
 
     return () => {

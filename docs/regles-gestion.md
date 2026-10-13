@@ -205,10 +205,21 @@ et [service-emplettes.md](service-emplettes.md)) :
 ## RG-09 — Annulations
 
 Une commande peut être annulée par le client (avant acceptation/début d'exécution)
-ou par le dispatcher (gestion d'incident). Le cahier des charges mentionne la
-fonction sans détailler de règles fines (délais d'annulation autorisés, pénalités,
-remboursement automatique ou manuel). **[À ARBITRER]** sur l'ensemble de ces points,
-voir [decisions-ouvertes.md](decisions-ouvertes.md).
+ou par le dispatcher (gestion d'incident).
+
+**✅ Décidé (2026-10-13, Q-13)** pour l'annulation par le dispatcher :
+- possible **uniquement avant le début du travail** : Repas tant que le
+  restaurant n'a pas commencé la préparation (`en_attente_acceptation`,
+  `confirmee`) ; Colis, Courses express et Emplettes tant qu'aucun livreur n'a
+  démarré (`confirmee`). Au-delà, la commande va à son terme ;
+- motif obligatoire, envoyé au client et conservé sur la commande (qui, quand) ;
+- une commande payée passe en `a_rembourser` ; le remboursement reste
+  **manuel** et son **montant est ajustable** : le dispatcher peut rembourser
+  moins que le montant payé (ex. frais de livraison retenus), le motif est
+  alors obligatoire. Pas de pénalité automatique.
+
+Restent **[À ARBITRER]** : les délais d'annulation côté client par service et
+d'éventuelles pénalités (voir [decisions-ouvertes.md](decisions-ouvertes.md) Q-13).
 
 ## RG-10 — Litiges et réclamations
 
