@@ -24,6 +24,7 @@ import {
   HISTORIQUE_LIVREUR_MAX,
 } from '../livreurs/periode-livreur';
 import { PrismaService } from '../prisma/prisma.service';
+import { AlertesLivreursService } from '../notifications/alertes-livreurs.service';
 import { tarifQuartier } from '../quartiers/tarification';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
 import {
@@ -105,6 +106,7 @@ export class CommandesRepasService {
     private readonly realtime: RealtimeGateway,
     private readonly notifications: NotificationsService,
     private readonly perimetre: PerimetreV1Service,
+    private readonly alertesLivreurs: AlertesLivreursService,
   ) {}
 
   // F-CLI-05 : notifie le client d'un changement de statut, pour remplacer
@@ -370,7 +372,9 @@ export class CommandesRepasService {
       const { count } = await tx.commande.updateMany({
         where: {
           id: commandeRepas.commandeId,
-          livreurId: null,
+          // Free, or already assigned to this livreur by the dispatcher
+          // (F-ADM-02/03): the assigned livreur starts it from here.
+          OR: [{ livreurId: null }, { livreurId: livreur.id }],
           commandeRepas: {
             statut: StatutRepas.prete,
             partenaire: { zoneId: livreur.zoneId },
@@ -484,6 +488,8 @@ export class CommandesRepasService {
       include: DETAIL_INCLUDE,
     });
     this.notifierClient(commandeRepas.commande, id, StatutRepas.prete);
+    // Ready to be picked up: it now shows in the livreurs' "À prendre" list.
+    this.alertesLivreurs.courseDisponible(updated.commandeId);
     return updated;
   }
 

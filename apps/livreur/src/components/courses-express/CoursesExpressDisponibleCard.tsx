@@ -9,12 +9,13 @@ export function CoursesExpressDisponibleCard({ commande }: { commande: CommandeC
   const prendreEnCharge = usePrendreEnChargeCoursesExpress();
 
   return (
-    <div className="space-y-3 rounded-lg border border-border p-4">
+    <div className="space-y-3 p-4">
       <CoursesExpressInfo commande={commande} />
       <p className="text-xs text-muted-foreground">
         {commande.etapes.length} étape{commande.etapes.length > 1 ? 's' : ''}
       </p>
       <Button
+        size="lg"
         className="w-full"
         disabled={prendreEnCharge.isPending}
         onClick={() => {

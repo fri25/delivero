@@ -1,12 +1,10 @@
 import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArticlePointageRow } from './ArticlePointageRow';
 import { EmplettesInfo } from './EmplettesInfo';
 import { LitigeEmplettesForm } from './LitigeEmplettesForm';
 import { TerminerAchatsForm } from './TerminerAchatsForm';
 import { useMarquerEmplettesEnRoute, useMarquerEmplettesLivree } from '@/api/commandes-emplettes';
-import { STATUT_EMPLETTES_LABELS } from '@/lib/statut-emplettes';
 import type { CommandeEmplettes } from '@/api/types';
 
 export function MonEmplettesCard({ commande }: { commande: CommandeEmplettes }) {
@@ -18,15 +16,7 @@ export function MonEmplettesCard({ commande }: { commande: CommandeEmplettes }) 
   const peutSignalerLitige = commande.statut === 'achats_en_cours';
 
   return (
-    <div className="space-y-3 rounded-lg border border-border p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {new Date(commande.createdAt).toLocaleString('fr-FR')}
-        </p>
-        <Badge variant={commande.statut === 'livree' ? 'outline' : 'default'}>
-          {STATUT_EMPLETTES_LABELS[commande.statut]}
-        </Badge>
-      </div>
+    <div className="space-y-3 p-4">
 
       <EmplettesInfo commande={commande} />
 
@@ -77,6 +67,7 @@ export function MonEmplettesCard({ commande }: { commande: CommandeEmplettes }) 
 
       {commande.statut === 'en_route' && (
         <Button
+          size="lg"
           className="w-full"
           disabled={marquerLivree.isPending}
           onClick={() => {

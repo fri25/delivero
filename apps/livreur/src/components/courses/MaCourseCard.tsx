@@ -1,35 +1,21 @@
 import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CourseInfo } from './CourseInfo';
 import { useMarquerEnRoute, useMarquerLivree } from '@/api/commandes';
-import type { CommandeRepas, StatutRepas } from '@/api/types';
-
-const STATUT_LABELS: Partial<Record<StatutRepas, string>> = {
-  recuperee_par_livreur: 'Récupérée',
-  en_route: 'En route',
-  livree: 'Livrée',
-};
+import type { CommandeRepas } from '@/api/types';
 
 export function MaCourseCard({ commande }: { commande: CommandeRepas }) {
   const marquerEnRoute = useMarquerEnRoute();
   const marquerLivree = useMarquerLivree();
 
   return (
-    <div className="space-y-3 rounded-lg border border-border p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {new Date(commande.createdAt).toLocaleString('fr-FR')}
-        </p>
-        <Badge variant={commande.statut === 'livree' ? 'outline' : 'default'}>
-          {STATUT_LABELS[commande.statut] ?? commande.statut}
-        </Badge>
-      </div>
+    <div className="space-y-3 p-4">
 
       <CourseInfo commande={commande} />
 
       {commande.statut === 'recuperee_par_livreur' && (
         <Button
+          size="lg"
           className="w-full"
           disabled={marquerEnRoute.isPending}
           onClick={() => {
@@ -44,6 +30,7 @@ export function MaCourseCard({ commande }: { commande: CommandeRepas }) {
 
       {commande.statut === 'en_route' && (
         <Button
+          size="lg"
           className="w-full"
           disabled={marquerLivree.isPending}
           onClick={() => {

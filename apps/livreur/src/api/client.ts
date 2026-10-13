@@ -1,5 +1,6 @@
 import { toast } from 'sonner';
 import { useAuthStore } from '../stores/auth-store';
+import { ErreurReseau } from '../lib/rejeu';
 
 const API_URL =import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
 
@@ -38,11 +39,18 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    // No answer at all (offline, dropped 3G): distinct from a server error,
+    // the offline queue keeps the action and replays it later.
+    throw new ErreurReseau();
+  }
 
   if (response.status === 204) {
     return undefined as T;

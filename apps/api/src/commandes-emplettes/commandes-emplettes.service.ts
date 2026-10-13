@@ -331,7 +331,9 @@ export class CommandesEmplettesService {
       const { count } = await tx.commande.updateMany({
         where: {
           id: commandeEmplettes.commandeId,
-          livreurId: null,
+          // Free, or already assigned to this livreur by the dispatcher
+          // (F-ADM-02/03): the assigned livreur starts it from here.
+          OR: [{ livreurId: null }, { livreurId: livreur.id }],
           paiement: PAIEMENT_ENGAGE_WHERE,
           commandeEmplettes: {
             statut: StatutEmplettes.confirmee,

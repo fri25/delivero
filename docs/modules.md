@@ -254,7 +254,12 @@ ne sert aujourd'hui que les restaurants.)*
 
 - [x] F-LIV-01 — Réception des courses attribuées, tous services (type, points,
       repères, liste d'achats, montants à avancer/encaisser) — *(fait pour les
-      4 services : Repas, Colis, Emplettes, Courses express)*
+      4 services : Repas, Colis, Emplettes, Courses express. Refonte du 13/10 :
+      les 7 écrans par service sont remplacés par une barre d'onglets « À
+      prendre » (tous services réunis, filtres par service, plus anciennes en
+      premier) / « En cours » (prochaine action en grand bouton) / « Historique »
+      / « Portefeuille » — `apps/livreur/src/pages/`, anciennes adresses
+      redirigées)*
 - [x] F-LIV-02 — Acceptation de la course — *(4 services ; la prise en charge
       est atomique sur les 4 (Repas inclus depuis le correctif V02/V02b du
       27/08), gère explicitement le cas "déjà pris" par un autre livreur et
@@ -303,6 +308,15 @@ ne sert aujourd'hui que les restaurants.)*
       mouvement de type "avance" réellement enregistré (`getAvanceEnCours`
       recalcule à la volée depuis les commandes Emplettes en cours), pas de
       reversement à l'expéditeur (RG-04) — voir F-LIV-11)*
+- [x] F-LIV-12 — Alerte nouvelle course — *(13/10 : dès qu'une course devient
+      prenable — Repas marqué prêt, Colis / Course payés — les livreurs de la
+      zone voient leur liste se rafraîchir en temps réel (Socket.IO, toast +
+      vibration) et les livreurs disponibles reçoivent une notification push,
+      même application fermée (carte « Activer les alertes »). Pas de repli
+      SMS pour ce cas (coût, bruit). Course attribuée par le dispatch : push
+      avec repli WhatsApp/SMS — `apps/api/src/notifications/alertes-livreurs.service.ts`,
+      `apps/livreur/src/api/alertes.ts`. Un Colis planifié n'est annoncé qu'au
+      prochain rafraîchissement après son heure)*
 - [x] F-LIV-10 — Statut disponible / indisponible — *(disponible/indisponible fait,
       sans motif de passage en indisponible)*
 - [ ] F-LIV-11 — Récapitulatif journalier (courses par service, montants, gains)
@@ -315,8 +329,15 @@ ne sert aujourd'hui que les restaurants.)*
       bloqué par cette question — choix confirmé par l'utilisateur le 30/08
       plutôt que d'inventer un chiffre)*
 
-*(Mode dégradé hors ligne — IndexedDB + file de mutations, exigé par
-[pwa-offline.md](pwa-offline.md) pour ce module — non trouvé dans `apps/livreur`.)*
+*(Mode hors ligne — fait le 13/10, voir [pwa-offline.md](pwa-offline.md) :
+file d'actions en IndexedDB rejouée dans l'ordre au retour du réseau
+(`apps/livreur/src/lib/rejeu.ts`, `api/hors-ligne.ts`), dernières listes
+gardées sur le téléphone 24 h (`lib/cache-persistant.ts`), bandeau réseau avec
+actions en attente / refusées (Réessayer, Abandonner). Mises en file :
+récupéré, en route, livré, remise Colis avec code (vérifié à la synchro),
+arrêt réalisé, litige. Réseau exigé : prendre une course, disponibilité,
+clôture de caisse, pointage Emplettes. Testé de bout en bout (réseau coupé
+dans le navigateur) + 8 tests Vitest)*
 
 ## Module Back-office — Admin/Dispatcher (F-ADM)
 
@@ -334,10 +355,19 @@ Compte de démo : `+22900000004` / `demo12345` (rôle `admin_dispatcher`, voir
       la zone dont la dernière commande assignée est la plus ancienne, filtré
       par les plafonds RG-02 — pas de "plus proche", aucune intégration
       cartographique. Choix documenté en `[DÉDUIT]` dans
-      `admin-commandes.service.ts`, RG-14 ne tranche pas le départage)*
+      `admin-commandes.service.ts`, RG-14 ne tranche pas le départage.
+      **Correctif du 13/10** : une course attribuée restait bloquée — la prise
+      en charge côté livreur exigeait une course sans livreur. Elle accepte
+      désormais une course attribuée à ce livreur (bouton « Démarrer cette
+      course » dans l'onglet En cours), 4 services. Le livreur est prévenu
+      (temps réel + push, repli WhatsApp/SMS))*
 - [x] F-ADM-03 — Réattribution manuelle d'une course — *(même endpoint que
       F-ADM-02 avec un `livreurId` explicite ; contourne volontairement zone
-      et plafonds, contrairement à l'automatique)*
+      et plafonds, contrairement à l'automatique. **Limite connue (13/10)** :
+      la prise en charge côté livreur vérifie toujours la zone — une course
+      réattribuée à un livreur d'une autre zone reste bloquée. **[À ARBITRER]** :
+      autoriser le hors-zone à la prise en charge, ou l'interdire à la
+      réattribution)*
 - [x] F-ADM-04 — Saisie manuelle d'une demande reçue hors plateforme (téléphone,
       WhatsApp), pour les 4 services — *(ajouté le 31/08 : page "Saisie manuelle",
       un formulaire par service. Le mode invité (F-CLI-02) n'existant pas, un

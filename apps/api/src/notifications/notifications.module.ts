@@ -1,5 +1,6 @@
 import { Global, Logger, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AlertesLivreursService } from './alertes-livreurs.service';
 import { JetonInviteService } from './jeton-invite.service';
 import { ConsoleMessagerie, Messagerie } from './messagerie';
 import { TwilioMessagerie } from './twilio-messagerie';
@@ -14,6 +15,7 @@ import { NotificationsService } from './notifications.service';
   providers: [
     NotificationsService,
     JetonInviteService,
+    AlertesLivreursService,
     {
       provide: Messagerie,
       inject: [ConfigService],
@@ -43,6 +45,11 @@ import { NotificationsService } from './notifications.service';
       },
     },
   ],
-  exports: [NotificationsService, Messagerie, JetonInviteService],
+  exports: [
+    NotificationsService,
+    Messagerie,
+    JetonInviteService,
+    AlertesLivreursService,
+  ],
 })
 export class NotificationsModule {}

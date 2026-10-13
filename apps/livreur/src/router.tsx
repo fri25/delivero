@@ -1,17 +1,16 @@
-import { EMPLETTES_ACTIF } from '@delivero/config/perimetre-v1';
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { RootLayout } from '@/layouts/RootLayout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { LoginPage } from '@/pages/LoginPage';
-import { CoursesDisponiblesPage } from '@/pages/CoursesDisponiblesPage';
-import { MesCoursesPage } from '@/pages/MesCoursesPage';
-import { ColisDisponiblesPage } from '@/pages/ColisDisponiblesPage';
-import { MesColisPage } from '@/pages/MesColisPage';
-import { EmplettesDisponiblesPage } from '@/pages/EmplettesDisponiblesPage';
-import { MesEmplettesPage } from '@/pages/MesEmplettesPage';
-import { CoursesExpressDisponiblesPage } from '@/pages/CoursesExpressDisponiblesPage';
-import { MesCoursesExpressPage } from '@/pages/MesCoursesExpressPage';
+import { APrendrePage } from '@/pages/APrendrePage';
+import { EnCoursPage } from '@/pages/EnCoursPage';
+import { HistoriquePage } from '@/pages/HistoriquePage';
 import { PortefeuillePage } from '@/pages/PortefeuillePage';
+
+// Former per-service pages (before 13/10): kept as redirects so bookmarks and
+// installed shortcuts still land somewhere useful.
+const ANCIENNES_LISTES = ['colis', 'emplettes', 'courses-express'];
+const ANCIENNES_MIENNES = ['mes-courses', 'colis/mes-courses', 'emplettes/mes-courses', 'courses-express/mes-courses'];
 
 export const router = createBrowserRouter([
   {
@@ -22,68 +21,23 @@ export const router = createBrowserRouter([
         index: true,
         element: (
           <ProtectedRoute>
-            <CoursesDisponiblesPage />
+            <APrendrePage />
           </ProtectedRoute>
         ),
       },
       {
-        path: 'mes-courses',
+        path: 'en-cours',
         element: (
           <ProtectedRoute>
-            <MesCoursesPage />
+            <EnCoursPage />
           </ProtectedRoute>
         ),
       },
       {
-        path: 'colis',
+        path: 'historique',
         element: (
           <ProtectedRoute>
-            <ColisDisponiblesPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'colis/mes-courses',
-        element: (
-          <ProtectedRoute>
-            <MesColisPage />
-          </ProtectedRoute>
-        ),
-      },
-      // Emplettes hors périmètre V1 (voir packages/config/perimetre-v1.ts).
-      ...(EMPLETTES_ACTIF
-        ? [
-            {
-              path: 'emplettes',
-              element: (
-                <ProtectedRoute>
-                  <EmplettesDisponiblesPage />
-                </ProtectedRoute>
-              ),
-            },
-            {
-              path: 'emplettes/mes-courses',
-              element: (
-                <ProtectedRoute>
-                  <MesEmplettesPage />
-                </ProtectedRoute>
-              ),
-            },
-          ]
-        : []),
-      {
-        path: 'courses-express',
-        element: (
-          <ProtectedRoute>
-            <CoursesExpressDisponiblesPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'courses-express/mes-courses',
-        element: (
-          <ProtectedRoute>
-            <MesCoursesExpressPage />
+            <HistoriquePage />
           </ProtectedRoute>
         ),
       },
@@ -95,6 +49,8 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      ...ANCIENNES_LISTES.map((path) => ({ path, element: <Navigate to="/" replace /> })),
+      ...ANCIENNES_MIENNES.map((path) => ({ path, element: <Navigate to="/en-cours" replace /> })),
       { path: 'connexion', element: <LoginPage /> },
     ],
   },

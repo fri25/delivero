@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './client';
+import { exigerReseau } from './hors-ligne';
 import { useAuthStore } from '../stores/auth-store';
 import type { ClotureCaisse, Livreur, PortefeuilleResume, RecapJournalier } from './types';
 
@@ -34,12 +35,15 @@ export function useCloturerCaisse() {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
   return useMutation({
+    // Financial: never queued (docs/pwa-offline.md), needs the server now.
     mutationFn: (montantDeclare: number) =>
-      apiFetch<ClotureCaisse>('/livreurs/me/cloture-caisse', {
-        method: 'POST',
-        body: { montantDeclare },
-        token,
-      }),
+      exigerReseau('Pas de réseau : la clôture de caisse doit être envoyée connecté.', () =>
+        apiFetch<ClotureCaisse>('/livreurs/me/cloture-caisse', {
+          method: 'POST',
+          body: { montantDeclare },
+          token,
+        }),
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mes-clotures-caisse'] });
       queryClient.invalidateQueries({ queryKey: ['mon-portefeuille-livreur'] });
@@ -60,12 +64,15 @@ export function useToggleDisponibilite() {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
   return useMutation({
+    // Only meaningful if the dispatch sees it now: not queued.
     mutationFn: (disponible: boolean) =>
-      apiFetch<Livreur>('/livreurs/me/disponibilite', {
-        method: 'PATCH',
-        body: { disponible },
-        token,
-      }),
+      exigerReseau('Pas de réseau : votre disponibilité sera modifiable une fois connecté.', () =>
+        apiFetch<Livreur>('/livreurs/me/disponibilite', {
+          method: 'PATCH',
+          body: { disponible },
+          token,
+        }),
+      ),
     onSuccess: (data) => queryClient.setQueryData(['mon-profil-livreur'], data),
   });
 }

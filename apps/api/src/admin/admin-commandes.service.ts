@@ -13,6 +13,7 @@ import {
   TypeService,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { AlertesLivreursService } from '../notifications/alertes-livreurs.service';
 import { assertPaiementEngage } from '../paiements/paiement-engage';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
 import { AttribuerCommandeDto } from './dto/attribuer-commande.dto';
@@ -104,6 +105,7 @@ export class AdminCommandesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly portefeuille: PortefeuilleService,
+    private readonly alertesLivreurs: AlertesLivreursService,
   ) {}
 
   async findAll(dto: ListCommandesDto) {
@@ -161,6 +163,7 @@ export class AdminCommandesService {
       where: { id },
       data: { livreurId: livreur.id },
     });
+    this.alertesLivreurs.courseAttribuee(livreur.userId, id);
 
     return this.prisma.commande
       .findUniqueOrThrow({

@@ -383,6 +383,9 @@ importers:
       shadcn:
         specifier: ^4.19.0
         version: 4.19.0(typescript@6.0.3)
+      socket.io-client:
+        specifier: ^4.8.3
+        version: 4.8.3
       sonner:
         specifier: ^2.0.8
         version: 2.0.8(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -429,6 +432,9 @@ importers:
       vite-plugin-pwa:
         specifier: ^1.3.0
         version: 1.3.0(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(terser@5.50.0))(workbox-build@7.4.1(@types/babel__core@7.20.5))(workbox-window@7.4.1)
+      vitest:
+        specifier: ^5.0.3
+        version: 5.0.3(@types/node@24.13.3)(jsdom@30.1.2(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(terser@5.50.0))
 
   apps/partenaires:
     dependencies:

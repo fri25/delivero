@@ -170,6 +170,27 @@ export class NotificationsService implements OnModuleInit {
     });
   }
 
+  /**
+   * New order a livreur could take. Push only, no WhatsApp/SMS fallback: one
+   * SMS per new order to every livreur of the zone would cost money and soon
+   * be ignored; the in-app list (real-time + polling) is the source of truth.
+   */
+  courseDisponibleLivreur(livreurUserId: string, notification: Notification) {
+    void this.envoyerPush(livreurUserId, notification).catch((error: unknown) =>
+      this.logger.error(`Alerte livreur non envoyée à ${livreurUserId}`, error),
+    );
+  }
+
+  /** Order assigned by the dispatcher (F-ADM-02/03): push, then WhatsApp/SMS. */
+  courseAttribueeLivreur(livreurUserId: string) {
+    this.envoyerEnArrierePlan(livreurUserId, {
+      titre: 'Course attribuée',
+      message:
+        'Le dispatch vous a attribué une course : ouvrez l’onglet En cours.',
+      url: '/en-cours',
+    });
+  }
+
   // Guests have no account, hence no push: WhatsApp/SMS only, with the link.
   private envoyerInviteEnArrierePlan(
     telephone: string,

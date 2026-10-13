@@ -28,15 +28,16 @@ Choix tranchés (voir [docs/decisions-arbitrage.md](docs/decisions-arbitrage.md)
 - TanStack Query (état serveur) + Zustand (état UI).
 - Tailwind CSS + shadcn/ui.
 - Offline-first sur le module Livreur : IndexedDB + file de mutations, sync
-  différée — **[À FAIRE]**, non implémenté (voir docs/pwa-offline.md et
-  docs/modules.md).
+  différée — fait le 13/10 (`apps/livreur/src/api/hors-ligne.ts`, voir
+  docs/pwa-offline.md). Prendre une course exige le réseau.
 - API REST — NestJS + PostgreSQL (Prisma). Monorepo pnpm multi-apps
   (`apps/api`, `apps/client`, `apps/partenaires`, `apps/livreur`, `apps/admin`,
   `packages/config`).
 - Temps réel : WebSockets (Socket.IO). Ajouté le 27/08 pour le suivi client
   (F-CLI-05, 4 services) et l'alerte nouvelle commande restaurant (F-RES-01) —
   voir `apps/api/src/realtime/`. Le polling reste en place comme filet de
-  secours (reconnexion, 3G instable) ; livreur et back-office non couverts.
+  secours (reconnexion, 3G instable). Livreur couvert depuis le 13/10 (alerte
+  nouvelle course / course attribuée, F-LIV-12) ; back-office non couvert.
 - Push : Web Push (VAPID) + fallback WhatsApp/SMS obligatoire — en place côté
   client depuis le 05/10 (`apps/api/src/notifications/`). Fournisseur
   WhatsApp/SMS : **Twilio** (choisi le 13/10, pilote prêt), **identifiants à
@@ -87,8 +88,9 @@ pnpm --filter @delivero/api prisma:studio   # Prisma Studio
 ```
 
 `apps/client` a une suite Vitest + Testing Library (`pnpm --filter
-@delivero/client test`, depuis le 06/10). Les 3 autres apps front
-(`partenaires`, `livreur`, `admin`) n'ont toujours aucun test.
+@delivero/client test`, depuis le 06/10). `apps/livreur` a une suite Vitest
+pour la logique hors ligne (`pnpm --filter @delivero/livreur test`, depuis le
+13/10). `partenaires` et `admin` n'ont toujours aucun test.
 
 ## Conventions
 

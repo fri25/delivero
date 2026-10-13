@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './client';
+import { exigerReseau, useExecuterAction } from './hors-ligne';
 import { useAuthStore } from '../stores/auth-store';
 import type { CommandeEmplettes, StatutArticleEmplette } from './types';
 
-// Pas de WebSocket ni de notification push in-app à ce stade (voir
-// docs/architecture.md) : on rafraîchit par intervalle en attendant.
+// Polling safety net: real-time alerts (api/alertes.ts) refresh the lists
+// at once, this catches up after a dropped socket on unstable 3G.
 const POLL_INTERVAL_MS = 8000;
 
 function invalidateEmplettes(queryClient: ReturnType<typeof useQueryClient>) {
@@ -36,11 +37,14 @@ export function usePrendreEnChargeEmplettes() {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
   return useMutation({
+    // Online only (decision of 13/10): the list may be stale offline.
     mutationFn: (id: string) =>
-      apiFetch<CommandeEmplettes>(`/commandes/emplettes/${id}/prendre-en-charge`, {
-        method: 'PATCH',
-        token,
-      }),
+      exigerReseau('Pas de réseau : il faut être connecté pour prendre une course (un autre livreur l’a peut-être déjà prise).', () =>
+        apiFetch<CommandeEmplettes>(`/commandes/emplettes/${id}/prendre-en-charge`, {
+          method: 'PATCH',
+          token,
+        }),
+      ),
     // Même en cas d'échec (409 : déjà pris par un autre livreur), on
     // rafraîchit la liste pour faire disparaître la carte obsolète.
     onSettled: () => invalidateEmplettes(queryClient),
@@ -59,59 +63,78 @@ export function usePointerArticle() {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
   return useMutation({
+    // Online only for now: an over-budget price needs the client's answer
+    // (RG-05), which cannot wait for a later sync. Emplettes is off in V1.
     mutationFn: ({ commandeId, articleId, ...dto }: PointerArticleInput) =>
-      apiFetch<CommandeEmplettes>(
-        `/commandes/emplettes/${commandeId}/articles/${articleId}/pointer`,
-        { method: 'PATCH', body: dto, token },
+      exigerReseau('Pas de réseau : le pointage d’un article doit être envoyé tout de suite.', () =>
+        apiFetch<CommandeEmplettes>(
+          `/commandes/emplettes/${commandeId}/articles/${articleId}/pointer`,
+          { method: 'PATCH', body: dto, token },
+        ),
       ),
     onSuccess: () => invalidateEmplettes(queryClient),
   });
 }
 
+// Status updates go through the offline queue (docs/pwa-offline.md).
 export function useTerminerAchats() {
-  const token = useAuthStore((state) => state.token);
-  const queryClient = useQueryClient();
+  const executer = useExecuterAction();
   return useMutation({
     mutationFn: ({ id, recapitulatifAchats }: { id: string; recapitulatifAchats: string }) =>
-      apiFetch<CommandeEmplettes>(`/commandes/emplettes/${id}/achats-termines`, {
-        method: 'PATCH',
-        body: { recapitulatifAchats },
-        token,
+      executer({
+        libelle: 'Achats terminés',
+        service: 'emplettes',
+        commandeId: id,
+        methode: 'PATCH',
+        chemin: `/commandes/emplettes/${id}/achats-termines`,
+        corps: { recapitulatifAchats },
+        attendu: { statut: 'achats_termines' },
       }),
-    onSuccess: () => invalidateEmplettes(queryClient),
   });
 }
 
 export function useMarquerEmplettesEnRoute() {
-  const token = useAuthStore((state) => state.token);
-  const queryClient = useQueryClient();
+  const executer = useExecuterAction();
   return useMutation({
     mutationFn: (id: string) =>
-      apiFetch<CommandeEmplettes>(`/commandes/emplettes/${id}/en-route`, { method: 'PATCH', token }),
-    onSuccess: () => invalidateEmplettes(queryClient),
+      executer({
+        libelle: 'Emplettes en route',
+        service: 'emplettes',
+        commandeId: id,
+        methode: 'PATCH',
+        chemin: `/commandes/emplettes/${id}/en-route`,
+        attendu: { statut: 'en_route' },
+      }),
   });
 }
 
 export function useMarquerEmplettesLivree() {
-  const token = useAuthStore((state) => state.token);
-  const queryClient = useQueryClient();
+  const executer = useExecuterAction();
   return useMutation({
     mutationFn: (id: string) =>
-      apiFetch<CommandeEmplettes>(`/commandes/emplettes/${id}/livree`, { method: 'PATCH', token }),
-    onSuccess: () => invalidateEmplettes(queryClient),
+      executer({
+        libelle: 'Emplettes livrées',
+        service: 'emplettes',
+        commandeId: id,
+        methode: 'PATCH',
+        chemin: `/commandes/emplettes/${id}/livree`,
+        attendu: { statut: 'livree' },
+      }),
   });
 }
 
 export function useDeclarerLitigeEmplettes() {
-  const token = useAuthStore((state) => state.token);
-  const queryClient = useQueryClient();
+  const executer = useExecuterAction();
   return useMutation({
     mutationFn: ({ id, motif }: { id: string; motif: string }) =>
-      apiFetch<CommandeEmplettes>(`/commandes/emplettes/${id}/litige`, {
-        method: 'PATCH',
-        body: { motif },
-        token,
+      executer({
+        libelle: 'Problème signalé',
+        service: 'emplettes',
+        commandeId: id,
+        methode: 'PATCH',
+        chemin: `/commandes/emplettes/${id}/litige`,
+        corps: { motif },
+        attendu: { statut: 'litige' },
       }),
-    onSuccess: () => invalidateEmplettes(queryClient),
   });
 }

@@ -1,9 +1,7 @@
 import { ExternalLink } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { CoursesExpressInfo } from './CoursesExpressInfo';
 import { EtapeRealisationRow } from './EtapeRealisationRow';
 import { LitigeCoursesExpressForm } from './LitigeCoursesExpressForm';
-import { STATUT_COURSES_EXPRESS_LABELS } from '@/lib/statut-courses-express';
 import { googleMapsRouteUrl } from '@/lib/format';
 import type { CommandeCoursesExpress } from '@/api/types';
 
@@ -23,15 +21,7 @@ export function MaCourseExpressCard({ commande }: { commande: CommandeCoursesExp
   const derniereEtape = etapesRestantes[etapesRestantes.length - 1];
 
   return (
-    <div className="space-y-3 rounded-lg border border-border p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {new Date(commande.createdAt).toLocaleString('fr-FR')}
-        </p>
-        <Badge variant={commande.statut === 'terminee' ? 'outline' : 'default'}>
-          {STATUT_COURSES_EXPRESS_LABELS[commande.statut]}
-        </Badge>
-      </div>
+    <div className="space-y-3 p-4">
 
       <CoursesExpressInfo commande={commande} />
 
@@ -45,7 +35,7 @@ export function MaCourseExpressCard({ commande }: { commande: CommandeCoursesExp
           rel="noreferrer"
           className="inline-flex items-center gap-1 text-sm font-medium text-brand-blue hover:underline"
         >
-          Itinéraire complet ({etapesRestantes.length} arrêt{etapesRestantes.length > 1 ? 's' : ''}
+          Itinéraire complet ({etapesRestantes.length} arrêt{etapesRestantes.length > 1 ? 's' : ''}{' '}
           restant{etapesRestantes.length > 1 ? 's' : ''}) <ExternalLink className="size-3.5" />
         </a>
       )}

@@ -9,9 +9,10 @@ export function ColisDisponibleCard({ commande }: { commande: CommandeColis }) {
   const prendreEnCharge = usePrendreEnChargeColis();
 
   return (
-    <div className="space-y-3 rounded-lg border border-border p-4">
+    <div className="space-y-3 p-4">
       <ColisInfo commande={commande} />
       <Button
+        size="lg"
         className="w-full"
         disabled={prendreEnCharge.isPending}
         onClick={() => {

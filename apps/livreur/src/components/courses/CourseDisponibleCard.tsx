@@ -8,9 +8,10 @@ export function CourseDisponibleCard({ commande }: { commande: CommandeRepas }) 
   const prendreEnCharge = usePrendreEnCharge();
 
   return (
-    <div className="space-y-3 rounded-lg border border-border p-4">
+    <div className="space-y-3 p-4">
       <CourseInfo commande={commande} />
       <Button
+        size="lg"
         className="w-full"
         disabled={prendreEnCharge.isPending}
         onClick={() => {

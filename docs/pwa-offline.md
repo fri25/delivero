@@ -33,11 +33,24 @@ justifie après mise en production.
 Chaque action du livreur pouvant survenir hors ligne est écrite dans une file
 persistée en IndexedDB avant tentative réseau :
 
-- Acceptation d'une course.
+- ~~Acceptation d'une course.~~ **✅ Décidé (2026-10-13)** : la prise d'une
+  course exige le réseau (liste peut-être périmée, course peut-être déjà prise
+  par un autre livreur) — bloquée hors ligne avec un message explicite.
 - Mise à jour de statut (récupérée, en route, livrée, achats en cours, etc.).
 - Pointage d'un article emplettes (acheté / indisponible / remplacé) avec prix réel.
 - Saisie du code de confirmation ou capture de la photo de remise (Colis).
+  **✅ Décidé (2026-10-13)** : mise en file, le code est vérifié par le serveur
+  à la synchronisation ; un code faux apparaît comme action refusée à traiter.
 - Enregistrement d'un encaissement ou d'une avance.
+
+**Implémenté le 2026-10-13** (`apps/livreur`) : `lib/rejeu.ts` (rejeu
+ordonné, arrêt à la première coupure, une action refusée bloque les suivantes
+de la même commande), `api/hors-ligne.ts`, `stores/file-actions-store.ts`.
+Écarts avec la liste ci-dessus : la clôture de caisse et le pointage d'un
+article Emplettes (prix réel, dépassement RG-05) exigent le réseau ; la
+disponibilité aussi. Idempotence : pas d'identifiant côté serveur — une action
+refusée au rejeu est comptée réussie si le statut serveur l'a déjà atteinte ou
+dépassée (réponse perdue en 3G).
 
 Chaque mutation en file porte : un identifiant d'idempotence, l'entité et l'action
 visées, un horodatage local, un compteur de tentatives. À la reconnexion, la file est

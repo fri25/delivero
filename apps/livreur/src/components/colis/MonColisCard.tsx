@@ -1,11 +1,9 @@
 import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ColisInfo } from './ColisInfo';
 import { LivraisonColisForm } from './LivraisonColisForm';
 import { LitigeColisForm } from './LitigeColisForm';
 import { useMarquerColisEnRoute, useMarquerColisRecupere } from '@/api/commandes-colis';
-import { STATUT_COLIS_LABELS } from '@/lib/statut-colis';
 import type { CommandeColis } from '@/api/types';
 
 export function MonColisCard({ commande }: { commande: CommandeColis }) {
@@ -16,20 +14,13 @@ export function MonColisCard({ commande }: { commande: CommandeColis }) {
     commande.statut === 'colis_recupere' || commande.statut === 'en_route';
 
   return (
-    <div className="space-y-3 rounded-lg border border-border p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {new Date(commande.createdAt).toLocaleString('fr-FR')}
-        </p>
-        <Badge variant={commande.statut === 'livre' ? 'outline' : 'default'}>
-          {STATUT_COLIS_LABELS[commande.statut]}
-        </Badge>
-      </div>
+    <div className="space-y-3 p-4">
 
       <ColisInfo commande={commande} />
 
       {commande.statut === 'livreur_en_route_enlevement' && (
         <Button
+          size="lg"
           className="w-full"
           disabled={marquerRecupere.isPending}
           onClick={() => {
@@ -44,6 +35,7 @@ export function MonColisCard({ commande }: { commande: CommandeColis }) {
 
       {commande.statut === 'colis_recupere' && (
         <Button
+          size="lg"
           className="w-full"
           disabled={marquerEnRoute.isPending}
           onClick={() => {

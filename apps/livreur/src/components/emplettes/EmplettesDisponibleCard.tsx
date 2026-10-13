@@ -9,9 +9,10 @@ export function EmplettesDisponibleCard({ commande }: { commande: CommandeEmplet
   const prendreEnCharge = usePrendreEnChargeEmplettes();
 
   return (
-    <div className="space-y-3 rounded-lg border border-border p-4">
+    <div className="space-y-3 p-4">
       <EmplettesInfo commande={commande} />
       <Button
+        size="lg"
         className="w-full"
         disabled={prendreEnCharge.isPending}
         onClick={() => {

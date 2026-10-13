@@ -18,6 +18,7 @@ import {
   TypeService,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { AlertesLivreursService } from '../notifications/alertes-livreurs.service';
 import { cheminCommande } from '../notifications/messages-statut';
 import { NotificationsService } from '../notifications/notifications.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -82,6 +83,7 @@ export class PaiementsService {
     private readonly realtime: RealtimeGateway,
     private readonly notifications: NotificationsService,
     private readonly config: ConfigService,
+    private readonly alertesLivreurs: AlertesLivreursService,
   ) {}
 
   /**
@@ -352,6 +354,11 @@ export class PaiementsService {
         commande.clientTelephoneInvite,
         commande.id,
       );
+    }
+    // Paid Colis / Course / Emplettes are takeable right away; a paid Repas
+    // goes to the restaurant first (livreurs are alerted when it is ready).
+    if (statut === StatutPaiement.reussi && !commande.commandeRepas) {
+      this.alertesLivreurs.courseDisponible(commande.id);
     }
     // F-RES-01: the restaurant is only alerted once the order is paid.
     if (statut === StatutPaiement.reussi && commande.commandeRepas) {

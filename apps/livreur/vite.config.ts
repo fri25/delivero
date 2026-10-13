@@ -15,6 +15,11 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        // Web Push handlers (public/push-sw.js, same file as the client app):
+        // "Nouvelle course" / "Course attribuée" alerts.
+        importScripts: ['/push-sw.js'],
+      },
       manifest: {
         lang: 'fr',
         name: 'ChapExpress Livreur',

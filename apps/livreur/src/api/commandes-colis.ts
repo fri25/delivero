@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './client';
+import { exigerReseau, useExecuterAction } from './hors-ligne';
 import { useAuthStore } from '../stores/auth-store';
 import type { CommandeColis } from './types';
 
-// Pas de WebSocket ni de notification push in-app à ce stade (voir
-// docs/architecture.md) : on rafraîchit par intervalle en attendant.
+// Polling safety net: real-time alerts (api/alertes.ts) refresh the lists
+// at once, this catches up after a dropped socket on unstable 3G.
 const POLL_INTERVAL_MS = 8000;
 
 function invalidateColis(queryClient: ReturnType<typeof useQueryClient>) {
@@ -36,31 +37,45 @@ export function usePrendreEnChargeColis() {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
   return useMutation({
+    // Online only (decision of 13/10): the list may be stale offline.
     mutationFn: (id: string) =>
-      apiFetch<CommandeColis>(`/commandes/colis/${id}/prendre-en-charge`, { method: 'PATCH', token }),
+      exigerReseau('Pas de réseau : il faut être connecté pour prendre une course (un autre livreur l’a peut-être déjà prise).', () =>
+        apiFetch<CommandeColis>(`/commandes/colis/${id}/prendre-en-charge`, { method: 'PATCH', token }),
+      ),
     // Même en cas d'échec (409 : déjà pris par un autre livreur), on
     // rafraîchit la liste pour faire disparaître la carte obsolète.
     onSettled: () => invalidateColis(queryClient),
   });
 }
 
+// Status updates go through the offline queue (docs/pwa-offline.md).
 export function useMarquerColisRecupere() {
-  const token = useAuthStore((state) => state.token);
-  const queryClient = useQueryClient();
+  const executer = useExecuterAction();
   return useMutation({
     mutationFn: (id: string) =>
-      apiFetch<CommandeColis>(`/commandes/colis/${id}/recupere`, { method: 'PATCH', token }),
-    onSuccess: () => invalidateColis(queryClient),
+      executer({
+        libelle: 'Colis récupéré',
+        service: 'colis',
+        commandeId: id,
+        methode: 'PATCH',
+        chemin: `/commandes/colis/${id}/recupere`,
+        attendu: { statut: 'colis_recupere' },
+      }),
   });
 }
 
 export function useMarquerColisEnRoute() {
-  const token = useAuthStore((state) => state.token);
-  const queryClient = useQueryClient();
+  const executer = useExecuterAction();
   return useMutation({
     mutationFn: (id: string) =>
-      apiFetch<CommandeColis>(`/commandes/colis/${id}/en-route`, { method: 'PATCH', token }),
-    onSuccess: () => invalidateColis(queryClient),
+      executer({
+        libelle: 'Colis en route',
+        service: 'colis',
+        commandeId: id,
+        methode: 'PATCH',
+        chemin: `/commandes/colis/${id}/en-route`,
+        attendu: { statut: 'en_route' },
+      }),
   });
 }
 
@@ -71,22 +86,36 @@ interface LivrerColisInput {
   montantEncaisse?: number;
 }
 
+// Queued offline too (decision of 13/10): the delivery code is checked by
+// the server at sync time; a wrong code shows up as a refused action.
 export function useLivrerColis() {
-  const token = useAuthStore((state) => state.token);
-  const queryClient = useQueryClient();
+  const executer = useExecuterAction();
   return useMutation({
     mutationFn: ({ id, ...dto }: LivrerColisInput) =>
-      apiFetch<CommandeColis>(`/commandes/colis/${id}/livraison`, { method: 'PATCH', body: dto, token }),
-    onSuccess: () => invalidateColis(queryClient),
+      executer({
+        libelle: 'Colis remis',
+        service: 'colis',
+        commandeId: id,
+        methode: 'PATCH',
+        chemin: `/commandes/colis/${id}/livraison`,
+        corps: dto,
+        attendu: { statut: 'livre' },
+      }),
   });
 }
 
 export function useDeclarerLitigeColis() {
-  const token = useAuthStore((state) => state.token);
-  const queryClient = useQueryClient();
+  const executer = useExecuterAction();
   return useMutation({
     mutationFn: ({ id, motif }: { id: string; motif: string }) =>
-      apiFetch<CommandeColis>(`/commandes/colis/${id}/litige`, { method: 'PATCH', body: { motif }, token }),
-    onSuccess: () => invalidateColis(queryClient),
+      executer({
+        libelle: 'Problème signalé',
+        service: 'colis',
+        commandeId: id,
+        methode: 'PATCH',
+        chemin: `/commandes/colis/${id}/litige`,
+        corps: { motif },
+        attendu: { statut: 'litige' },
+      }),
   });
 }

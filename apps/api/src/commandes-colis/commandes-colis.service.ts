@@ -24,6 +24,7 @@ import {
   HISTORIQUE_LIVREUR_MAX,
 } from '../livreurs/periode-livreur';
 import { PrismaService } from '../prisma/prisma.service';
+import { AlertesLivreursService } from '../notifications/alertes-livreurs.service';
 import { QuartiersService } from '../quartiers/quartiers.service';
 import { tarifQuartier } from '../quartiers/tarification';
 import { PortefeuilleService } from '../portefeuille/portefeuille.service';
@@ -118,6 +119,7 @@ export class CommandesColisService {
     private readonly medias: MediasService,
     private readonly perimetre: PerimetreV1Service,
     private readonly quartiers: QuartiersService,
+    private readonly alertesLivreurs: AlertesLivreursService,
   ) {}
 
   // F-CLI-05 : voir même principe que commandes-repas.service.ts.
@@ -250,6 +252,11 @@ export class CommandesColisService {
       });
     });
 
+    // Cash on delivery is engaged at once; Mobile Money waits for the
+    // payment (PaiementsService alerts the livreurs then).
+    if (dto.modePaiement === 'especes') {
+      this.alertesLivreurs.courseDisponible(commandeColis.commandeId);
+    }
     return commandeColis;
   }
 
@@ -378,7 +385,9 @@ export class CommandesColisService {
       const { count } = await tx.commande.updateMany({
         where: {
           id: commandeColis.commandeId,
-          livreurId: null,
+          // Free, or already assigned to this livreur by the dispatcher
+          // (F-ADM-02/03): the assigned livreur starts it from here.
+          OR: [{ livreurId: null }, { livreurId: livreur.id }],
           paiement: PAIEMENT_ENGAGE_WHERE,
           commandeColis: {
             statut: StatutColis.confirmee,

@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './client';
+import { exigerReseau, useExecuterAction } from './hors-ligne';
 import { useAuthStore } from '../stores/auth-store';
 import type { CommandeRepas } from './types';
 
-// Pas de WebSocket ni de notification push in-app à ce stade (voir
-// docs/architecture.md) : on rafraîchit par intervalle en attendant.
+// Polling safety net: real-time alerts (api/alertes.ts) refresh the lists
+// at once, this catches up after a dropped socket on unstable 3G.
 const POLL_INTERVAL_MS = 8000;
 
 export function useCoursesDisponibles() {
@@ -27,27 +28,49 @@ export function useMesCourses() {
   });
 }
 
-function useCourseAction(action: string) {
+export function usePrendreEnCharge() {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
   return useMutation({
+    // Online only (decision of 13/10): the list may be stale offline.
     mutationFn: (id: string) =>
-      apiFetch<CommandeRepas>(`/commandes/repas/${id}/${action}`, { method: 'PATCH', token }),
-    onSuccess: () => {
+      exigerReseau('Pas de réseau : il faut être connecté pour prendre une course (un autre livreur l’a peut-être déjà prise).', () =>
+        apiFetch<CommandeRepas>(`/commandes/repas/${id}/prendre-en-charge`, { method: 'PATCH', token }),
+      ),
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['courses-disponibles'] });
       queryClient.invalidateQueries({ queryKey: ['mes-courses'] });
     },
   });
 }
 
-export function usePrendreEnCharge() {
-  return useCourseAction('prendre-en-charge');
-}
-
+// Status updates go through the offline queue (docs/pwa-offline.md).
 export function useMarquerEnRoute() {
-  return useCourseAction('en-route');
+  const executer = useExecuterAction();
+  return useMutation({
+    mutationFn: (id: string) =>
+      executer({
+        libelle: 'Repas en route',
+        service: 'repas',
+        commandeId: id,
+        methode: 'PATCH',
+        chemin: `/commandes/repas/${id}/en-route`,
+        attendu: { statut: 'en_route' },
+      }),
+  });
 }
 
 export function useMarquerLivree() {
-  return useCourseAction('livree');
+  const executer = useExecuterAction();
+  return useMutation({
+    mutationFn: (id: string) =>
+      executer({
+        libelle: 'Repas livré',
+        service: 'repas',
+        commandeId: id,
+        methode: 'PATCH',
+        chemin: `/commandes/repas/${id}/livree`,
+        attendu: { statut: 'livree' },
+      }),
+  });
 }
