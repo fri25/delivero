@@ -35,6 +35,14 @@ const SERVICES = TOUS_SERVICES.filter((s) => s.value !== 'emplettes' || EMPLETTE
 // retirées de la V1, l'API refuserait `especes` (voir perimetre-v1.service.ts).
 const MODE_PAIEMENT_V1: ModePaiement = ESPECES_ACTIF ? 'especes' : 'mobile_money';
 
+// Mobile Money (decision of 13/10): the client sends the money to the
+// ChapExpress number; the order only goes out once the dispatcher confirms
+// receipt from « Commandes », and is cancelled after 30 minutes otherwise.
+const MESSAGE_CREATION = (service: string) =>
+  MODE_PAIEMENT_V1 === 'mobile_money'
+    ? `Commande ${service} créée. Confirmez le paiement depuis « Commandes » dès réception du Mobile Money.`
+    : `Commande ${service} créée.`;
+
 // A course stop: its neighbourhood prices the course (Q-28, dearest × stops).
 const ETAPE_VIDE = { description: '', pointDeRepere: '', quartierId: '', precision: '' };
 
@@ -137,7 +145,7 @@ function FormRepas() {
           },
           {
             onSuccess: () => {
-              toast.success('Commande Repas créée.');
+              toast.success(MESSAGE_CREATION('Repas'));
               reset();
             },
             onError: (error) => toast.error(error.message),
@@ -296,7 +304,7 @@ function FormColis() {
           },
           {
             onSuccess: () => {
-              toast.success('Commande Colis créée.');
+              toast.success(MESSAGE_CREATION('Colis'));
               setClientNom('');
               setClientTelephone('');
               setPointDeRepereEnlevement('');
@@ -565,7 +573,7 @@ function FormCoursesExpress() {
           },
           {
             onSuccess: () => {
-              toast.success('Commande Courses express créée.');
+              toast.success(MESSAGE_CREATION('Courses express'));
               reset();
             },
             onError: (error) => toast.error(error.message),
@@ -664,9 +672,10 @@ export function SaisieManuellePage() {
         <p className="text-sm text-muted-foreground">
           Demande reçue par téléphone ou WhatsApp (F-ADM-04), pour les {SERVICES.length} services
           ouverts. Un compte client est créé ou retrouvé par numéro de téléphone (sans mot de
-          passe) ; le mode de paiement suit le périmètre de la V1 (
-          {MODE_PAIEMENT_V1 === 'mobile_money' ? 'Mobile Money' : 'espèces'}), la tarification
-          suit les mêmes règles que le parcours client normal.
+          passe) ; la tarification suit les mêmes règles que le parcours client normal.
+          {MODE_PAIEMENT_V1 === 'mobile_money'
+            ? ' Paiement par Mobile Money au numéro ChapExpress : la commande n’est transmise qu’une fois le paiement confirmé depuis « Commandes » (bouton « Paiement reçu »), et annulée au bout de 30 minutes sans paiement.'
+            : ' Paiement en espèces à la livraison.'}
         </p>
       </div>
 

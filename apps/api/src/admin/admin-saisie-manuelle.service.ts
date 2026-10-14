@@ -20,6 +20,11 @@ const CLIENT_ROLE_NAME = 'client';
 // délègue au create() déjà utilisé par le parcours client normal. Limite
 // assumée : si cette personne s'inscrit plus tard normalement, son numéro
 // est déjà pris ; aucune fusion de compte n'est prévue.
+//
+// Paiement (décision du 13/10) : le client envoie le Mobile Money au numéro
+// ChapExpress et le dispatcher confirme la réception (PaiementsService
+// .confirmerManuellement). La commande est marquée `saisieParId` : c'est ce
+// qui autorise cette confirmation à la main.
 @Injectable()
 export class AdminSaisieManuelleService {
   constructor(
@@ -71,7 +76,21 @@ export class AdminSaisieManuelleService {
     });
   }
 
-  async saisirRepas(dto: SaisieManuelleRepasDto) {
+  // The order services own their creation transaction; the dispatcher who
+  // entered it is recorded right after.
+  private async marquerSaisie<T extends { commandeId: string }>(
+    adminId: string,
+    creation: Promise<T>,
+  ): Promise<T> {
+    const cree = await creation;
+    await this.prisma.commande.update({
+      where: { id: cree.commandeId },
+      data: { saisieParId: adminId },
+    });
+    return cree;
+  }
+
+  async saisirRepas(dto: SaisieManuelleRepasDto, adminId: string) {
     const clientId = await this.resoudreClient(
       dto.clientTelephone,
       dto.clientNom,
@@ -83,15 +102,18 @@ export class AdminSaisieManuelleService {
       dto.longitude,
       { id: dto.quartierId, precision: dto.quartier },
     );
-    return this.commandesRepas.create(clientId, {
-      partenaireId: dto.partenaireId,
-      adresseId: adresse.id,
-      modePaiement: dto.modePaiement,
-      lignes: dto.lignes,
-    });
+    return this.marquerSaisie(
+      adminId,
+      this.commandesRepas.create(clientId, {
+        partenaireId: dto.partenaireId,
+        adresseId: adresse.id,
+        modePaiement: dto.modePaiement,
+        lignes: dto.lignes,
+      }),
+    );
   }
 
-  async saisirColis(dto: SaisieManuelleColisDto) {
+  async saisirColis(dto: SaisieManuelleColisDto, adminId: string) {
     const clientId = await this.resoudreClient(
       dto.clientTelephone,
       dto.clientNom,
@@ -102,28 +124,31 @@ export class AdminSaisieManuelleService {
       dto.latitudeEnlevement,
       dto.longitudeEnlevement,
     );
-    return this.commandesColis.create(clientId, {
-      adresseEnlevementId: adresseEnlevement.id,
-      zoneId: dto.zoneId,
-      taille: dto.taille,
-      destinataireNom: dto.destinataireNom,
-      destinataireTelephone: dto.destinataireTelephone,
-      adresseLivraison: dto.adresseLivraison,
-      quartierLivraisonId: dto.quartierLivraisonId,
-      quartierLivraison: dto.quartierLivraison,
-      pointDeRepereLivraison: dto.pointDeRepereLivraison,
-      latitudeLivraison: dto.latitudeLivraison,
-      longitudeLivraison: dto.longitudeLivraison,
-      valeurDeclaree: dto.valeurDeclaree,
-      fragile: dto.fragile,
-      montantContreRemboursement: dto.montantContreRemboursement,
-      modePaiement: dto.modePaiement,
-      programmationAt: dto.programmationAt,
-      conditionsAcceptees: dto.conditionsAcceptees,
-    });
+    return this.marquerSaisie(
+      adminId,
+      this.commandesColis.create(clientId, {
+        adresseEnlevementId: adresseEnlevement.id,
+        zoneId: dto.zoneId,
+        taille: dto.taille,
+        destinataireNom: dto.destinataireNom,
+        destinataireTelephone: dto.destinataireTelephone,
+        adresseLivraison: dto.adresseLivraison,
+        quartierLivraisonId: dto.quartierLivraisonId,
+        quartierLivraison: dto.quartierLivraison,
+        pointDeRepereLivraison: dto.pointDeRepereLivraison,
+        latitudeLivraison: dto.latitudeLivraison,
+        longitudeLivraison: dto.longitudeLivraison,
+        valeurDeclaree: dto.valeurDeclaree,
+        fragile: dto.fragile,
+        montantContreRemboursement: dto.montantContreRemboursement,
+        modePaiement: dto.modePaiement,
+        programmationAt: dto.programmationAt,
+        conditionsAcceptees: dto.conditionsAcceptees,
+      }),
+    );
   }
 
-  async saisirEmplettes(dto: SaisieManuelleEmplettesDto) {
+  async saisirEmplettes(dto: SaisieManuelleEmplettesDto, adminId: string) {
     const clientId = await this.resoudreClient(
       dto.clientTelephone,
       dto.clientNom,
@@ -134,27 +159,36 @@ export class AdminSaisieManuelleService {
       dto.latitude,
       dto.longitude,
     );
-    return this.commandesEmplettes.create(clientId, {
-      mode: dto.mode,
-      zoneId: dto.zoneId,
-      adresseId: adresse.id,
-      lieuAchat: dto.lieuAchat,
-      budgetMax: dto.budgetMax,
-      modeFinancement: dto.modeFinancement,
-      articles: dto.articles,
-    });
+    return this.marquerSaisie(
+      adminId,
+      this.commandesEmplettes.create(clientId, {
+        mode: dto.mode,
+        zoneId: dto.zoneId,
+        adresseId: adresse.id,
+        lieuAchat: dto.lieuAchat,
+        budgetMax: dto.budgetMax,
+        modeFinancement: dto.modeFinancement,
+        articles: dto.articles,
+      }),
+    );
   }
 
-  async saisirCoursesExpress(dto: SaisieManuelleCoursesExpressDto) {
+  async saisirCoursesExpress(
+    dto: SaisieManuelleCoursesExpressDto,
+    adminId: string,
+  ) {
     const clientId = await this.resoudreClient(
       dto.clientTelephone,
       dto.clientNom,
     );
-    return this.commandesCoursesExpress.create(clientId, {
-      description: dto.description,
-      zoneId: dto.zoneId,
-      modePaiement: dto.modePaiement,
-      etapes: dto.etapes,
-    });
+    return this.marquerSaisie(
+      adminId,
+      this.commandesCoursesExpress.create(clientId, {
+        description: dto.description,
+        zoneId: dto.zoneId,
+        modePaiement: dto.modePaiement,
+        etapes: dto.etapes,
+      }),
+    );
   }
 }

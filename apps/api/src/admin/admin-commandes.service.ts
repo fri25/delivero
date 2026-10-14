@@ -29,6 +29,7 @@ const OVERVIEW_SELECT = {
   createdAt: true,
   montantTotal: true,
   livreurId: true,
+  saisieParId: true,
   client: { select: { nom: true, telephone: true } },
   clientNomInvite: true,
   clientTelephoneInvite: true,
@@ -54,6 +55,8 @@ export interface AdminCommandeRow {
   client: { nom: string; telephone: string } | null;
   livreur: { nom: string; telephone: string } | null;
   paiement: { mode: string; statut: string } | null;
+  /** Entered by the dispatcher (F-ADM-04): payment confirmed by hand. */
+  saisieManuelle: boolean;
 }
 
 // Détail nécessaire à l'attribution (F-ADM-02/03) : zone, statut brut et
@@ -333,6 +336,7 @@ export class AdminCommandesService {
           : null),
       livreur: row.livreur?.user ?? null,
       paiement: row.paiement,
+      saisieManuelle: row.saisieParId !== null,
     };
   }
 }

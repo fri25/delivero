@@ -393,10 +393,19 @@ Compte de démo : `+22900000004` / `demo12345` (rôle `admin_dispatcher`, voir
       (sans mot de passe) puis la commande passe par le même `create()` que le
       parcours client normal — même tarification, mêmes validations, aucune
       logique dupliquée. Voir
-      `apps/api/src/admin/admin-saisie-manuelle.service.ts`. Mode de paiement
-      fixé à "espèces" dans le formulaire (pas de saisie Mobile Money côté
-      dispatcher) ; limite assumée : si l'appelant s'inscrit plus tard
-      normalement, son numéro est déjà pris, aucune fusion de compte prévue)*
+      `apps/api/src/admin/admin-saisie-manuelle.service.ts`. **Paiement
+      (14/10)** : Mobile Money en V1 (espèces retirées). Le client envoie
+      l'argent directement au numéro ChapExpress ; le dispatcher vérifie la
+      réception, clique « Paiement reçu » dans Commandes et saisit la
+      référence de l'opérateur — la commande part alors comme après un
+      paiement FedaPay (restaurant ou livreurs alertés). Seules les commandes
+      marquées `Commande.saisieParId` acceptent cette confirmation
+      (`PATCH /admin/saisie-manuelle/commandes/:id/paiement-recu`, trace dans
+      `Paiement.referenceManuelle` / `confirmeAt` / `confirmeParId`). Pas de
+      lien de paiement envoyé (décision utilisateur). Sans confirmation, la
+      commande expire au bout de 30 min (voir F-ADM-16). Limite assumée : si
+      l'appelant s'inscrit plus tard normalement, son numéro est déjà pris,
+      aucune fusion de compte prévue)*
 - [ ] F-ADM-05 — Validation des demandes sensibles
 - [ ] F-ADM-06 — Gestion des incidents (annulation, remboursement, litige, client
       injoignable, colis refusé/endommagé, article contesté) — *(partiel, 13/10 :
@@ -467,8 +476,15 @@ Compte de démo : `+22900000004` / `demo12345` (rôle `admin_dispatcher`, voir
       manuel** : refus/annulation d'une commande payée => paiement
       `a_rembourser`. **Pas encore validé en sandbox** (clés à renseigner
       dans `apps/api/.env`). Écran back-office des remboursements fait
-      le 13/10 (F-ADM-06). Restent à faire : expiration des commandes jamais payées, paiement des
-      commandes saisies par le dispatcher (F-ADM-04))*
+      le 13/10 (F-ADM-06). **Expiration (14/10)** : une commande Mobile Money
+      toujours non payée 30 min après sa création est annulée (motif
+      « paiement non reçu dans les 30 minutes », client prévenu) par une
+      tâche de l'API qui passe chaque minute
+      (`apps/api/src/paiements/expiration-paiements.service.ts`, testée). Si
+      une page FedaPay a été ouverte, la transaction est relue avant
+      d'annuler (webhook perdu) ; un paiement arrivé après l'expiration passe
+      en `a_rembourser`. Commandes saisies par le dispatcher : confirmation
+      manuelle du paiement, voir F-ADM-04)*
 - [ ] F-ADM-17 — Calcul automatique des commissions par partenaire et par service
       (Emplettes : commission uniquement en mode (b) catalogue partenaire, aucune en
       mode (a) liste libre — voir [regles-gestion.md](regles-gestion.md) RG-08)

@@ -79,3 +79,25 @@ export const useSaisieManuelleEmplettes = () =>
   useSaisieManuelle<SaisieManuelleEmplettesInput>('emplettes');
 export const useSaisieManuelleCoursesExpress = () =>
   useSaisieManuelle<SaisieManuelleCoursesExpressInput>('courses-express');
+
+/**
+ * The client sent Mobile Money to the ChapExpress number: the dispatcher
+ * confirms receipt with the operator's reference and the order goes out
+ * (decision of 13/10). Unpaid, it is cancelled after 30 minutes.
+ */
+export function usePaiementRecu() {
+  const token = useAuthStore((state) => state.token);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reference }: { id: string; reference: string }) =>
+      apiFetch(`/admin/saisie-manuelle/commandes/${id}/paiement-recu`, {
+        method: 'PATCH',
+        body: { reference },
+        token,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin-commandes'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin-remboursements'] });
+    },
+  });
+}

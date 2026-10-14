@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AnnulerCommandeBouton } from '@/components/commandes/AnnulerCommandeBouton';
+import { PaiementRecuBouton } from '@/components/commandes/PaiementRecuBouton';
 import { useAttribuerCommande, useCommandesOverview } from '@/api/commandes';
 import { useLivreurs } from '@/api/livreurs';
 import { formatDateHeure, formatPrixFcfa } from '@/lib/format';
@@ -44,6 +45,15 @@ const STATUTS_TERMINAUX = new Set([
   'refusee',
   'litige',
 ]);
+
+// Payment states the dispatcher has to act on or know about; a collected
+// payment needs no mention.
+const LIBELLES_PAIEMENT: Record<string, string> = {
+  en_attente: 'Non payée',
+  echoue: 'Paiement échoué',
+  a_rembourser: 'À rembourser',
+  rembourse: 'Remboursée',
+};
 
 function formatStatut(statut: string | null): string {
   if (!statut) return '—';
@@ -211,13 +221,21 @@ export function OverviewPage() {
                       '—'
                     )}
                   </td>
-                  <td className="px-3 py-2">{formatPrixFcfa(row.montantTotal)}</td>
+                  <td className="px-3 py-2">
+                    <div>{formatPrixFcfa(row.montantTotal)}</div>
+                    {row.paiement && LIBELLES_PAIEMENT[row.paiement.statut] && (
+                      <div className="text-xs text-muted-foreground">
+                        {LIBELLES_PAIEMENT[row.paiement.statut]}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-3 py-2 text-muted-foreground">
                     {formatDateHeure(row.createdAt)}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-1">
                       <AttributionCell row={row} />
+                      <PaiementRecuBouton row={row} />
                       <AnnulerCommandeBouton row={row} />
                     </div>
                   </td>

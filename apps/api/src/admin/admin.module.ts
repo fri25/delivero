@@ -3,6 +3,7 @@ import { CommandesColisModule } from '../commandes-colis/commandes-colis.module'
 import { CommandesCoursesExpressModule } from '../commandes-courses-express/commandes-courses-express.module';
 import { CommandesEmplettesModule } from '../commandes-emplettes/commandes-emplettes.module';
 import { CommandesRepasModule } from '../commandes-repas/commandes-repas.module';
+import { PaiementsModule } from '../paiements/paiements.module';
 import { AdminCaisseController } from './admin-caisse.controller';
 import { AdminCaisseService } from './admin-caisse.service';
 import { AdminCommandesController } from './admin-commandes.controller';
@@ -26,6 +27,7 @@ import { AdminZonesService } from './admin-zones.service';
     CommandesColisModule,
     CommandesEmplettesModule,
     CommandesCoursesExpressModule,
+    PaiementsModule,
   ],
   controllers: [
     AdminCommandesController,

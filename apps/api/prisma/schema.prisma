@@ -64,7 +64,9 @@ model User {
   abonnementsPush     AbonnementPush[]
   cloturesRapprochees ClotureCaisse[]
   commandesAnnulees   Commande[]       @relation("CommandeAnnuleePar")
+  commandesSaisies    Commande[]       @relation("CommandeSaisiePar")
   paiementsRembourses Paiement[]       @relation("PaiementRembourseePar")
+  paiementsConfirmes  Paiement[]       @relation("PaiementConfirmePar")
 
   @@map("users")
 }
@@ -387,6 +389,11 @@ model Commande {
   annuleeParId    String?   @map("annulee_par_id")
   annuleePar      User?     @relation("CommandeAnnuleePar", fields: [annuleeParId], references: [id])
 
+  // Entered by the dispatcher for a phone/WhatsApp request (F-ADM-04). Only
+  // such orders can have their Mobile Money payment confirmed by hand.
+  saisieParId String? @map("saisie_par_id")
+  saisiePar   User?   @relation("CommandeSaisiePar", fields: [saisieParId], references: [id])
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -541,6 +548,14 @@ model Paiement {
   rembourseAt            DateTime? @map("rembourse_at")
   rembourseParId         String?   @map("rembourse_par_id")
   remboursePar           User?     @relation("PaiementRembourseePar", fields: [rembourseParId], references: [id])
+
+  // Manual entry (F-ADM-04, decision of 2026-10-13): the client sends Mobile
+  // Money straight to the ChapExpress number and the dispatcher confirms
+  // receipt with the operator's reference — no FedaPay transaction.
+  referenceManuelle String?   @map("reference_manuelle")
+  confirmeAt        DateTime? @map("confirme_at")
+  confirmeParId     String?   @map("confirme_par_id")
+  confirmePar       User?     @relation("PaiementConfirmePar", fields: [confirmeParId], references: [id])
 
   @@map("paiements")
 }

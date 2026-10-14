@@ -22,6 +22,8 @@ export interface AdminCommandeRow {
   client: { nom: string; telephone: string } | null;
   livreur: { nom: string; telephone: string } | null;
   paiement: { mode: string; statut: string } | null;
+  /** Entered by the dispatcher (F-ADM-04): payment confirmed by hand. */
+  saisieManuelle: boolean;
 }
 
 export interface AdminCommandesPage {

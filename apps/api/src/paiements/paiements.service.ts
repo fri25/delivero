@@ -31,6 +31,7 @@ const COMMANDE_SELECT = {
   clientNomInvite: true,
   clientTelephoneInvite: true,
   montantTotal: true,
+  saisieParId: true,
   client: { select: { nom: true, telephone: true } },
   paiement: true,
   commandeRepas: {
@@ -107,6 +108,14 @@ export class PaiementsService {
 
   async synchroniserInvite(commandeId: string) {
     return this.synchroniserCommande(await this.getCommandeInvite(commandeId));
+  }
+
+  /** Re-reads FedaPay before the expiry job gives up on an order. */
+  async resynchroniser(commandeId: string): Promise<StatutPaiement> {
+    const etat = await this.synchroniserCommande(
+      await this.getCommande(commandeId),
+    );
+    return etat.statut;
   }
 
   // `cheminRetour`: client app page FedaPay sends the payer back to (it
@@ -216,6 +225,70 @@ export class PaiementsService {
       transaction.status,
     );
     return this.etat(commande, statut);
+  }
+
+  /**
+   * F-ADM-04: the client of a phone/WhatsApp order sent Mobile Money straight
+   * to the ChapExpress number; the dispatcher confirms receipt with the
+   * operator's reference. The order then goes out exactly as if FedaPay had
+   * confirmed it (restaurant or livreurs alerted).
+   */
+  async confirmerManuellement(
+    commandeId: string,
+    reference: string,
+    adminId: string,
+  ): Promise<EtatPaiement> {
+    const commande = await this.getCommande(commandeId);
+    const paiement = commande.paiement;
+    if (!commande.saisieParId) {
+      throw new BadRequestException(
+        'Seule une commande saisie par le dispatcher se confirme à la main.',
+      );
+    }
+    if (!paiement || paiement.mode !== ModePaiement.mobile_money) {
+      throw new BadRequestException(
+        'Cette commande ne se paie pas par Mobile Money.',
+      );
+    }
+    if (this.estClose(commande)) {
+      throw new BadRequestException('Cette commande a été annulée.');
+    }
+
+    // Conditional on the unpaid statuses: a double click, or the expiry job
+    // cancelling at the same moment, cannot confirm twice.
+    const { count } = await this.prisma.paiement.updateMany({
+      where: {
+        id: paiement.id,
+        statut: { in: [StatutPaiement.en_attente, StatutPaiement.echoue] },
+      },
+      data: {
+        statut: StatutPaiement.reussi,
+        referenceManuelle: reference.trim(),
+        confirmeAt: new Date(),
+        confirmeParId: adminId,
+      },
+    });
+    if (count === 0) {
+      throw new BadRequestException('Cette commande est déjà payée.');
+    }
+
+    // Expiry may have cancelled the order between the check and the update.
+    const apres = await this.getCommande(commandeId);
+    if (this.estClose(apres)) {
+      await this.prisma.paiement.update({
+        where: { id: paiement.id },
+        data: { statut: StatutPaiement.a_rembourser },
+      });
+      throw new BadRequestException(
+        'La commande a expiré entre-temps : le paiement passe dans « Remboursements ».',
+      );
+    }
+
+    this.logger.log(
+      `Paiement ${paiement.id} (commande ${commande.id}) confirmé à la main, réf. ${reference.trim()}`,
+    );
+    this.notifierTransition(commande, StatutPaiement.reussi);
+    return this.etat(commande, StatutPaiement.reussi);
   }
 
   /** Server-to-server confirmation from FedaPay, the source of truth. */
