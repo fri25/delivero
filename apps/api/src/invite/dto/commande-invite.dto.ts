@@ -1,6 +1,7 @@
 import { OmitType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import {
+  IsEmail,
   IsLatitude,
   IsLongitude,
   IsNotEmpty,
@@ -24,6 +25,10 @@ export class ContactInviteDto {
   @IsNotEmpty()
   @MaxLength(20)
   telephone!: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 }
 
 /**

@@ -19,7 +19,7 @@ export function FiltreServices({
     ...services.map((service) => ({ value: service, label: SERVICE_LABELS[service], n: comptes[service] ?? 0 })),
   ];
   return (
-    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none]" role="group" aria-label="Filtrer par service">
+    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" role="group" aria-label="Filtrer par service">
       {options.map((option) => (
         <button
           key={option.value}
@@ -27,12 +27,19 @@ export function FiltreServices({
           aria-pressed={valeur === option.value}
           onClick={() => onChange(option.value)}
           className={cn(
-            'inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium whitespace-nowrap transition-colors',
-            valeur === option.value ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground hover:bg-primary/10',
+            'inline-flex min-h-9.5 shrink-0 items-center gap-2 rounded-full px-3.5 text-xs font-semibold whitespace-nowrap transition-all duration-200 active:scale-95 cursor-pointer',
+            valeur === option.value
+              ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/30 border border-primary font-bold'
+              : 'bg-card text-foreground/80 hover:bg-secondary hover:text-foreground border border-border/80 shadow-2xs',
           )}
         >
-          {option.label}
-          <span className={cn('text-xs', valeur === option.value ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
+          <span>{option.label}</span>
+          <span
+            className={cn(
+              'rounded-full px-1.5 py-0.2 text-[11px] font-bold',
+              valeur === option.value ? 'bg-white/20 text-white' : 'bg-secondary text-muted-foreground',
+            )}
+          >
             {option.n}
           </span>
         </button>

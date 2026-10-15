@@ -33,6 +33,7 @@ interface SaisieManuelleColisInput {
   quartierLivraison?: string;
   adresseLivraison?: string;
   pointDeRepereLivraison: string;
+  nature?: string;
   valeurDeclaree?: number;
   fragile?: boolean;
   montantContreRemboursement?: number;

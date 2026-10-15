@@ -14,10 +14,10 @@ export function CarteDetail({
   children: ReactNode;
 }) {
   return (
-    <section className={cn('rounded-2xl bg-card p-4 ring-1 ring-foreground/10 sm:p-5', className)}>
+    <section className={cn('rounded-3xl bg-card p-5 sm:p-6 border border-border/70 shadow-xs', className)}>
       {(titre || action) && (
-        <header className="mb-3 flex items-center justify-between gap-3">
-          {titre && <h2 className="font-heading text-base font-semibold">{titre}</h2>}
+        <header className="mb-3.5 flex items-center justify-between gap-3 border-b border-border/50 pb-2.5">
+          {titre && <h2 className="font-heading text-base sm:text-lg font-bold text-foreground">{titre}</h2>}
           {action}
         </header>
       )}

@@ -42,6 +42,14 @@ describe('MediasService', () => {
       allowed_formats: 'jpg,jpeg,png,webp',
     });
     expect(signature.signature).toMatch(/^[0-9a-f]{40}$/);
+
+    const signaturePlats = service(ENV).signer('plats');
+    expect(signaturePlats).toMatchObject({
+      cloudName: 'chapx',
+      apiKey: '123',
+      folder: 'chapexpress/plats',
+      allowed_formats: 'jpg,jpeg,png,webp',
+    });
   });
 
   it('only accepts our own Cloudinary URLs, in the right folder', () => {

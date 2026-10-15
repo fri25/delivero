@@ -67,10 +67,10 @@ export function OrdersPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <header className="flex items-end justify-between gap-3">
+      <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <h1 className="font-heading text-2xl font-semibold whitespace-nowrap lg:text-3xl">Mes commandes</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          <h1 className="font-heading text-2xl font-bold whitespace-nowrap lg:text-3xl text-foreground">Mes commandes</h1>
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
             {commandes.length} commande{commandes.length > 1 ? 's' : ''}
             {nbEnCours > 0 ? ` · ${nbEnCours} en cours` : ''}
           </p>
@@ -80,7 +80,7 @@ export function OrdersPage() {
           <select
             value={periode}
             onChange={(event) => setPeriode(event.target.value as Periode)}
-            className="h-10 rounded-full border border-input bg-card px-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="h-9.5 rounded-full border border-border/80 bg-card px-3.5 text-xs font-semibold shadow-2xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none cursor-pointer"
           >
             <option value="tout">Depuis le début</option>
             <option value="30">30 derniers jours</option>
@@ -104,39 +104,39 @@ export function OrdersPage() {
       </div>
 
       {isError && (
-        <div role="alert" className="flex items-center justify-between gap-3 rounded-2xl bg-destructive/5 p-4 ring-1 ring-destructive/20">
-          <p className="text-sm">Une partie de votre historique n’a pas pu être chargée.</p>
-          <Button variant="outline" size="sm" onClick={refetch}>
-            <RefreshCw /> Réessayer
+        <div role="alert" className="flex items-center justify-between gap-3 rounded-2xl bg-destructive/10 p-4 border border-destructive/20 text-destructive">
+          <p className="text-xs sm:text-sm font-medium">Une partie de votre historique n’a pas pu être chargée.</p>
+          <Button variant="outline" size="sm" onClick={refetch} className="rounded-xl">
+            <RefreshCw className="size-3.5" /> Réessayer
           </Button>
         </div>
       )}
 
       {isPending && commandes.length === 0 && (
         <div className="space-y-3" aria-label="Chargement des commandes">
-          <Skeleton className="h-20 w-full rounded-2xl" />
-          <Skeleton className="h-20 w-full rounded-2xl" />
-          <Skeleton className="h-20 w-full rounded-2xl" />
+          <Skeleton className="h-22 w-full rounded-3xl" />
+          <Skeleton className="h-22 w-full rounded-3xl" />
+          <Skeleton className="h-22 w-full rounded-3xl" />
         </div>
       )}
 
       {!isPending && filtrees.length === 0 && (
-        <div className="rounded-2xl bg-card px-6 py-12 text-center ring-1 ring-foreground/10">
-          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-secondary text-primary">
-            <CalendarDays className="size-6" aria-hidden="true" />
+        <div className="rounded-3xl bg-card px-6 py-12 text-center border border-border/70 shadow-xs">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-2xs">
+            <CalendarDays className="size-7" aria-hidden="true" />
           </div>
-          <h2 className="font-heading mt-4 text-lg font-semibold">
+          <h2 className="font-heading mt-4 text-lg font-bold text-foreground">
             {commandes.length ? 'Aucune commande pour ces filtres' : 'Pas encore de commande'}
           </h2>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+          <p className="mx-auto mt-1 max-w-sm text-xs sm:text-sm text-muted-foreground leading-relaxed">
             {commandes.length
               ? 'Modifiez les filtres pour retrouver une commande.'
-              : 'Vos repas, colis et courses apparaîtront ici, avec leur suivi.'}
+              : 'Vos repas, colis et courses apparaîtront ici, avec leur suivi en direct.'}
           </p>
           {filtresActifs ? (
             <Button
               variant="outline"
-              className="mt-4"
+              className="mt-5 rounded-xl font-semibold shadow-xs"
               onClick={() => {
                 setIssue('tout');
                 setService('tous');
@@ -146,7 +146,7 @@ export function OrdersPage() {
               Effacer les filtres
             </Button>
           ) : (
-            <Button asChild className="mt-4">
+            <Button asChild size="lg" className="mt-5 rounded-xl font-semibold shadow-md shadow-primary/20">
               <Link to="/">Passer une commande</Link>
             </Button>
           )}
@@ -154,11 +154,12 @@ export function OrdersPage() {
       )}
 
       {enCours.length > 0 && (
-        <section className="space-y-2.5" aria-labelledby="titre-en-cours">
-          <h2 id="titre-en-cours" className="font-heading text-base font-semibold">
+        <section className="space-y-3" aria-labelledby="titre-en-cours">
+          <h2 id="titre-en-cours" className="font-heading text-base font-bold text-foreground flex items-center gap-2">
+            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
             En cours
           </h2>
-          <ul className="space-y-2.5">
+          <ul className="space-y-3">
             {enCours.map((c) => (
               <LigneCommande key={`${c.typeService}:${c.id}`} commande={c} />
             ))}

@@ -41,85 +41,96 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
     <li
       data-commande={commande.id}
       className={cn(
-        'flex flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/10',
-        aAccepter && 'ring-2 ring-destructive',
+        'flex flex-col overflow-hidden rounded-3xl bg-card border border-border/70 shadow-xs transition-all hover:shadow-md',
+        aAccepter && 'border-destructive/60 ring-2 ring-destructive/40 shadow-destructive/10',
       )}
     >
       <div
         className={cn(
-          'flex items-center justify-between gap-2 border-b border-border px-4 py-2.5',
-          aAccepter ? 'bg-destructive text-white' : 'bg-secondary/60',
+          'flex items-center justify-between gap-2 border-b border-border/60 px-4 py-3',
+          aAccepter ? 'bg-destructive text-white' : 'bg-muted/40',
         )}
       >
         <span className="flex min-w-0 items-baseline gap-2">
-          <span className="font-mono text-base font-bold tracking-wide">N° {reference(commande)}</span>
-          <span className={cn('truncate text-sm', aAccepter ? 'text-white/85' : 'text-muted-foreground')}>
+          <span className="font-mono text-base font-bold tracking-tight">N° {reference(commande)}</span>
+          <span className={cn('truncate text-xs font-medium', aAccepter ? 'text-white/80' : 'text-muted-foreground')}>
             {anciennete(commande.createdAt, maintenant)}
           </span>
         </span>
         <span
           className={cn(
-            'shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold',
-            aAccepter ? 'bg-white text-destructive' : 'bg-muted text-muted-foreground',
-            commande.statut === 'prete' && 'bg-success text-white',
+            'shrink-0 rounded-full px-3 py-1 text-xs font-bold shadow-2xs',
+            aAccepter && 'bg-white text-destructive animate-pulse',
+            !aAccepter && commande.statut === 'prete' && 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30',
+            !aAccepter && commande.statut === 'en_preparation' && 'bg-amber-500/15 text-amber-700 border border-amber-500/30',
+            !aAccepter && commande.statut === 'confirmee' && 'bg-brand-blue/15 text-brand-blue border border-brand-blue/30',
+            !aAccepter && commande.statut === 'livree' && 'bg-muted text-muted-foreground',
           )}
         >
           {STATUT_LABELS[commande.statut]}
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        <ul className="space-y-1.5">
+      <div className="flex flex-1 flex-col gap-3.5 p-4 sm:p-5">
+        <ul className="space-y-2">
           {commande.lignes.map((ligne) => (
             <li key={ligne.id} className="text-base">
-              <span className="font-bold tabular-nums">{ligne.quantite} ×</span>{' '}
-              <span className="font-medium">{ligne.plat.nom}</span>
-              {ligne.instructions && (
-                <span className="mt-0.5 block rounded-md bg-amber-100 px-2 py-1 text-sm text-amber-900">
-                  « {ligne.instructions} »
+              <div className="flex items-start gap-2">
+                <span className="inline-flex items-center justify-center rounded-lg bg-primary/10 px-2 py-0.5 font-mono text-sm font-bold text-primary tabular-nums shrink-0">
+                  {ligne.quantite}×
                 </span>
+                <span className="font-semibold text-foreground leading-snug">{ligne.plat.nom}</span>
+              </div>
+              {ligne.instructions && (
+                <div className="mt-1.5 ml-8 rounded-xl bg-amber-50 border border-amber-200/80 px-2.5 py-1.5 text-xs font-medium text-amber-900">
+                  « {ligne.instructions} »
+                </div>
               )}
             </li>
           ))}
         </ul>
 
-        <div className="flex items-baseline justify-between border-t border-border pt-2 text-sm">
-          <span className="text-muted-foreground">
-            {nbPlats} plat{nbPlats > 1 ? 's' : ''} · pour vous
+        <div className="flex items-baseline justify-between border-t border-border/60 pt-3 text-sm">
+          <span className="text-xs text-muted-foreground font-medium">
+            {nbPlats} plat{nbPlats > 1 ? 's' : ''} · Sous-total restaurant
           </span>
-          <span className="text-base font-semibold tabular-nums">
+          <span className="font-mono text-base font-bold tabular-nums text-foreground">
             {commande.commande.sousTotal ? formatPrixFcfa(commande.commande.sousTotal) : '—'}
           </span>
         </div>
 
         {livreur && (
-          <div className="flex items-center justify-between gap-2 rounded-xl bg-secondary px-3 py-2 text-sm">
+          <div className="flex items-center justify-between gap-2 rounded-2xl bg-muted/60 border border-border/50 px-3.5 py-2.5 text-sm">
             <span className="flex min-w-0 items-center gap-2">
-              <Bike className="size-4 shrink-0 text-primary" aria-hidden="true" />
-              <span className="truncate">
-                Livreur : <span className="font-medium">{livreur.nom}</span>
+              <div className="flex size-7 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+                <Bike className="size-4" aria-hidden="true" />
+              </div>
+              <span className="truncate text-xs sm:text-sm">
+                Livreur : <span className="font-semibold text-foreground">{livreur.nom}</span>
               </span>
             </span>
             <a
               href={`tel:${livreur.telephone}`}
-              className="inline-flex shrink-0 items-center gap-1 font-medium text-primary hover:underline"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary/10 hover:bg-primary/20 px-3 py-1 text-xs font-bold text-primary transition-colors"
             >
-              <Phone className="size-4" aria-hidden="true" />
+              <Phone className="size-3.5" aria-hidden="true" />
               Appeler
             </a>
           </div>
         )}
 
         {commande.statut === 'refusee' && commande.motifRefus && (
-          <p className="text-sm text-destructive">Motif du refus : {commande.motifRefus}</p>
+          <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-2.5 text-xs text-destructive font-medium">
+            Motif du refus : {commande.motifRefus}
+          </div>
         )}
 
-        <div className="mt-auto">
+        <div className="mt-auto pt-2">
           {aAccepter && !refusOuvert && (
             <div className="flex gap-2">
               <Button
                 size="lg"
-                className="h-12 flex-1 bg-success text-base hover:bg-success/85"
+                className="h-12 flex-1 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base shadow-sm active:scale-98 transition-all"
                 disabled={pending}
                 onClick={() => {
                   accepter.mutate(commande.id, {
@@ -133,7 +144,7 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
               <Button
                 size="lg"
                 variant="outline"
-                className="h-12 px-5 text-base"
+                className="h-12 px-5 rounded-2xl text-base font-semibold border-border hover:bg-destructive/10 hover:text-destructive active:scale-98 transition-all"
                 disabled={pending}
                 onClick={() => setRefusOuvert(true)}
               >
@@ -143,17 +154,19 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
           )}
 
           {aAccepter && refusOuvert && (
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Pourquoi refuser ? Le client verra ce motif.</p>
-              <div className="flex flex-wrap gap-2">
+            <div className="space-y-2.5 rounded-2xl bg-muted/40 border border-border/60 p-3">
+              <p className="text-xs font-semibold text-foreground">Pourquoi refuser ? Le client verra ce motif.</p>
+              <div className="flex flex-wrap gap-1.5">
                 {MOTIFS_RAPIDES.map((rapide) => (
                   <button
                     key={rapide}
                     type="button"
                     onClick={() => setMotif(rapide)}
                     className={cn(
-                      'rounded-full border border-border px-3 py-1.5 text-sm',
-                      motif === rapide && 'border-primary bg-primary text-primary-foreground',
+                      'rounded-full border border-border/80 px-3 py-1 text-xs font-medium transition-all',
+                      motif === rapide
+                        ? 'border-primary bg-primary text-primary-foreground shadow-2xs font-semibold'
+                        : 'bg-card text-muted-foreground hover:bg-muted',
                     )}
                   >
                     {rapide}
@@ -162,14 +175,15 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
               </div>
               <Textarea
                 aria-label="Motif du refus"
-                placeholder="Ou écrivez le motif"
+                placeholder="Ou écrivez le motif précis"
+                className="rounded-xl bg-card text-sm"
                 value={motif}
                 onChange={(event) => setMotif(event.target.value)}
               />
               <div className="flex gap-2">
                 <Button
                   variant="destructive"
-                  className="h-11 flex-1"
+                  className="h-10 flex-1 rounded-xl font-bold"
                   disabled={!motif.trim() || refuser.isPending}
                   onClick={() => {
                     refuser.mutate(
@@ -180,7 +194,7 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
                 >
                   Confirmer le refus
                 </Button>
-                <Button variant="ghost" className="h-11" onClick={() => setRefusOuvert(false)}>
+                <Button variant="ghost" className="h-10 rounded-xl" onClick={() => setRefusOuvert(false)}>
                   Annuler
                 </Button>
               </div>
@@ -190,7 +204,7 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
           {commande.statut === 'confirmee' && (
             <Button
               size="lg"
-              className="h-12 w-full text-base"
+              className="h-12 w-full rounded-2xl bg-brand-blue hover:bg-brand-blue/90 text-white font-bold text-base shadow-sm active:scale-98 transition-all"
               disabled={pending}
               onClick={() => marquerEnPreparation.mutate(commande.id, { onError: erreur })}
             >
@@ -201,7 +215,7 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
           {commande.statut === 'en_preparation' && (
             <Button
               size="lg"
-              className="h-12 w-full bg-success text-base hover:bg-success/85"
+              className="h-12 w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base shadow-sm active:scale-98 transition-all"
               disabled={pending}
               onClick={() =>
                 marquerPrete.mutate(commande.id, {
@@ -215,9 +229,10 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
           )}
 
           {commande.statut === 'prete' && (
-            <p className="text-sm text-muted-foreground">
-              {livreur ? 'Le livreur arrive : remettez-lui la commande.' : 'En attente d’un livreur.'}
-            </p>
+            <div className="flex items-center gap-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs sm:text-sm text-emerald-800 font-medium">
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span>{livreur ? 'Le livreur arrive : remettez-lui la commande.' : 'En attente d’un livreur.'}</span>
+            </div>
           )}
         </div>
       </div>

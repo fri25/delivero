@@ -18,6 +18,7 @@ interface CreatePlatInput {
   categorie?: string;
   description?: string;
   prix: number;
+  photoUrl?: string | null;
   disponible?: boolean;
 }
 

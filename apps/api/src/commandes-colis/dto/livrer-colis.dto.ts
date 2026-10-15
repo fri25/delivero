@@ -1,4 +1,11 @@
-import { IsNumber, IsOptional, IsPositive, IsString } from 'class-validator';
+import {
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+  IsUrl,
+  MaxLength,
+} from 'class-validator';
 
 // V01 : le code de remise est désormais obligatoire (RG-07 imposé, pas
 // seulement recommandé) — nomReceptionnaire reste une information
@@ -15,4 +22,10 @@ export class LivrerColisDto {
   @IsNumber()
   @IsPositive()
   montantEncaisse?: number;
+
+  /** F-CLI-22: Cloudinary URL of delivery proof photo. */
+  @IsOptional()
+  @IsUrl({ protocols: ['https'] })
+  @MaxLength(500)
+  photoPreuveUrl?: string;
 }

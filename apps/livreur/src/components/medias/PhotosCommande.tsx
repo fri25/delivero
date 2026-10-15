@@ -8,14 +8,14 @@ function miniature(url: string): string {
 export function PhotosCommande({ urls }: { urls: string[] }) {
   if (urls.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2.5">
       {urls.map((url) => (
-        <a key={url} href={url} target="_blank" rel="noreferrer">
+        <a key={url} href={url} target="_blank" rel="noreferrer" className="group">
           <img
             src={miniature(url)}
             alt="Photo jointe par le client"
             loading="lazy"
-            className="size-20 rounded-lg object-cover ring-1 ring-foreground/10"
+            className="size-20 rounded-2xl object-cover border border-border/70 shadow-2xs transition-transform duration-200 group-hover:scale-105"
           />
         </a>
       ))}

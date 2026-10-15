@@ -47,6 +47,7 @@ const EXPIRABLE_SELECT = {
   typeService: true,
   clientId: true,
   clientTelephoneInvite: true,
+  clientEmailInvite: true,
   paiement: { select: { referenceTransaction: true } },
   commandeRepas: { select: { id: true } },
   commandeColis: { select: { id: true } },

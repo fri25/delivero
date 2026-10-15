@@ -36,10 +36,12 @@ export function DetailCommandeLayout({
   return (
     <div className="mx-auto max-w-2xl space-y-4 lg:max-w-6xl lg:space-y-6">
       <header>
-        <p className="text-sm font-medium text-primary">{service}</p>
-        <h1 className="font-heading mt-0.5 text-2xl leading-tight font-semibold lg:text-3xl">{titre}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {dateLisible} · N° {reference.slice(-6).toUpperCase()}
+        <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary mb-1.5">
+          {service}
+        </span>
+        <h1 className="font-heading text-2xl font-bold leading-tight lg:text-3xl text-foreground">{titre}</h1>
+        <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+          {dateLisible} · Commande <span className="font-mono font-semibold text-foreground">#{reference.slice(-6).toUpperCase()}</span>
         </p>
       </header>
 
@@ -52,10 +54,10 @@ export function DetailCommandeLayout({
             href={WHATSAPP_SUPPORT}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-border/70 bg-card px-4 py-3 text-xs sm:text-sm font-semibold text-foreground shadow-2xs hover:bg-secondary/70 hover:border-emerald-500/30 transition-all active:scale-[0.99]"
           >
-            <MessageCircle className="size-4" aria-hidden="true" />
-            Un souci ? Écrivez-nous sur WhatsApp
+            <MessageCircle className="size-4 text-[#25D366]" aria-hidden="true" />
+            <span>Un souci ? Écrivez-nous sur WhatsApp</span>
           </a>
         </aside>
 

@@ -3,6 +3,7 @@ export interface InfosInvite {
   nom: string;
   /** Normalised international form (+229…), see auth/telephone.ts. */
   telephone: string;
+  email?: string;
 }
 
 /**
@@ -14,7 +15,11 @@ export function demandeurCommande(
   invite: InfosInvite | undefined,
 ) {
   return invite
-    ? { clientNomInvite: invite.nom, clientTelephoneInvite: invite.telephone }
+    ? {
+        clientNomInvite: invite.nom,
+        clientTelephoneInvite: invite.telephone,
+        clientEmailInvite: invite.email ?? null,
+      }
     : { clientId };
 }
 

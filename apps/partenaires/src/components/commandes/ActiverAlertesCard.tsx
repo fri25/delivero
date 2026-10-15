@@ -46,24 +46,28 @@ export function ActiverAlertesCard() {
   };
 
   return (
-    <section className="flex items-start gap-3 rounded-2xl bg-primary p-4 text-primary-foreground">
-      <BellRing className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+    <section className="relative overflow-hidden flex items-start gap-3.5 rounded-3xl bg-gradient-to-r from-brand-navy via-brand-blue to-primary p-4 sm:p-5 text-white shadow-md">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur-sm">
+        <BellRing className="size-5 text-cyan-300 animate-bounce" aria-hidden="true" />
+      </div>
       <div className="min-w-0 flex-1 space-y-3">
         <div>
-          <p className="font-semibold">Soyez prévenu de chaque nouvelle commande</p>
-          <p className="text-sm text-primary-foreground/85">
-            Une alerte sur ce téléphone dès qu’un client commande, même écran éteint ou
-            application fermée. Sans cela, gardez cet onglet ouvert.
+          <p className="font-heading font-bold text-base leading-snug">Soyez prévenu de chaque nouvelle commande</p>
+          <p className="mt-1 text-xs sm:text-sm text-white/80 leading-relaxed">
+            Recevez une notification sonore et visuelle dès qu’un client commande, même écran éteint ou
+            application en arrière-plan.
           </p>
         </div>
         <Button
           variant="secondary"
+          size="sm"
+          className="rounded-full bg-white font-semibold text-brand-navy hover:bg-white/90 shadow-sm active:scale-95 transition-all"
           disabled={enCours}
           onClick={async () => {
             setEnCours(true);
             try {
               await activerPush(token);
-              toast.success('Alertes activées.');
+              toast.success('Alertes activées avec succès.');
               masquer();
             } catch (error) {
               toast.error((error as Error).message);
@@ -80,7 +84,7 @@ export function ActiverAlertesCard() {
         variant="ghost"
         size="icon-sm"
         aria-label="Plus tard"
-        className="text-primary-foreground hover:bg-white/10 hover:text-primary-foreground"
+        className="size-8 rounded-full text-white/70 hover:bg-white/10 hover:text-white"
         onClick={masquer}
       >
         <X className="size-4" />

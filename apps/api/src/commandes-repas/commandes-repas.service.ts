@@ -78,7 +78,11 @@ const DISPONIBLES_INCLUDE = {
   commande: {
     // V11 also covers guest orders (F-CLI-02): their contact lives on
     // Commande itself, so it must be omitted explicitly here.
-    omit: { clientNomInvite: true, clientTelephoneInvite: true },
+    omit: {
+      clientNomInvite: true,
+      clientTelephoneInvite: true,
+      clientEmailInvite: true,
+    },
     include: {
       adresse: true,
       paiement: { select: { mode: true, statut: true } },
@@ -350,6 +354,7 @@ export class CommandesRepasService {
             id: true,
             clientId: true,
             clientTelephoneInvite: true,
+            clientEmailInvite: true,
             montantTotal: true,
             paiement: { select: { mode: true } },
           },

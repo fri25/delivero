@@ -16,23 +16,24 @@ function titre(tache: Tache): string {
   }
 }
 
-/** A finished task: one compact line, no actions left. */
 export function LigneHistorique({ tache }: { tache: Tache }) {
   const montant = tache.commande.commande.montantTotal;
   const reussie = estReussie(tache.statut);
   return (
-    <li className="flex items-center justify-between gap-3 rounded-2xl bg-card px-4 py-3 ring-1 ring-foreground/10">
-      <div className="min-w-0">
-        <p className="truncate font-medium">{titre(tache)}</p>
-        <p className="truncate text-sm text-muted-foreground">
+    <li className="flex items-center justify-between gap-3.5 rounded-3xl bg-card px-4 py-3.5 border border-border/70 shadow-xs transition-all hover:border-primary/30">
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-heading font-bold text-foreground text-sm">{titre(tache)}</p>
+        <p className="truncate text-xs text-muted-foreground mt-0.5">
           {SERVICE_LABELS[tache.service]} · {anciennete(tache.createdAt)}
           {montant ? ` · ${formatPrixFcfa(montant)}` : ''}
         </p>
       </div>
       <span
         className={cn(
-          'shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold',
-          reussie ? 'bg-secondary text-foreground' : 'bg-destructive/10 text-destructive',
+          'shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold',
+          reussie
+            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+            : 'bg-destructive/10 text-destructive border border-destructive/20',
         )}
       >
         {libelleStatut(tache.service, tache.statut)}

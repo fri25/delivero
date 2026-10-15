@@ -58,6 +58,7 @@ export function ColisFormPage() {
   const [adresseEnlevementId, setAdresseEnlevementId] = useState<string | null>(modele?.adresseEnlevementId ?? null);
   const [zoneId, setZoneId] = useState<string | null>(modele?.zoneId ?? null);
   const [taille, setTaille] = useState<TailleColis>(modele?.taille ?? 'petit');
+  const [nature, setNature] = useState(modele?.nature ?? '');
   const [destinataireNom, setDestinataireNom] = useState(modele?.destinataireNom ?? '');
   const [destinataireTelephone, setDestinataireTelephone] = useState(modele?.destinataireTelephone ?? '');
   const [adresseLivraison, setAdresseLivraison] = useState(modele?.adresseLivraison ?? '');
@@ -133,6 +134,7 @@ export function ColisFormPage() {
   const envoyer = () => {
     const champsCommuns = {
       taille,
+      nature: nature.trim() || undefined,
       destinataireNom: destinataireNom.trim(),
       destinataireTelephone: destinataireTelephone.trim(),
       quartierLivraisonId: quartierLivraison.quartierId,
@@ -170,6 +172,7 @@ export function ColisFormPage() {
         adresseEnlevementId,
         zoneId: effectiveZoneId,
         taille,
+        nature: nature.trim() || undefined,
         destinataireNom: destinataireNom.trim(),
         destinataireTelephone: destinataireTelephone.trim(),
         quartierLivraisonId: quartierLivraison.quartierId,
@@ -268,6 +271,31 @@ export function ColisFormPage() {
 
           <FormStep numero={2} titre="Votre colis" aide="La taille aide le livreur à prévoir le transport.">
             <ChoiceCards name="Taille du colis" value={taille} options={TAILLES} onChange={setTaille} />
+
+            <div className="space-y-1.5">
+              <Label htmlFor="natureColis">
+                Nature ou contenu du colis <span className="font-normal text-muted-foreground">(facultatif)</span>
+              </Label>
+              <Input
+                id="natureColis"
+                placeholder="Ex. Documents, vêtements, nourriture, électronique..."
+                value={nature}
+                onChange={(event) => setNature(event.target.value)}
+                maxLength={120}
+              />
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {['Documents', 'Vêtements', 'Nourriture', 'Électronique', 'Cadeau'].map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => setNature(suggestion)}
+                    className="rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground hover:bg-secondary/80"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <label className="flex min-h-11 items-center gap-3 rounded-xl border border-border px-3 text-sm">
               <Checkbox checked={fragile} onCheckedChange={(checked) => setFragile(checked === true)} />

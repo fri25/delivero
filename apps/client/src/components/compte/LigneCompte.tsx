@@ -17,17 +17,17 @@ export function LigneCompte({
 }) {
   const contenu = (
     <>
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-2xs">
         <Icon className="size-5" aria-hidden="true" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block font-medium">{label}</span>
-        <span className="block truncate text-sm text-muted-foreground">{detail}</span>
+        <span className="block font-heading text-sm font-semibold text-foreground">{label}</span>
+        <span className="block truncate text-xs text-muted-foreground mt-0.5">{detail}</span>
       </span>
-      <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <ChevronRight className="size-4.5 shrink-0 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
     </>
   );
-  const classe = 'flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/60';
+  const classe = 'group flex min-h-16 items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-secondary/50';
 
   return (
     <li>

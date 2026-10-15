@@ -32,30 +32,58 @@ export function StatutHero({
     <section
       aria-live="polite"
       className={cn(
-        'flex items-start gap-3 rounded-2xl p-4 sm:p-5',
-        ton === 'actif' && 'bg-primary text-primary-foreground',
-        ton === 'paiement' && 'bg-brand-navy text-white',
-        ton === 'succes' && 'bg-secondary text-foreground',
-        ton === 'echec' && 'bg-muted text-foreground',
+        'relative overflow-hidden rounded-3xl p-5 sm:p-6 shadow-sm border transition-all duration-300',
+        ton === 'actif' &&
+          'bg-gradient-to-r from-brand-navy via-[#0c2f66] to-brand-blue text-white border-white/10 shadow-lg shadow-primary/10',
+        ton === 'paiement' &&
+          'bg-gradient-to-r from-brand-navy to-[#002b66] text-white border-white/10 shadow-md',
+        ton === 'succes' &&
+          'bg-emerald-500/10 text-emerald-950 dark:text-emerald-50 border-emerald-500/20',
+        ton === 'echec' &&
+          'bg-destructive/10 text-destructive border-destructive/20',
       )}
     >
-      <Icone
-        className={cn('mt-0.5 size-6 shrink-0', ton === 'succes' && 'text-primary', ton === 'echec' && 'text-destructive')}
-        aria-hidden="true"
-      />
-      <div className="min-w-0">
-        <p className="font-heading text-lg leading-tight font-semibold sm:text-xl">{titre}</p>
-        {message && (
-          <p className={cn('mt-1 text-sm', ton === 'actif' || ton === 'paiement' ? 'text-white/85' : 'text-muted-foreground')}>
-            {message}
-          </p>
-        )}
-        {motif && (
-          <p className="mt-2 flex items-start gap-1.5 text-sm">
-            <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-            <span>Motif : {motif}</span>
-          </p>
-        )}
+      {ton === 'actif' && (
+        <div className="absolute -right-10 -top-10 size-40 rounded-full bg-brand-light/15 blur-2xl pointer-events-none" />
+      )}
+      <div className="relative z-10 flex items-start gap-4">
+        <div
+          className={cn(
+            'flex size-11 shrink-0 items-center justify-center rounded-2xl shadow-xs',
+            ton === 'actif' && 'bg-white/15 text-white backdrop-blur-md',
+            ton === 'paiement' && 'bg-brand-light/20 text-brand-light backdrop-blur-md',
+            ton === 'succes' && 'bg-emerald-500 text-white',
+            ton === 'echec' && 'bg-destructive text-destructive-foreground',
+          )}
+        >
+          <Icone className="size-5.5" aria-hidden="true" />
+        </div>
+        <div className="min-w-0 flex-1 pt-0.5">
+          <div className="flex items-center gap-2">
+            <h2 className="font-heading text-lg font-bold leading-snug sm:text-xl">{titre}</h2>
+            {ton === 'actif' && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-md">
+                <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" /> En cours
+              </span>
+            )}
+          </div>
+          {message && (
+            <p
+              className={cn(
+                'mt-1.5 text-xs sm:text-sm leading-relaxed',
+                ton === 'actif' || ton === 'paiement' ? 'text-white/85' : 'text-muted-foreground',
+              )}
+            >
+              {message}
+            </p>
+          )}
+          {motif && (
+            <div className="mt-3 flex items-start gap-2 rounded-xl bg-destructive/15 p-2.5 text-xs sm:text-sm">
+              <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <span>Motif : {motif}</span>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );

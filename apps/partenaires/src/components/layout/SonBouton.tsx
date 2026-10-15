@@ -13,10 +13,11 @@ export function SonBouton() {
   return (
     <Button
       size="sm"
-      className="gap-1.5 bg-brand-blue text-white hover:bg-brand-blue/85"
+      className="relative gap-1.5 rounded-full bg-brand-blue/90 hover:bg-brand-blue text-white shadow-sm ring-2 ring-cyan-400/50 animate-pulse text-xs sm:text-sm h-8.5 sm:h-9 active:scale-95"
       onClick={deverrouillerSon}
+      title="Activer les alertes sonores de commande"
     >
-      <BellRing className="size-4" aria-hidden="true" />
+      <BellRing className="size-4 animate-bounce" aria-hidden="true" />
       <span className="sm:hidden">Son</span>
       <span className="hidden sm:inline">Activer le son</span>
     </Button>

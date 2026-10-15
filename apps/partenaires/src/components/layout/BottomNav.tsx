@@ -17,9 +17,9 @@ export function BottomNav({ aAccepter }: { aAccepter: number }) {
   return (
     <nav
       aria-label="Navigation principale"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-card/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl shadow-lg"
     >
-      <ul className="mx-auto grid max-w-md grid-cols-4">
+      <ul className="mx-auto grid max-w-lg grid-cols-4 px-2 py-1">
         {ONGLETS.map(({ to, label, icon: Icon, end }) => (
           <li key={to}>
             <NavLink
@@ -27,22 +27,25 @@ export function BottomNav({ aAccepter }: { aAccepter: number }) {
               end={end}
               className={({ isActive }) =>
                 cn(
-                  'flex min-h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors',
-                  isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+                  'flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl py-1 text-[11px] font-medium transition-all active:scale-95',
+                  isActive
+                    ? 'bg-primary/10 text-primary font-bold shadow-2xs'
+                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                 )
               }
             >
               {({ isActive }) => (
                 <>
                   <span className="relative">
-                    <Icon className={cn('size-6', isActive && 'stroke-[2.4]')} aria-hidden="true" />
+                    <Icon className={cn('size-5 sm:size-5.5 transition-transform', isActive && 'stroke-[2.5] scale-110')} aria-hidden="true" />
                     {to === '/' && aAccepter > 0 && (
-                      <span className="absolute -top-1.5 -right-2.5 flex min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-bold text-white">
-                        {aAccepter}
+                      <span className="absolute -top-1.5 -right-3 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white shadow-xs">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-50" />
+                        <span className="relative">{aAccepter}</span>
                       </span>
                     )}
                   </span>
-                  {label}
+                  <span className="leading-tight tracking-tight">{label}</span>
                   {to === '/' && aAccepter > 0 && <span className="sr-only">({aAccepter} à accepter)</span>}
                 </>
               )}

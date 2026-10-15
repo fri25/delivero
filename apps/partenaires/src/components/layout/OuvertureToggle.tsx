@@ -19,8 +19,10 @@ export function OuvertureToggle() {
       variant="outline"
       aria-pressed={ouvert}
       className={cn(
-        'gap-2 border-white/25 bg-white/10 text-white hover:bg-white/20 hover:text-white',
-        ouvert && 'border-success bg-success hover:bg-success/85',
+        'relative gap-2 rounded-full px-3.5 font-medium transition-all text-xs sm:text-sm h-8.5 sm:h-9 active:scale-95 shadow-xs',
+        ouvert
+          ? 'border-emerald-500/40 bg-emerald-600/90 hover:bg-emerald-600 text-white ring-1 ring-emerald-400/40'
+          : 'border-white/20 bg-white/10 hover:bg-white/15 text-white/90',
       )}
       disabled={toggleOuverture.isPending}
       onClick={() => {
@@ -33,8 +35,19 @@ export function OuvertureToggle() {
         });
       }}
     >
-      <span className={cn('size-2 rounded-full', ouvert ? 'bg-white' : 'bg-white/50')} aria-hidden="true" />
-      {ouvert ? 'Ouvert' : 'Fermé'}
+      <span className="relative flex size-2 items-center justify-center">
+        {ouvert && (
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+        )}
+        <span
+          className={cn(
+            'relative inline-flex size-2 rounded-full',
+            ouvert ? 'bg-white' : 'bg-amber-400',
+          )}
+          aria-hidden="true"
+        />
+      </span>
+      <span>{ouvert ? 'Ouvert' : 'Fermé'}</span>
     </Button>
   );
 }

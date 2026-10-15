@@ -1,32 +1,33 @@
-# API des avis client
+# API des avis client (Remplacée par Notations)
 
-Les avis sont attachés à une commande et ne sont disponibles qu'au client qui
-l'a créée. Les routes exigent un jeton client.
+> [!NOTE]
+> Le système d'avis (`apps/api/src/avis/`, tables `avis_partenaires` et `avis_livreurs`) a été supprimé au profit du système unifié de notations (`apps/api/src/notations/`, table `notations`, module `NotationsModule`).
+> Cela résout le conflit F-CLI-08 où les deux systèmes recalculaient et écrasaient mutuellement `noteMoyenne`.
 
-## `GET /commandes/:commandeId/avis`
+## Endpoints actuels de notation (F-CLI-08)
 
-Retourne les cibles évaluables pour cette commande : partenaire (Repas) et/ou
-livreur (si affecté), avec le nom, l'éligibilité et l'avis déjà envoyé.
+Le système de notation officiel est exposé sous le préfixe `/notations` :
 
-## `POST /commandes/:commandeId/avis`
+### `POST /notations/commandes/:commandeId`
 
 Corps JSON :
-
 ```json
 {
-  "cible": "partenaire",
-  "note": 5,
-  "commentaire": "Livraison rapide et repas bien préparé."
+  "notes": [
+    {
+      "cible": "partenaire",
+      "note": 5,
+      "commentaire": "Repas délicieux !"
+    },
+    {
+      "cible": "livreur",
+      "note": 5,
+      "commentaire": "Livraison rapide."
+    }
+  ]
 }
 ```
 
-`cible` vaut `partenaire` ou `livreur`. La note est un entier de 1 à 5 ; le
-commentaire est facultatif et limité à 500 caractères. Le service doit être
-terminé et la cible doit être associée à la commande. La base impose un seul avis
-par commande et par cible ; une tentative répétée reçoit un conflit HTTP 409.
-La moyenne de la cible est recalculée à chaque avis accepté.
-
-Les commandes Repas permettent d'évaluer le restaurant et, lorsqu'un livreur
-leur est affecté, ce livreur. Les commandes Colis et Courses express permettent
-d'évaluer le livreur affecté. Aucun avis n'est possible avant la fin de la
-prestation.
+- Accessible aux clients connectés ainsi qu'au suivi invité (`/invite/commandes/noter`).
+- Une seule note par commande et par cible (`partenaire` pour Repas, `livreur` pour tous les services livrés).
+- Recalcule la `noteMoyenne` officielle sur les tables `partenaires` et `livreurs`.

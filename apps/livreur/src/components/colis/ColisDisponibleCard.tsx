@@ -13,7 +13,7 @@ export function ColisDisponibleCard({ commande }: { commande: CommandeColis }) {
       <ColisInfo commande={commande} />
       <Button
         size="lg"
-        className="w-full"
+        className="w-full rounded-xl font-bold shadow-md shadow-primary/20 transition-all active:scale-[0.99]"
         disabled={prendreEnCharge.isPending}
         onClick={() => {
           prendreEnCharge.mutate(commande.id, {
@@ -30,7 +30,7 @@ export function ColisDisponibleCard({ commande }: { commande: CommandeColis }) {
           });
         }}
       >
-        Prendre ce colis
+        {prendreEnCharge.isPending ? 'Prise en charge...' : 'Prendre ce colis'}
       </Button>
     </div>
   );

@@ -124,7 +124,7 @@ export function ColisOrderDetailPage() {
         onNoter={(notes, callbacks) => noter.mutate({ commandeId: commande.commande.id, notes }, callbacks)}
       />
 
-      {/* F-CLI-22 : preuve de remise (code obligatoire à la livraison, RG-07). */}
+      {/* F-CLI-22 : preuve de remise (code obligatoire à la livraison, RG-07 + photo de remise). */}
       {commande.statut === 'livre' && (
         <CarteDetail titre="Preuve de remise">
           <p className="text-sm text-muted-foreground">Remis le {dateRemise}.</p>
@@ -140,6 +140,26 @@ export function ColisOrderDetailPage() {
               </div>
             )}
           </div>
+          {commande.photoPreuveUrl && (
+            <div className="mt-3 rounded-xl bg-secondary/40 p-3">
+              <p className="text-xs font-medium text-muted-foreground">Photo de preuve de livraison</p>
+              <a
+                href={commande.photoPreuveUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="group mt-2 inline-block"
+              >
+                <img
+                  src={miniature(commande.photoPreuveUrl, 400)}
+                  alt="Preuve de livraison"
+                  className="max-h-48 rounded-lg object-cover ring-1 ring-border group-hover:ring-foreground/40 transition"
+                />
+                <span className="mt-1 block text-xs text-brand-blue group-hover:underline">
+                  Voir en grand format
+                </span>
+              </a>
+            </div>
+          )}
         </CarteDetail>
       )}
 
@@ -148,6 +168,12 @@ export function ColisOrderDetailPage() {
         action={commande.fragile ? <Badge variant="outline">Fragile</Badge> : undefined}
       >
         <dl className="space-y-3 text-sm">
+          {commande.nature && (
+            <div>
+              <dt className="text-xs text-muted-foreground">Nature du colis</dt>
+              <dd className="mt-0.5 font-medium">{commande.nature}</dd>
+            </div>
+          )}
           <div>
             <dt className="text-xs text-muted-foreground">Enlèvement</dt>
             <dd className="mt-0.5">{commande.adresseEnlevement.pointDeRepere}</dd>
@@ -191,6 +217,32 @@ export function ColisOrderDetailPage() {
               className="size-24 rounded-xl object-cover ring-1 ring-foreground/10"
             />
           </a>
+        )}
+
+        {(commande.photoEnlevementUrl || commande.etatEnlevement) && (
+          <div className="mt-4 rounded-xl bg-secondary/40 p-3 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Constat d’enlèvement par le livreur</p>
+            {commande.etatEnlevement && (
+              <p className="text-xs font-semibold">{commande.etatEnlevement}</p>
+            )}
+            {commande.photoEnlevementUrl && (
+              <a
+                href={commande.photoEnlevementUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="group inline-block"
+              >
+                <img
+                  src={miniature(commande.photoEnlevementUrl, 300)}
+                  alt="Photo à l’enlèvement"
+                  className="max-h-36 rounded-lg object-cover ring-1 ring-border group-hover:ring-foreground/40 transition"
+                />
+                <span className="mt-1 block text-xs text-brand-blue group-hover:underline">
+                  Voir la photo en plein format
+                </span>
+              </a>
+            )}
+          </div>
         )}
 
         <dl className="mt-3 space-y-1.5 border-t border-border pt-3 text-sm">

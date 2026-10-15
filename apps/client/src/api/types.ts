@@ -2,6 +2,7 @@ export interface User {
   id: string;
   telephone: string;
   nom: string;
+  email?: string | null;
   role: string;
 }
 
@@ -161,6 +162,8 @@ export interface CommandeColis {
   id: string;
   statut: StatutColis;
   taille: TailleColis;
+  /** F-CLI-16: description / nature du contenu du colis. */
+  nature: string | null;
   fragile: boolean;
   valeurDeclaree: string | null;
   montantContreRemboursement: string | null;
@@ -174,6 +177,12 @@ export interface CommandeColis {
   programmationAt: string | null;
   nomReceptionnaire: string | null;
   photoUrl: string | null;
+  /** F-CLI-22: photo de preuve de livraison prise par le livreur. */
+  photoPreuveUrl: string | null;
+  /** F-LIV-06: photo du colis prise par le livreur lors de la prise en charge. */
+  photoEnlevementUrl?: string | null;
+  /** F-LIV-06: constat / état du colis lors de l'enlèvement. */
+  etatEnlevement?: string | null;
   motif: string | null;
   /** Uniquement présent dans la réponse au client propriétaire (voir api-colis.md). */
   codeOtp?: string;
@@ -195,7 +204,11 @@ export interface SuiviColisPublic {
   id: string;
   statut: StatutColis;
   taille: TailleColis;
+  nature: string | null;
   fragile: boolean;
+  photoEnlevementUrl?: string | null;
+  etatEnlevement?: string | null;
+  photoPreuveUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }

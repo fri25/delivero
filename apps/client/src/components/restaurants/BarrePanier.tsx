@@ -1,4 +1,4 @@
-import { ShoppingCart } from 'lucide-react';
+import { ArrowRight, ShoppingBag, ShoppingCart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { formatPrixFcfa } from '@/lib/format';
@@ -14,34 +14,53 @@ export function BarrePanier({ items }: { items: CartItem[] }) {
 
   if (nombre === 0) {
     return (
-      <aside className="hidden rounded-2xl bg-card p-5 text-center ring-1 ring-foreground/10 lg:block">
-        <ShoppingCart className="mx-auto size-8 text-muted-foreground" aria-hidden="true" />
-        <p className="mt-2 font-semibold">Votre panier est vide</p>
-        <p className="text-sm text-muted-foreground">Ajoutez des plats avec le bouton +.</p>
+      <aside className="hidden rounded-3xl bg-card p-6 text-center border border-border/70 shadow-xs lg:block">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <ShoppingCart className="size-6" aria-hidden="true" />
+        </div>
+        <p className="mt-3 font-heading font-bold text-foreground">Votre panier est vide</p>
+        <p className="mt-1 text-xs text-muted-foreground">Ajoutez des plats avec le bouton +.</p>
       </aside>
     );
   }
 
   return (
     <>
-      <aside className="hidden space-y-4 rounded-2xl bg-card p-5 ring-1 ring-foreground/10 lg:block">
-        <h2 className="font-heading text-lg font-semibold">Votre panier</h2>
-        <ul className="space-y-2 text-sm">
+      <aside className="hidden space-y-4 rounded-3xl bg-card p-6 border border-border/70 shadow-sm lg:block">
+        <div className="flex items-center justify-between border-b border-border/60 pb-3">
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="size-5 text-primary" />
+            <h2 className="font-heading text-base font-bold text-foreground">Votre commande</h2>
+          </div>
+          <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
+            {nombre} article{nombre > 1 ? 's' : ''}
+          </span>
+        </div>
+
+        <ul className="divide-y divide-border/60 text-sm">
           {items.map((item) => (
-            <li key={item.platId} className="flex justify-between gap-3">
-              <span>
-                <span className="font-semibold text-primary">{item.quantite} ×</span> {item.nom}
+            <li key={item.platId} className="flex justify-between items-center gap-3 py-2.5 first:pt-0">
+              <span className="min-w-0 truncate">
+                <span className="font-bold text-primary mr-1.5">{item.quantite}×</span>
+                <span className="font-medium text-foreground">{item.nom}</span>
               </span>
-              <span className="shrink-0">{formatPrixFcfa(item.prixUnitaire * item.quantite)}</span>
+              <span className="shrink-0 font-semibold text-foreground">
+                {formatPrixFcfa(item.prixUnitaire * item.quantite)}
+              </span>
             </li>
           ))}
         </ul>
-        <div className="flex items-baseline justify-between border-t border-border pt-3">
+
+        <div className="flex items-baseline justify-between border-t border-border/70 pt-3">
           <span className="text-sm text-muted-foreground">Sous-total</span>
-          <span className="font-heading text-lg font-semibold">{formatPrixFcfa(sousTotal)}</span>
+          <span className="font-heading text-lg font-bold text-primary">{formatPrixFcfa(sousTotal)}</span>
         </div>
-        <Button asChild size="lg" className="w-full">
-          <Link to="/panier">Voir le panier et commander</Link>
+
+        <Button asChild size="lg" className="w-full rounded-xl shadow-md shadow-primary/20 font-semibold gap-2">
+          <Link to="/panier">
+            <span>Passer commande</span>
+            <ArrowRight className="size-4" />
+          </Link>
         </Button>
       </aside>
 
@@ -50,11 +69,18 @@ export function BarrePanier({ items }: { items: CartItem[] }) {
       <div className="fixed inset-x-0 bottom-0 z-30 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
         <Link
           to="/panier"
-          className="mx-auto flex h-14 max-w-2xl items-center justify-between gap-3 rounded-2xl bg-primary px-4 text-primary-foreground shadow-lg"
+          className="mx-auto flex h-14 max-w-xl items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-brand-navy via-brand-blue to-primary px-4 text-white shadow-xl shadow-brand-blue/20 backdrop-blur-xl border border-white/20 transition-all active:scale-[0.98]"
         >
-          <span className="flex size-8 items-center justify-center rounded-full bg-white/20 text-sm font-semibold">{nombre}</span>
-          <span className="font-semibold">Voir le panier</span>
-          <span className="font-semibold">{formatPrixFcfa(sousTotal)}</span>
+          <div className="flex items-center gap-2.5">
+            <span className="flex size-7 items-center justify-center rounded-full bg-white text-xs font-bold text-brand-navy shadow-xs">
+              {nombre}
+            </span>
+            <span className="font-heading font-semibold text-sm">Voir le panier</span>
+          </div>
+          <div className="flex items-center gap-2 font-heading font-bold text-sm">
+            <span>{formatPrixFcfa(sousTotal)}</span>
+            <ArrowRight className="size-4 text-white/80" />
+          </div>
         </Link>
       </div>
     </>

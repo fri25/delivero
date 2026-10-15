@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import type { TypeService } from '@prisma/client';
 import * as webpush from 'web-push';
 import { PrismaService } from '../prisma/prisma.service';
+import { CourrielService } from './courriel.service';
 import { JetonInviteService } from './jeton-invite.service';
 import { Messagerie } from './messagerie';
 import { notificationStatut, type Notification } from './messages-statut';
@@ -12,6 +13,7 @@ export interface ContactCommande {
   id: string;
   clientId: string | null;
   clientTelephoneInvite: string | null;
+  clientEmailInvite?: string | null;
 }
 
 export interface AbonnementPushInput {
@@ -23,7 +25,8 @@ export interface AbonnementPushInput {
  * F-CLI-09 / F-RES-01 alerts. Web Push first (PWA installed, permission
  * granted); WhatsApp/SMS whenever no push could be delivered — the fallback
  * is mandatory, not optional (local constraint: iOS push support is partial,
- * partners are poorly equipped).
+ * partners are poorly equipped). Email is sent whenever an email address is
+ * configured (user or guest order).
  *
  * Every public method is fire-and-forget for callers: a notification failure
  * must never fail the business action that triggered it.
@@ -38,6 +41,7 @@ export class NotificationsService implements OnModuleInit {
     private readonly messagerie: Messagerie,
     private readonly jetonInvite: JetonInviteService,
     private readonly config: ConfigService,
+    private readonly courriel: CourrielService,
   ) {}
 
   onModuleInit() {
@@ -113,9 +117,15 @@ export class NotificationsService implements OnModuleInit {
       commandeServiceId,
       statut,
     );
-    if (notification && commande.clientTelephoneInvite) {
+    if (
+      notification &&
+      (commande.clientTelephoneInvite || commande.clientEmailInvite)
+    ) {
       this.envoyerInviteEnArrierePlan(
-        commande.clientTelephoneInvite,
+        {
+          telephone: commande.clientTelephoneInvite,
+          email: commande.clientEmailInvite,
+        },
         commande.id,
         notification,
       );
@@ -123,15 +133,21 @@ export class NotificationsService implements OnModuleInit {
   }
 
   /** Right after a guest order: the link is the only way back to it. */
-  commandeInviteCreee(telephone: string, commandeId: string) {
-    this.envoyerInviteEnArrierePlan(telephone, commandeId, {
+  commandeInviteCreee(
+    contact: string | { telephone?: string | null; email?: string | null },
+    commandeId: string,
+  ) {
+    this.envoyerInviteEnArrierePlan(contact, commandeId, {
       titre: 'Commande enregistrée',
       message: 'Payez et suivez votre commande ici',
     });
   }
 
-  paiementRecuInvite(telephone: string, commandeId: string) {
-    this.envoyerInviteEnArrierePlan(telephone, commandeId, {
+  paiementRecuInvite(
+    contact: string | { telephone?: string | null; email?: string | null },
+    commandeId: string,
+  ) {
+    this.envoyerInviteEnArrierePlan(contact, commandeId, {
       titre: 'Paiement reçu',
       message: 'Votre commande est transmise. Suivi',
     });
@@ -173,9 +189,15 @@ export class NotificationsService implements OnModuleInit {
     };
     if (commande.clientId) {
       this.envoyerEnArrierePlan(commande.clientId, notification);
-    } else if (commande.clientTelephoneInvite) {
+    } else if (
+      commande.clientTelephoneInvite ||
+      commande.clientEmailInvite
+    ) {
       this.envoyerInviteEnArrierePlan(
-        commande.clientTelephoneInvite,
+        {
+          telephone: commande.clientTelephoneInvite,
+          email: commande.clientEmailInvite,
+        },
         commande.id,
         notification,
       );
@@ -194,9 +216,15 @@ export class NotificationsService implements OnModuleInit {
     };
     if (commande.clientId) {
       this.envoyerEnArrierePlan(commande.clientId, notification);
-    } else if (commande.clientTelephoneInvite) {
+    } else if (
+      commande.clientTelephoneInvite ||
+      commande.clientEmailInvite
+    ) {
       this.envoyerInviteEnArrierePlan(
-        commande.clientTelephoneInvite,
+        {
+          telephone: commande.clientTelephoneInvite,
+          email: commande.clientEmailInvite,
+        },
         commande.id,
         notification,
       );
@@ -232,21 +260,59 @@ export class NotificationsService implements OnModuleInit {
     });
   }
 
-  // Guests have no account, hence no push: WhatsApp/SMS only, with the link.
+  // Guests have no account, hence no push: WhatsApp/SMS and/or email with the link.
   private envoyerInviteEnArrierePlan(
-    telephone: string,
+    contact: string | { telephone?: string | null; email?: string | null },
     commandeId: string,
     notification: Notification,
   ) {
-    const texte = `ChapExpress — ${notification.titre} : ${notification.message} ${this.jetonInvite.lien(commandeId)}`;
-    void this.messagerie
-      .envoyer(telephone, texte)
-      .catch((error: unknown) =>
-        this.logger.error(
-          `Notification invité non envoyée (${commandeId})`,
-          error,
-        ),
-      );
+    const telephone = typeof contact === 'string' ? contact : contact.telephone;
+    const email = typeof contact === 'object' ? contact.email : undefined;
+    const lien = this.jetonInvite.lien(commandeId);
+
+    if (telephone) {
+      const texte = `ChapExpress — ${notification.titre} : ${notification.message} ${lien}`;
+      void this.messagerie
+        .envoyer(telephone, texte)
+        .catch((error: unknown) =>
+          this.logger.error(
+            `Notification invité non envoyée (${commandeId})`,
+            error,
+          ),
+        );
+    }
+
+    if (email) {
+      const texteCourriel = `${notification.message}\n\nSuivi de votre commande :\n${lien}`;
+      const htmlCourriel = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b;">
+          <h2 style="color: #0f766e;">ChapExpress — ${notification.titre}</h2>
+          <p style="font-size: 16px; line-height: 1.5;">${notification.message}</p>
+          <div style="margin: 24px 0;">
+            <a href="${lien}" style="background-color: #0d9488; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; display: inline-block;">
+              Suivre ma commande
+            </a>
+          </div>
+          <p style="font-size: 13px; color: #64748b;">
+            Si le bouton ne fonctionne pas, copiez ce lien :<br/>
+            <a href="${lien}" style="color: #0d9488;">${lien}</a>
+          </p>
+        </div>
+      `;
+      void this.courriel
+        .envoyer({
+          a: email,
+          objet: `ChapExpress — ${notification.titre}`,
+          texte: texteCourriel,
+          html: htmlCourriel,
+        })
+        .catch((error: unknown) =>
+          this.logger.error(
+            `Courriel invité non envoyé (${commandeId})`,
+            error,
+          ),
+        );
+    }
   }
 
   private envoyerEnArrierePlan(userId: string, notification: Notification) {
@@ -256,18 +322,58 @@ export class NotificationsService implements OnModuleInit {
   }
 
   private async notifier(userId: string, notification: Notification) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { telephone: true, email: true },
+    });
+    if (!user) {
+      return;
+    }
+
+    if (user.email) {
+      const baseUrl = this.config.get<string>(
+        'CLIENT_URL',
+        'http://localhost:5173',
+      );
+      const lien = notification.url
+        ? (notification.url.startsWith('http')
+            ? notification.url
+            : `${baseUrl}${notification.url}`)
+        : undefined;
+      const texteCourriel = lien
+        ? `${notification.message}\n\nConsulter : ${lien}`
+        : notification.message;
+      const boutonHtml = lien
+        ? `<div style="margin: 24px 0;">
+             <a href="${lien}" style="background-color: #0d9488; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; display: inline-block;">
+               Voir la commande
+             </a>
+           </div>`
+        : '';
+      const htmlCourriel = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b;">
+          <h2 style="color: #0f766e;">ChapExpress — ${notification.titre}</h2>
+          <p style="font-size: 16px; line-height: 1.5;">${notification.message}</p>
+          ${boutonHtml}
+        </div>
+      `;
+      void this.courriel
+        .envoyer({
+          a: user.email,
+          objet: `ChapExpress — ${notification.titre}`,
+          texte: texteCourriel,
+          html: htmlCourriel,
+        })
+        .catch((error: unknown) =>
+          this.logger.error(`Courriel non envoyé à ${user.email}`, error),
+        );
+    }
+
     const recuParPush = await this.envoyerPush(userId, notification);
     if (recuParPush) {
       return;
     }
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { telephone: true },
-    });
-    if (!user) {
-      return;
-    }
     await this.messagerie.envoyer(
       user.telephone,
       `ChapExpress — ${notification.titre} : ${notification.message}`,

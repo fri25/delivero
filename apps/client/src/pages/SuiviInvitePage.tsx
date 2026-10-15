@@ -128,6 +128,43 @@ export function SuiviInvitePage() {
         </div>
       )}
 
+      {suivi.typeService === 'colis' && (suivi.commande.photoEnlevementUrl || suivi.commande.etatEnlevement) && (
+        <div className="space-y-2 rounded-lg border border-border bg-card p-3">
+          <p className="text-sm font-semibold">Photo lors de la prise en charge</p>
+          {suivi.commande.etatEnlevement && (
+            <p className="text-xs text-muted-foreground">Constat : {suivi.commande.etatEnlevement}</p>
+          )}
+          {suivi.commande.photoEnlevementUrl && (
+            <a href={suivi.commande.photoEnlevementUrl} target="_blank" rel="noreferrer" className="block">
+              <img
+                src={suivi.commande.photoEnlevementUrl}
+                alt="Prise en charge du colis"
+                className="max-h-48 rounded-lg object-cover ring-1 ring-border hover:opacity-90"
+              />
+              <span className="mt-1 block text-xs text-brand-blue hover:underline">
+                Voir la photo en plein format
+              </span>
+            </a>
+          )}
+        </div>
+      )}
+
+      {suivi.typeService === 'colis' && suivi.commande.photoPreuveUrl && (
+        <div className="space-y-2 rounded-lg border border-border bg-card p-3">
+          <p className="text-sm font-semibold">Photo de preuve de livraison</p>
+          <a href={suivi.commande.photoPreuveUrl} target="_blank" rel="noreferrer" className="block">
+            <img
+              src={suivi.commande.photoPreuveUrl}
+              alt="Preuve de livraison"
+              className="max-h-48 rounded-lg object-cover ring-1 ring-border hover:opacity-90"
+            />
+            <span className="mt-1 block text-xs text-brand-blue hover:underline">
+              Voir la photo en plein format
+            </span>
+          </a>
+        </div>
+      )}
+
       <div className="flex items-baseline justify-between border-t border-border pt-3">
         <span className="font-semibold">Total</span>
         <span className="font-heading text-xl font-semibold">

@@ -2,7 +2,6 @@ import { EMPLETTES_ACTIF, ESPECES_ACTIF } from '@delivero/config/perimetre-v1';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,51 +30,54 @@ function RecapJournalierCard() {
   const totalCourses = Object.values(recap.parService).reduce((a, b) => a + b, 0);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Aujourd'hui</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <div className="rounded-3xl border border-border/70 bg-card p-5 sm:p-6 shadow-xs space-y-4">
+      <div className="flex items-center justify-between border-b border-border/50 pb-3">
+        <h2 className="font-heading text-base font-bold text-foreground">Activité du jour</h2>
+        <span className="text-xs text-muted-foreground font-medium">Aujourd'hui</span>
+      </div>
+
+      <div className="space-y-4">
         {totalCourses === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucune course livrée aujourd'hui.</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">Aucune course livrée aujourd'hui.</p>
         ) : (
-          <div className="flex flex-wrap gap-4 text-sm">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {(Object.entries(recap.parService) as [TypeService, number][])
               .filter(([, nombre]) => nombre > 0)
               .map(([service, nombre]) => (
-                <div key={service}>
-                  <span className="text-lg font-semibold">{nombre}</span>{' '}
-                  <span className="text-muted-foreground">{LABELS_SERVICE[service]}</span>
+                <div key={service} className="rounded-2xl bg-secondary/40 border border-border/50 p-3 text-center">
+                  <span className="font-heading text-2xl font-bold text-primary block">{nombre}</span>
+                  <span className="text-xs font-semibold text-muted-foreground mt-0.5 block">{LABELS_SERVICE[service]}</span>
                 </div>
               ))}
           </div>
         )}
+
         {(ESPECES_ACTIF || EMPLETTES_ACTIF || recap.encaisseAujourdhui > 0) && (
-          <div className="flex flex-wrap gap-6 border-t border-border pt-3 text-sm">
-            {/* Hors V1, pas d'espèces : l'encaissement reste nul, sauf pour un
-                contre-remboursement Colis créé avant le retrait. */}
+          <div className="flex flex-wrap gap-4 border-t border-border/50 pt-3 text-xs sm:text-sm">
             {(ESPECES_ACTIF || recap.encaisseAujourdhui > 0) && (
-              <div>
-                <div className="text-muted-foreground">Encaissé aujourd'hui</div>
-                <div className="font-medium">{formatPrixFcfa(recap.encaisseAujourdhui)}</div>
+              <div className="rounded-2xl bg-amber-500/10 border border-amber-500/20 px-3.5 py-2">
+                <span className="text-xs text-amber-800 dark:text-amber-300 font-medium block">Encaissé aujourd'hui</span>
+                <span className="font-heading text-base font-extrabold text-amber-950 dark:text-amber-100 block">
+                  {formatPrixFcfa(recap.encaisseAujourdhui)}
+                </span>
               </div>
             )}
-            {/* Seul Emplettes génère une avance : hors V1, ce montant est
-                toujours nul (voir packages/config/perimetre-v1.ts). */}
             {EMPLETTES_ACTIF && (
-              <div>
-                <div className="text-muted-foreground">Avancé aujourd'hui (Emplettes)</div>
-                <div className="font-medium">{formatPrixFcfa(recap.avanceAujourdhui)}</div>
+              <div className="rounded-2xl bg-secondary/60 border border-border/60 px-3.5 py-2">
+                <span className="text-xs text-muted-foreground font-medium block">Avancé aujourd'hui (Emplettes)</span>
+                <span className="font-heading text-base font-bold text-foreground block">
+                  {formatPrixFcfa(recap.avanceAujourdhui)}
+                </span>
               </div>
             )}
           </div>
         )}
-        <p className="text-xs text-muted-foreground">
-          Ne montre pas vos gains : le mode de rémunération par course n'est pas encore défini
-          par ChapExpress.
-        </p>
-      </CardContent>
-    </Card>
+
+        <div className="rounded-2xl bg-primary/5 border border-primary/15 p-3 text-xs text-muted-foreground leading-relaxed">
+          ℹ️ La rémunération par course est masquée pour cette version (non définie dans le périmètre actuel).
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -92,28 +94,26 @@ function SoldeCard({
   const proche = ratio >= 0.8;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{titre}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <p className="text-2xl font-semibold">{formatPrixFcfa(montant)}</p>
-        <p className="text-sm text-muted-foreground">
-          Plafond : {formatPrixFcfa(plafond)}
+    <div className="rounded-3xl border border-border/70 bg-card p-5 sm:p-6 shadow-xs space-y-3">
+      <h2 className="font-heading text-sm font-bold text-muted-foreground uppercase tracking-wider">{titre}</h2>
+      <div className="space-y-2">
+        <p className="font-heading text-2xl font-bold text-foreground">{formatPrixFcfa(montant)}</p>
+        <p className="text-xs text-muted-foreground font-medium">
+          Plafond autorisé : {formatPrixFcfa(plafond)}
         </p>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-secondary">
           <div
-            className={proche ? 'h-full bg-destructive' : 'h-full bg-success'}
+            className={proche ? 'h-full bg-destructive transition-all' : 'h-full bg-emerald-500 transition-all'}
             style={{ width: `${ratio * 100}%` }}
           />
         </div>
         {proche && (
-          <p className="text-sm text-destructive">
-            Proche du plafond — régularisez avant de reprendre une course en espèces.
+          <p className="text-xs font-semibold text-destructive mt-1">
+            ⚠️ Proche du plafond — effectuez un versement avant de reprendre des courses en espèces.
           </p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -122,11 +122,11 @@ function ClotureCaisseForm() {
   const [montantDeclare, setMontantDeclare] = useState('');
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Clôturer ma caisse du jour</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="rounded-3xl border border-border/70 bg-card p-5 sm:p-6 shadow-xs space-y-4">
+      <div className="border-b border-border/50 pb-3">
+        <h2 className="font-heading text-base font-bold text-foreground">Clôturer ma caisse du jour</h2>
+      </div>
+      <div>
         <form
           className="flex flex-wrap items-end gap-3"
           onSubmit={(event) => {
@@ -145,46 +145,48 @@ function ClotureCaisseForm() {
             });
           }}
         >
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 flex-1 min-w-[200px]">
             <Label htmlFor="montant-declare">Montant en espèces compté (FCFA)</Label>
             <Input
               id="montant-declare"
               type="number"
               min="0"
-              className="w-40"
+              className="rounded-xl"
               value={montantDeclare}
               onChange={(e) => setMontantDeclare(e.target.value)}
               required
             />
           </div>
-          <Button type="submit" size="sm" disabled={cloturerCaisse.isPending}>
-            Clôturer
+          <Button type="submit" size="default" className="rounded-xl font-bold shadow-md shadow-primary/20" disabled={cloturerCaisse.isPending}>
+            {cloturerCaisse.isPending ? 'En cours...' : 'Clôturer la caisse'}
           </Button>
         </form>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-2.5 text-xs text-muted-foreground leading-relaxed">
           Une seule clôture par jour. Le montant théorique (encaissements non encore clôturés)
           est comparé à ce que vous comptez ; l'écart est transmis au dispatcher.
         </p>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
 function ClotureRow({ cloture }: { cloture: ClotureCaisse }) {
   const ecart = Number(cloture.ecart);
   return (
-    <tr className="border-t border-border">
-      <td className="px-3 py-2">{formatDateHeure(cloture.createdAt)}</td>
-      <td className="px-3 py-2">{formatPrixFcfa(cloture.montantTheorique)}</td>
-      <td className="px-3 py-2">{formatPrixFcfa(cloture.montantDeclare)}</td>
-      <td className="px-3 py-2">
-        <span className={ecart === 0 ? '' : ecart > 0 ? 'text-success' : 'text-destructive'}>
+    <tr className="border-t border-border/60">
+      <td className="px-3.5 py-2.5 text-xs sm:text-sm font-medium">{formatDateHeure(cloture.createdAt)}</td>
+      <td className="px-3.5 py-2.5 text-xs sm:text-sm">{formatPrixFcfa(cloture.montantTheorique)}</td>
+      <td className="px-3.5 py-2.5 text-xs sm:text-sm font-bold text-foreground">{formatPrixFcfa(cloture.montantDeclare)}</td>
+      <td className="px-3.5 py-2.5 text-xs sm:text-sm font-bold">
+        <span className={ecart === 0 ? 'text-muted-foreground' : ecart > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}>
           {ecart > 0 ? '+' : ''}
           {formatPrixFcfa(cloture.ecart)}
         </span>
       </td>
-      <td className="px-3 py-2 text-muted-foreground">
-        {cloture.rapprocheeAt ? 'Rapprochée' : 'En attente'}
+      <td className="px-3.5 py-2.5 text-xs">
+        <span className={cloture.rapprocheeAt ? 'rounded-full bg-emerald-500/10 px-2 py-0.5 font-bold text-emerald-600 dark:text-emerald-400' : 'rounded-full bg-secondary px-2 py-0.5 text-muted-foreground'}>
+          {cloture.rapprocheeAt ? 'Rapprochée' : 'En attente'}
+        </span>
       </td>
     </tr>
   );
@@ -194,19 +196,19 @@ function HistoriqueClotures() {
   const { data: clotures, isPending } = useClotures();
 
   if (isPending) {
-    return <Skeleton className="h-24 w-full" />;
+    return <Skeleton className="h-24 w-full rounded-2xl" />;
   }
 
   if (!clotures || clotures.length === 0) {
     return ESPECES_ACTIF ? (
-      <p className="text-sm text-muted-foreground">Aucune clôture pour l'instant.</p>
+      <p className="text-xs sm:text-sm text-muted-foreground">Aucune clôture pour l'instant.</p>
     ) : null;
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl ring-1 ring-foreground/10">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
+    <div className="overflow-x-auto rounded-2xl border border-border/70 bg-card shadow-xs">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-secondary/40 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">
           <tr>
             <th className="px-3 py-2 font-medium">Date</th>
             <th className="px-3 py-2 font-medium">Théorique</th>
@@ -255,8 +257,8 @@ export function PortefeuillePage() {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h1 className="text-xl font-semibold">Mon portefeuille</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="font-heading text-2xl font-bold lg:text-3xl text-foreground">Mon portefeuille</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
           {EMPLETTES_ACTIF
             ? 'Avance en cours (Emplettes financées par vous) et solde en espèces à reverser à ChapExpress (Repas, Colis, Courses express, Emplettes).'
             : afficherCaisse

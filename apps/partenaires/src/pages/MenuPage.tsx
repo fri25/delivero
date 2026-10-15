@@ -28,19 +28,28 @@ export function MenuPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-heading text-xl font-semibold">Menu</h1>
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Menu du restaurant</h1>
           {plats && plats.length > 0 && (
-            <p className="text-sm text-muted-foreground">
-              {plats.length} plat{plats.length > 1 ? 's' : ''}
-              {enRupture > 0 && ` · ${enRupture} en rupture, invisible${enRupture > 1 ? 's' : ''} pour les clients`}
-            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                {plats.length} plat{plats.length > 1 ? 's' : ''} enregistré{plats.length > 1 ? 's' : ''}
+              </span>
+              {enRupture > 0 && (
+                <span className="inline-flex items-center rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                  {enRupture} en rupture (masqué{enRupture > 1 ? 's' : ''} aux clients)
+                </span>
+              )}
+            </div>
           )}
         </div>
         {!ajoutOuvert && (
-          <Button className="h-10 shrink-0 gap-1.5" onClick={() => setAjoutOuvert(true)}>
-            <Plus className="size-4" aria-hidden="true" />
+          <Button
+            className="h-10 shrink-0 gap-2 rounded-full bg-primary px-4 font-bold text-white shadow-sm hover:bg-primary/90 active:scale-95 transition-all"
+            onClick={() => setAjoutOuvert(true)}
+          >
+            <Plus className="size-4.5" aria-hidden="true" />
             Ajouter un plat
           </Button>
         )}
@@ -59,22 +68,39 @@ export function MenuPage() {
       {ajoutOuvert && <AjouterPlatForm onTermine={() => setAjoutOuvert(false)} />}
 
       {isPending ? (
-        <div className="space-y-3">
-          <Skeleton className="h-16 w-full rounded-2xl" />
-          <Skeleton className="h-16 w-full rounded-2xl" />
+        <div className="space-y-4">
+          <Skeleton className="h-20 w-full rounded-3xl" />
+          <Skeleton className="h-20 w-full rounded-3xl" />
+          <Skeleton className="h-20 w-full rounded-3xl" />
         </div>
       ) : groupes.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border px-6 py-12 text-center">
-          <p className="font-heading text-lg font-semibold">Votre menu est vide</p>
-          <p className="mt-1 text-sm text-muted-foreground">Ajoutez vos plats pour que les clients puissent commander.</p>
+        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border/80 bg-card/60 p-8 sm:p-12 text-center shadow-xs">
+          <p className="font-heading text-lg font-bold text-foreground">Votre carte est encore vide</p>
+          <p className="mt-1 text-sm text-muted-foreground max-w-sm">
+            Ajoutez vos spécialités et boissons pour que les clients puissent les commander en livraison.
+          </p>
+          {!ajoutOuvert && (
+            <Button
+              className="mt-4 gap-2 rounded-full font-bold"
+              onClick={() => setAjoutOuvert(true)}
+            >
+              <Plus className="size-4" />
+              Créer mon premier plat
+            </Button>
+          )}
         </div>
       ) : (
         groupes.map(([categorie, platsDuGroupe]) => (
-          <section key={categorie} className="space-y-2">
-            <h2 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-              {categorie} <span className="font-normal">({platsDuGroupe.length})</span>
-            </h2>
-            <ul className="grid gap-2 lg:grid-cols-2">
+          <section key={categorie} className="space-y-3">
+            <div className="flex items-center gap-2 border-b border-border/60 pb-2">
+              <h2 className="font-heading text-sm font-bold tracking-wider text-muted-foreground uppercase">
+                {categorie}
+              </h2>
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground tabular-nums">
+                {platsDuGroupe.length}
+              </span>
+            </div>
+            <ul className="grid gap-3 lg:grid-cols-2">
               {platsDuGroupe.map((plat) => (
                 <PlatRow key={plat.id} plat={plat} />
               ))}

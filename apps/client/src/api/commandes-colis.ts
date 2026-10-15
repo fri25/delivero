@@ -8,6 +8,7 @@ interface CreateCommandeColisInput {
   adresseEnlevementId: string;
   zoneId: string;
   taille: TailleColis;
+  nature?: string;
   destinataireNom: string;
   destinataireTelephone: string;
   /** Recipient's neighbourhood: sets the price (Q-28). */

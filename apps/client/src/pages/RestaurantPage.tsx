@@ -109,58 +109,60 @@ export function RestaurantPage() {
             <span
               className={
                 restaurant.statutOuverture
-                  ? 'inline-flex rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold'
-                  : 'inline-flex rounded-full bg-black/60 px-2.5 py-0.5 text-xs font-semibold'
+                  ? 'inline-flex items-center gap-1.5 rounded-full bg-emerald-500/90 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-md'
+                  : 'inline-flex items-center rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white/90 backdrop-blur-md'
               }
             >
+              {restaurant.statutOuverture && <span className="size-1.5 animate-pulse rounded-full bg-white" />}
               {restaurant.statutOuverture ? 'Ouvert' : 'Fermé'}
             </span>
-            <h1 className="font-heading mt-1.5 text-2xl font-semibold drop-shadow-sm md:text-3xl">{restaurant.nom}</h1>
-            {restaurant.description && <p className="mt-0.5 line-clamp-2 text-sm text-white/90">{restaurant.description}</p>}
+            <h1 className="font-heading mt-2 text-2xl font-bold drop-shadow-sm md:text-3xl text-white">{restaurant.nom}</h1>
+            {restaurant.description && <p className="mt-1 line-clamp-2 text-sm text-white/90 leading-relaxed">{restaurant.description}</p>}
           </div>
         </MediaFrame>
       </header>
 
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted-foreground md:mt-4">
+      <div className="mt-4 flex flex-wrap items-center gap-2 text-xs md:text-sm text-muted-foreground">
         {restaurant.noteMoyenne && (
-          <span className="inline-flex items-center gap-1 font-medium text-foreground">
-            <Star className="size-4 fill-primary text-primary" aria-hidden="true" />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 font-bold text-amber-600 dark:text-amber-400">
+            <Star className="size-3.5 fill-amber-400 text-amber-400" aria-hidden="true" />
             {restaurant.noteMoyenne}
           </span>
         )}
         {delai != null && (
-          <span className="inline-flex items-center gap-1">
-            <Clock className="size-4" aria-hidden="true" /> {delai} min de préparation
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/80 px-2.5 py-1 font-medium text-foreground">
+            <Clock className="size-3.5 text-primary" aria-hidden="true" /> {delai} min de préparation
           </span>
         )}
         {fourchette && (
-          <span className="inline-flex items-center gap-1">
-            <Bike className="size-4" aria-hidden="true" /> Livraison{' '}
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/80 px-2.5 py-1 font-medium text-foreground">
+            <Bike className="size-3.5 text-primary" aria-hidden="true" /> Livraison{' '}
             {fourchette.min === fourchette.max
               ? formatPrixFcfa(fourchette.min)
-              : `${new Intl.NumberFormat('fr-FR').format(fourchette.min)} à ${formatPrixFcfa(fourchette.max)}`}{' '}
-            selon votre quartier
+              : `${new Intl.NumberFormat('fr-FR').format(fourchette.min)} à ${formatPrixFcfa(fourchette.max)}`}
           </span>
         )}
-        {restaurant.horaires && <span>{restaurant.horaires}</span>}
+        {restaurant.horaires && (
+          <span className="rounded-full bg-secondary/60 px-2.5 py-1 text-xs">{restaurant.horaires}</span>
+        )}
       </div>
 
       {!restaurant.statutOuverture && (
-        <p className="mt-3 rounded-xl bg-muted px-3 py-2 text-sm">
+        <div className="mt-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 p-3.5 text-xs sm:text-sm text-amber-900 dark:text-amber-200">
           Ce restaurant est fermé pour le moment : vous pouvez consulter le menu, mais pas commander.
-        </p>
+        </div>
       )}
 
       {categories.length > 1 && (
         <nav
           aria-label="Catégories du menu"
-          className="sticky top-14 z-10 -mx-4 mt-4 flex gap-2 overflow-x-auto bg-background/95 px-4 py-2.5 backdrop-blur-md [scrollbar-width:none] md:top-16"
+          className="sticky top-14 z-10 -mx-4 mt-4 flex gap-2 overflow-x-auto bg-background/85 px-4 py-2.5 backdrop-blur-xl border-b border-border/40 [scrollbar-width:none] md:top-16"
         >
           {categories.map((categorie) => (
             <a
               key={categorie}
               href={`#${ancre(categorie)}`}
-              className="shrink-0 rounded-full bg-secondary px-3.5 py-2 text-sm font-medium whitespace-nowrap hover:bg-primary/10"
+              className="shrink-0 rounded-full border border-border/70 bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-2xs transition-all hover:border-primary/40 hover:bg-secondary active:scale-95 whitespace-nowrap"
             >
               {categorie}
             </a>
@@ -168,12 +170,20 @@ export function RestaurantPage() {
         </nav>
       )}
 
-      <div className="mt-2 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
+      <div className="mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
         <div className="space-y-6">
           {[...platsParCategorie.entries()].map(([categorie, plats]) => (
-            <section key={categorie} id={ancre(categorie)} className="scroll-mt-32">
-              <h2 className="font-heading text-lg font-semibold">{categorie}</h2>
-              <div className="divide-y divide-border">
+            <section
+              key={categorie}
+              id={ancre(categorie)}
+              className="scroll-mt-32 rounded-3xl bg-card border border-border/70 p-4 sm:p-5 shadow-2xs"
+            >
+              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border/50">
+                <span className="size-2 rounded-full bg-primary" />
+                <h2 className="font-heading text-base sm:text-lg font-bold text-foreground">{categorie}</h2>
+                <span className="text-xs text-muted-foreground ml-auto">{plats.length} choix</span>
+              </div>
+              <div className="divide-y divide-border/50">
                 {plats.map((plat) => (
                   <PlatCard
                     key={plat.id}

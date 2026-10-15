@@ -18,11 +18,14 @@ export function DemarrerCourse({ tache }: { tache: Tache }) {
   const mutation = { repas, colis, courses_express: express, emplettes }[tache.service];
 
   return (
-    <div className="space-y-2 border-b border-border bg-primary/5 p-4">
-      <p className="text-sm font-medium">Le dispatch vous a attribué cette course.</p>
+    <div className="space-y-2.5 border-b border-border/60 bg-primary/5 p-4 sm:p-5">
+      <div className="flex items-center gap-2">
+        <span className="size-2 rounded-full bg-primary animate-pulse" />
+        <p className="text-xs sm:text-sm font-bold text-foreground">Le dispatch vous a attribué cette course.</p>
+      </div>
       <Button
         size="lg"
-        className="w-full"
+        className="w-full rounded-xl font-bold shadow-md shadow-primary/20 transition-all active:scale-[0.99]"
         disabled={mutation.isPending}
         onClick={() =>
           mutation.mutate(tache.id, {
@@ -31,7 +34,7 @@ export function DemarrerCourse({ tache }: { tache: Tache }) {
           })
         }
       >
-        Démarrer cette course
+        {mutation.isPending ? 'Démarrage...' : 'Démarrer cette course'}
       </Button>
     </div>
   );

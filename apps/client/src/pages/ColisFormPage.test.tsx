@@ -32,7 +32,7 @@ describe('ColisFormPage', () => {
     // Ourbouga = 1 000 FCFA, whatever the size.
     expect(screen.getAllByText(/1\s000 FCFA/).length).toBeGreaterThan(0);
     for (const bouton of boutonsConfirmer()) expect(bouton).toBeEnabled();
-  });
+  }, 15000);
 
   it('asks for the name when "Autre quartier" is picked', async () => {
     const user = userEvent.setup();

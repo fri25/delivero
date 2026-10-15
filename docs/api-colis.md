@@ -57,6 +57,7 @@ Body :
   "adresseEnlevementId": "string",   // doit appartenir au client (carnet d'adresses)
   "zoneId": "string",                // zone de l'adresse d'enlèvement
   "taille": "petit | moyen | grand",
+  "nature": "string?",               // F-CLI-16 : nature ou contenu du colis
   "destinataireNom": "string",
   "destinataireTelephone": "string",
   "adresseLivraison": "string",
@@ -107,8 +108,15 @@ affectée (déjà pris, ou plus au statut `confirmee`). Statut →
 `livreur_en_route_enlevement`.
 
 ### `PATCH /commandes/colis/:id/recupere`
-Contrôle visuel à l'enlèvement, sans capture photo (aucun stockage de
-fichiers S3 intégré). Depuis `livreur_en_route_enlevement` uniquement.
+Contrôle visuel à l'enlèvement et capture photo facultative (stockage Cloudinary
+signé). Depuis `livreur_en_route_enlevement` uniquement.
+Body :
+```jsonc
+{
+  "photoEnlevementUrl": "string?",   // F-LIV-06 : photo Cloudinary du colis prise à la remise
+  "etatEnlevement": "string?"        // F-LIV-06 : constat visuel ("Emballage intact", etc.)
+}
+```
 `403` si le colis n'est pas attribué à ce livreur. `409` si mauvais statut.
 Statut → `colis_recupere`.
 
@@ -120,9 +128,10 @@ Depuis `colis_recupere` uniquement. Mêmes erreurs que ci-dessus. Statut →
 Body :
 ```jsonc
 {
-  "codeOtp": "string?",
+  "codeOtp": "string",
   "nomReceptionnaire": "string?",
-  "montantEncaisse": "number?"
+  "montantEncaisse": "number?",
+  "photoPreuveUrl": "string?"       // F-CLI-22 : photo Cloudinary de remise / preuve de livraison
 }
 ```
 Au moins un de `codeOtp` / `nomReceptionnaire` est obligatoire (RG-07,
@@ -155,14 +164,13 @@ devinable) — pas de token de suivi séparé.
 Réponse `200`, liste blanche volontaire (voir `SUIVI_PUBLIC_SELECT` dans
 `commandes-colis.service.ts`) :
 ```jsonc
-{ "id": "string", "statut": "StatutColis", "taille": "TailleColis", "fragile": "boolean", "createdAt": "string", "updatedAt": "string" }
+{ "id": "string", "statut": "StatutColis", "taille": "TailleColis", "nature": "string?", "fragile": "boolean", "photoPreuveUrl": "string?", "createdAt": "string", "updatedAt": "string" }
 ```
 Jamais : téléphone/adresse du client, adresse d'enlèvement, `codeOtp`,
 `montantContreRemboursement`. `404` si l'id n'existe pas.
 
 ## Hors périmètre de cette passe (backend)
 
-- Photo à l'enlèvement / à la remise (pas de stockage S3 intégré).
 - Validation manuelle des colis de valeur élevée (RG-11, seuil non arbitré,
   pas de back-office).
 - Reversement périodique à l'expéditeur (RG-04) et portefeuille livreur

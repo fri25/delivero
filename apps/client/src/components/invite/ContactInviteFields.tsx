@@ -38,6 +38,23 @@ export function ContactInviteFields({
           Vous recevrez le lien de suivi par WhatsApp ou SMS. Le livreur pourra vous appeler.
         </p>
       </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="invite-email">
+          Votre e-mail <span className="text-xs font-normal text-muted-foreground">(facultatif)</span>
+        </Label>
+        <Input
+          id="invite-email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          placeholder="exemple@domaine.bj"
+          value={value.email ?? ''}
+          onChange={(event) => onChange({ ...value, email: event.target.value })}
+        />
+        <p className="text-xs text-muted-foreground">
+          Pour recevoir le récapitulatif et le suivi de commande par e-mail.
+        </p>
+      </div>
     </div>
   );
 }

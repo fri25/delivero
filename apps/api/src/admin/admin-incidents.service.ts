@@ -41,6 +41,7 @@ const ANNULATION_SELECT = {
   typeService: true,
   clientId: true,
   clientTelephoneInvite: true,
+  clientEmailInvite: true,
   livreur: { select: { userId: true } },
   commandeRepas: {
     select: {
@@ -91,6 +92,7 @@ const REMBOURSEMENT_SELECT = {
       clientId: true,
       clientNomInvite: true,
       clientTelephoneInvite: true,
+      clientEmailInvite: true,
       client: { select: { nom: true, telephone: true } },
       motifAnnulation: true,
       annuleeAt: true,
@@ -249,7 +251,12 @@ export class AdminIncidentsService {
         montant: true,
         statut: true,
         commande: {
-          select: { id: true, clientId: true, clientTelephoneInvite: true },
+          select: {
+            id: true,
+            clientId: true,
+            clientTelephoneInvite: true,
+            clientEmailInvite: true,
+          },
         },
       },
     });

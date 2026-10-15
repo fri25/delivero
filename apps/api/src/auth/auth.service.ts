@@ -30,6 +30,16 @@ export class AuthService {
       throw new ConflictException('Ce numéro de téléphone est déjà utilisé.');
     }
 
+    const emailNormalise = dto.email?.trim().toLowerCase() || null;
+    if (emailNormalise) {
+      const existingEmail = await this.prisma.user.findUnique({
+        where: { email: emailNormalise },
+      });
+      if (existingEmail) {
+        throw new ConflictException('Cette adresse e-mail est déjà utilisée.');
+      }
+    }
+
     const clientRole = await this.prisma.role.findUniqueOrThrow({
       where: { name: CLIENT_ROLE_NAME },
     });
@@ -38,6 +48,7 @@ export class AuthService {
     const user = await this.prisma.user.create({
       data: {
         telephone: dto.telephone,
+        email: emailNormalise,
         nom: dto.nom,
         passwordHash,
         roleId: clientRole.id,
@@ -85,6 +96,7 @@ export class AuthService {
     return {
       id: user.id,
       telephone: user.telephone,
+      email: user.email ?? null,
       nom: user.nom,
       role: user.role.name,
     };

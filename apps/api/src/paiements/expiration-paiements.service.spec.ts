@@ -17,6 +17,7 @@ function commandeColis(referenceTransaction: string | null = null) {
     typeService: 'colis',
     clientId: 'u1',
     clientTelephoneInvite: null,
+    clientEmailInvite: null,
     paiement: { referenceTransaction },
     commandeRepas: null,
     commandeColis: { id: 'colis-1' },

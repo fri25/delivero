@@ -9,6 +9,7 @@ interface LoginInput {
 
 interface RegisterInput extends LoginInput {
   nom: string;
+  email?: string;
 }
 
 export function useLogin() {

@@ -30,9 +30,10 @@ const COMMANDE_SELECT = {
   clientId: true,
   clientNomInvite: true,
   clientTelephoneInvite: true,
+  clientEmailInvite: true,
   montantTotal: true,
   saisieParId: true,
-  client: { select: { nom: true, telephone: true } },
+  client: { select: { nom: true, telephone: true, email: true } },
   paiement: true,
   commandeRepas: {
     select: {
@@ -420,11 +421,14 @@ export class PaiementsService {
     }
     if (
       !commande.clientId &&
-      commande.clientTelephoneInvite &&
+      (commande.clientTelephoneInvite || commande.clientEmailInvite) &&
       statut === StatutPaiement.reussi
     ) {
       this.notifications.paiementRecuInvite(
-        commande.clientTelephoneInvite,
+        {
+          telephone: commande.clientTelephoneInvite,
+          email: commande.clientEmailInvite,
+        },
         commande.id,
       );
     }

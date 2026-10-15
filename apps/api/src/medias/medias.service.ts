@@ -11,7 +11,7 @@ import { ConfigService } from '@nestjs/config';
 // short-lived signature from this service — files never transit through the
 // API, which matters on a 3G link — and the order only stores the URL.
 
-export const USAGES_MEDIA = ['colis', 'courses'] as const;
+export const USAGES_MEDIA = ['colis', 'courses', 'plats'] as const;
 export type UsageMedia = (typeof USAGES_MEDIA)[number];
 
 // Only images: anything else is refused by Cloudinary itself, the format list

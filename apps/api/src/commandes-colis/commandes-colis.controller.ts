@@ -19,6 +19,7 @@ import { CreateCommandeColisDto } from './dto/create-commande-colis.dto';
 import { DeclarerLitigeColisDto } from './dto/declarer-litige-colis.dto';
 import { EstimerColisDto } from './dto/estimer-colis.dto';
 import { LivrerColisDto } from './dto/livrer-colis.dto';
+import { RecupererColisDto } from './dto/recuperer-colis.dto';
 
 @Controller('commandes/colis')
 export class CommandesColisController {
@@ -94,8 +95,9 @@ export class CommandesColisController {
   marquerRecupere(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
+    @Body() dto?: RecupererColisDto,
   ) {
-    return this.commandesColisService.marquerRecupere(user.id, id);
+    return this.commandesColisService.marquerRecupere(user.id, id, dto);
   }
 
   @Patch(':id/en-route')

@@ -27,11 +27,11 @@ export function CatalogueFilters({
         Ouverts maintenant
       </FilterChip>
       <FilterChip actif={filtres.bienNotes} onClick={() => basculer('bienNotes', true, false)}>
-        <Star className="size-3.5" aria-hidden="true" />
+        <Star className="size-3.5 fill-amber-400 text-amber-400" aria-hidden="true" />
         {NOTE_MIN} et plus
       </FilterChip>
       <FilterChip actif={filtres.rapides} onClick={() => basculer('rapides', true, false)}>
-        <Clock className="size-3.5" aria-hidden="true" />
+        <Clock className="size-3.5 text-primary" aria-hidden="true" />
         {DELAI_MAX_MIN} min max
       </FilterChip>
       {(Object.keys(TRANCHES_PRIX) as TranchePrix[]).map((tranche) => (

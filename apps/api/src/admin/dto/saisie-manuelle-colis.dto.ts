@@ -44,6 +44,12 @@ export class SaisieManuelleColisDto {
   @IsEnum(TailleColis)
   taille!: TailleColis;
 
+  /** F-CLI-16 / F-ADM-04: Description or nature of the parcel (e.g. documents, clothes...). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  nature?: string;
+
   @IsString()
   @IsNotEmpty()
   destinataireNom!: string;

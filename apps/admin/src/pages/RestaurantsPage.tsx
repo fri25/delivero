@@ -1,8 +1,8 @@
 import { useState, type ComponentProps } from 'react';
 import { Pencil, Plus } from 'lucide-react';
 import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,9 +23,9 @@ function Champ({
 }: { id: string; label: string; aide?: string } & ComponentProps<typeof Input>) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      <Input id={id} {...props} />
-      {aide && <p className="text-xs text-muted-foreground">{aide}</p>}
+      <Label htmlFor={id} className="text-xs font-semibold">{label}</Label>
+      <Input id={id} className="rounded-xl" {...props} />
+      {aide && <p className="text-[11px] text-muted-foreground">{aide}</p>}
     </div>
   );
 }
@@ -41,7 +41,7 @@ function NouveauRestaurantForm({ onTermine }: { onTermine: () => void }) {
 
   return (
     <form
-      className="space-y-4 rounded-2xl bg-card p-4 ring-1 ring-foreground/10"
+      className="space-y-5 rounded-3xl border border-primary/30 bg-card p-5 sm:p-6 shadow-md"
       onSubmit={(event) => {
         event.preventDefault();
         creer.mutate(
@@ -66,22 +66,21 @@ function NouveauRestaurantForm({ onTermine }: { onTermine: () => void }) {
         );
       }}
     >
-      <div>
-        <h2 className="font-heading font-semibold">Nouveau restaurant</h2>
-        <p className="text-sm text-muted-foreground">
-          Crée le restaurant et son compte de connexion à l’application Partenaires. Transmettez le numéro et le mot de
-          passe au restaurant.
+      <div className="border-b border-border/60 pb-3">
+        <h2 className="font-heading text-lg font-bold text-foreground">Nouveau restaurant partenaire</h2>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+          Crée la fiche établissement et les identifiants de connexion à l’application Partenaires.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Champ id="resto-nom" label="Nom du restaurant" value={nom} onChange={(e) => setNom(e.target.value)} required minLength={2} />
+        <Champ id="resto-nom" label="Nom du restaurant *" value={nom} onChange={(e) => setNom(e.target.value)} required minLength={2} />
         <div className="space-y-1.5">
-          <Label htmlFor="resto-zone">Zone</Label>
+          <Label htmlFor="resto-zone" className="text-xs font-semibold">Zone de livraison *</Label>
           <ZoneSelect id="resto-zone" value={zoneId} onChange={setZoneId} />
         </div>
         <Champ
           id="resto-telephone"
-          label="Téléphone de connexion"
+          label="Téléphone de connexion *"
           placeholder="01 57 86 69 59"
           inputMode="tel"
           value={telephone}
@@ -90,7 +89,7 @@ function NouveauRestaurantForm({ onTermine }: { onTermine: () => void }) {
         />
         <Champ
           id="resto-mdp"
-          label="Mot de passe provisoire"
+          label="Mot de passe provisoire *"
           aide="8 caractères minimum."
           value={motDePasse}
           onChange={(e) => setMotDePasse(e.target.value)}
@@ -99,8 +98,8 @@ function NouveauRestaurantForm({ onTermine }: { onTermine: () => void }) {
         />
         <Champ
           id="resto-repere"
-          label="Point de repère"
-          aide="Obligatoire : c’est ce que lit le livreur pour trouver le restaurant."
+          label="Point de repère *"
+          aide="Obligatoire : description visuelle pour le livreur."
           placeholder="ex. Face à la station Total, portail vert"
           value={pointDeRepere}
           onChange={(e) => setPointDeRepere(e.target.value)}
@@ -109,11 +108,15 @@ function NouveauRestaurantForm({ onTermine }: { onTermine: () => void }) {
         />
         <Champ id="resto-adresse" label="Adresse (facultatif)" value={adresse} onChange={(e) => setAdresse(e.target.value)} />
       </div>
-      <div className="flex gap-2">
-        <Button type="submit" disabled={creer.isPending}>
-          {creer.isPending ? 'Création…' : 'Créer le restaurant'}
+      <div className="flex gap-2 pt-2 border-t border-border/60">
+        <Button
+          type="submit"
+          disabled={creer.isPending}
+          className="h-11 rounded-2xl font-bold bg-primary hover:bg-primary/90 text-white shadow-sm active:scale-98 transition-all px-6"
+        >
+          {creer.isPending ? 'Création en cours…' : 'Créer le restaurant'}
         </Button>
-        <Button type="button" variant="ghost" onClick={onTermine}>
+        <Button type="button" variant="ghost" className="h-11 rounded-2xl" onClick={onTermine}>
           Annuler
         </Button>
       </div>
@@ -131,7 +134,7 @@ function ModifierRestaurantForm({ restaurant, onTermine }: { restaurant: Partena
 
   return (
     <form
-      className="grid gap-3 border-t border-border pt-4 sm:grid-cols-2"
+      className="grid gap-3 border-t border-border/60 pt-4 sm:grid-cols-2"
       onSubmit={(event) => {
         event.preventDefault();
         modifier.mutate(
@@ -157,7 +160,7 @@ function ModifierRestaurantForm({ restaurant, onTermine }: { restaurant: Partena
     >
       <Champ id={`nom-${restaurant.id}`} label="Nom" value={nom} onChange={(e) => setNom(e.target.value)} required minLength={2} />
       <div className="space-y-1.5">
-        <Label htmlFor={`zone-${restaurant.id}`}>Zone</Label>
+        <Label htmlFor={`zone-${restaurant.id}`} className="text-xs font-semibold">Zone</Label>
         <ZoneSelect id={`zone-${restaurant.id}`} value={zoneId} onChange={setZoneId} />
       </div>
       <Champ
@@ -172,16 +175,16 @@ function ModifierRestaurantForm({ restaurant, onTermine }: { restaurant: Partena
       <Champ
         id={`mdp-${restaurant.id}`}
         label="Nouveau mot de passe"
-        aide="Seulement si le restaurant a perdu le sien. Laissez vide sinon."
+        aide="Laisser vide si inchangé."
         value={motDePasse}
         onChange={(e) => setMotDePasse(e.target.value)}
         minLength={8}
       />
-      <div className="flex items-end gap-2">
-        <Button type="submit" disabled={modifier.isPending}>
-          Enregistrer
+      <div className="flex items-end gap-2 sm:col-span-2 pt-2">
+        <Button type="submit" disabled={modifier.isPending} className="h-10 rounded-xl font-bold bg-primary text-white">
+          {modifier.isPending ? 'Enregistrement...' : 'Enregistrer'}
         </Button>
-        <Button type="button" variant="ghost" onClick={onTermine}>
+        <Button type="button" variant="ghost" className="h-10 rounded-xl" onClick={onTermine}>
           Annuler
         </Button>
       </div>
@@ -194,36 +197,56 @@ function CarteRestaurant({ restaurant }: { restaurant: PartenaireAdmin }) {
   const suspendre = useSuspendrePartenaire();
 
   return (
-    <li className="space-y-3 rounded-2xl bg-card p-4 ring-1 ring-foreground/10">
+    <li className="space-y-4 rounded-3xl border border-border/70 bg-card p-5 shadow-xs transition-all hover:shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
+        <div className="min-w-0 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-heading font-semibold">{restaurant.nom}</h3>
+            <h3 className="font-heading font-bold text-base text-foreground">{restaurant.nom}</h3>
             {restaurant.suspendu ? (
-              <Badge variant="destructive">Suspendu</Badge>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/15 text-destructive border border-destructive/30 px-2.5 py-0.5 text-xs font-bold">
+                <span className="size-1.5 rounded-full bg-destructive" />
+                Suspendu
+              </span>
             ) : restaurant.statutOuverture ? (
-              <Badge className="bg-success text-white">Ouvert</Badge>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 text-emerald-700 border border-emerald-500/30 px-2.5 py-0.5 text-xs font-bold">
+                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Ouvert
+              </span>
             ) : (
-              <Badge variant="outline">Fermé</Badge>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 text-amber-700 border border-amber-500/30 px-2.5 py-0.5 text-xs font-bold">
+                <span className="size-1.5 rounded-full bg-amber-500" />
+                Fermé
+              </span>
             )}
           </div>
-          <p className="text-sm text-muted-foreground">
-            Connexion : <span className="font-medium text-foreground">{restaurant.user.telephone}</span> · Zone{' '}
-            {restaurant.zone.nom}
+          <p className="text-xs text-muted-foreground">
+            Connexion : <a href={`tel:${restaurant.user.telephone}`} className="font-mono font-medium text-foreground hover:text-primary transition-colors">{restaurant.user.telephone}</a> · Zone <span className="font-medium text-foreground">{restaurant.zone.nom}</span>
           </p>
-          <p className="text-sm">
-            {restaurant.pointDeRepere ?? <span className="text-destructive">Point de repère manquant</span>}
+          <p className="text-xs text-foreground/90">
+            {restaurant.pointDeRepere ? (
+              <span>📍 {restaurant.pointDeRepere}</span>
+            ) : (
+              <span className="text-destructive font-semibold">Point de repère manquant</span>
+            )}
             {restaurant.adresse && <span className="text-muted-foreground"> · {restaurant.adresse}</span>}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {restaurant._count.plats} plat{restaurant._count.plats > 1 ? 's' : ''} · {restaurant._count.commandesRepas}{' '}
-            commande{restaurant._count.commandesRepas > 1 ? 's' : ''} au total
-            {restaurant.noteMoyenne && ` · ${Number(restaurant.noteMoyenne).toFixed(1)} / 5`}
-          </p>
+          <div className="flex flex-wrap gap-2 pt-1 text-[11px] text-muted-foreground font-medium">
+            <span className="rounded-lg bg-muted px-2 py-0.5 font-bold text-foreground">
+              {restaurant._count.plats} plat{restaurant._count.plats > 1 ? 's' : ''}
+            </span>
+            <span className="rounded-lg bg-muted px-2 py-0.5 font-bold text-foreground">
+              {restaurant._count.commandesRepas} commande{restaurant._count.commandesRepas > 1 ? 's' : ''}
+            </span>
+            {restaurant.noteMoyenne && (
+              <span className="rounded-lg bg-amber-500/10 text-amber-700 px-2 py-0.5 font-bold">
+                ⭐ {Number(restaurant.noteMoyenne).toFixed(1)} / 5
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex shrink-0 gap-2">
           {!edition && (
-            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setEdition(true)}>
+            <Button size="sm" variant="outline" className="h-8.5 gap-1.5 rounded-xl text-xs font-semibold" onClick={() => setEdition(true)}>
               <Pencil className="size-3.5" aria-hidden="true" />
               Modifier
             </Button>
@@ -231,7 +254,12 @@ function CarteRestaurant({ restaurant }: { restaurant: PartenaireAdmin }) {
           <Button
             size="sm"
             variant={restaurant.suspendu ? 'default' : 'outline'}
-            className={restaurant.suspendu ? '' : 'text-destructive hover:bg-destructive/10 hover:text-destructive'}
+            className={cn(
+              'h-8.5 rounded-xl text-xs font-bold transition-all',
+              restaurant.suspendu
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                : 'text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive',
+            )}
             disabled={suspendre.isPending}
             onClick={() => {
               if (
@@ -271,16 +299,19 @@ export function RestaurantsPage() {
   const [creation, setCreation] = useState(false);
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-heading text-xl font-semibold">Restaurants</h1>
-          <p className="text-sm text-muted-foreground">
-            Comptes partenaires, points de repère et suspension. Le menu et l’ouverture sont gérés par chaque restaurant.
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Restaurants partenaires</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Gestion des fiches établissements, points de repère et contrôle des suspensions.
           </p>
         </div>
         {!creation && (
-          <Button className="gap-1.5" onClick={() => setCreation(true)}>
+          <Button
+            className="gap-2 rounded-full bg-primary px-4 font-bold text-white shadow-sm hover:bg-primary/90 active:scale-95 transition-all self-start sm:self-auto"
+            onClick={() => setCreation(true)}
+          >
             <Plus className="size-4" aria-hidden="true" />
             Nouveau restaurant
           </Button>
@@ -290,23 +321,31 @@ export function RestaurantsPage() {
       {creation && <NouveauRestaurantForm onTermine={() => setCreation(false)} />}
 
       {isPending ? (
-        <Skeleton className="h-32 w-full rounded-2xl" />
+        <div className="grid gap-4 xl:grid-cols-2">
+          <Skeleton className="h-40 w-full rounded-3xl" />
+          <Skeleton className="h-40 w-full rounded-3xl" />
+        </div>
       ) : isError ? (
-        <p className="text-sm text-destructive">Impossible de charger les restaurants.</p>
+        <div className="rounded-3xl border border-destructive/30 bg-destructive/5 p-6 text-center text-destructive">
+          <p className="font-heading font-semibold text-base">Impossible de charger les restaurants</p>
+        </div>
       ) : restaurants.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aucun restaurant pour l’instant.</p>
+        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border/80 bg-card/60 p-8 sm:p-12 text-center shadow-xs">
+          <p className="font-heading text-lg font-bold text-foreground">Aucun restaurant partenaire</p>
+          <p className="mt-1 text-sm text-muted-foreground">Créez la première fiche restaurant pour ouvrir la commande en ligne.</p>
+        </div>
       ) : (
-        <ul className="grid gap-3 xl:grid-cols-2">
+        <ul className="grid gap-4 xl:grid-cols-2">
           {restaurants.map((restaurant) => (
             <CarteRestaurant key={restaurant.id} restaurant={restaurant} />
           ))}
         </ul>
       )}
 
-      <p className="text-xs text-muted-foreground">
-        Commission Repas : 15 % facturés au client sur (plats + livraison), le restaurant est payé au prix de son menu
-        (RG-08).
-      </p>
+      <div className="rounded-2xl border border-border/60 bg-muted/30 p-3.5 text-xs text-muted-foreground">
+        Commission Repas : 15 % facturés au client sur (plats + livraison). Le restaurant partenaire est payé
+        au prix net de sa carte (RG-08).
+      </div>
     </div>
   );
 }

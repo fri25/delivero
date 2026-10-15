@@ -27,6 +27,7 @@ export interface ModeleColis {
   pointDeRepereLivraison: string;
   valeurDeclaree: string;
   fragile: boolean;
+  nature?: string;
 }
 
 export function modeleColis(commande: CommandeColis): ModeleColis {
@@ -44,6 +45,7 @@ export function modeleColis(commande: CommandeColis): ModeleColis {
     pointDeRepereLivraison: commande.pointDeRepereLivraison,
     valeurDeclaree: commande.valeurDeclaree ? String(Number(commande.valeurDeclaree)) : '',
     fragile: commande.fragile,
+    ...(commande.nature ? { nature: commande.nature } : {}),
   };
 }
 

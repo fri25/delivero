@@ -31,42 +31,51 @@ export function APrendrePage() {
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="font-heading text-2xl font-semibold">À prendre</h1>
-        <p className="text-sm text-muted-foreground">
-          Les plus anciennes en premier. Les nouvelles courses s’affichent toutes seules.
+        <div className="flex items-center justify-between">
+          <h1 className="font-heading text-2xl font-bold lg:text-3xl text-foreground">À prendre</h1>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" /> En direct
+          </span>
+        </div>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+          Courses disponibles à Natitingou · Les plus urgentes en premier.
         </p>
       </header>
 
       <ActiverAlertesCard />
 
       {moi && !moi.disponible && (
-        <p className="flex items-start gap-2 rounded-2xl bg-muted p-3 text-sm">
-          <PauseCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          Vous êtes indisponible : passez « Disponible » en haut de l’écran pour qu’on vous attribue des courses.
-        </p>
+        <div className="flex items-start gap-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 p-3.5 text-xs sm:text-sm font-medium text-amber-900 dark:text-amber-200">
+          <PauseCircle className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+          <span>
+            Vous êtes indisponible : passez « Disponible » en haut de l’écran pour qu’on vous attribue des courses.
+          </span>
+        </div>
       )}
 
       <FiltreServices services={SERVICES} comptes={comptes} valeur={filtre} onChange={setFiltre} />
 
       {isError && (
-        <p className="rounded-2xl bg-destructive/10 p-3 text-sm text-destructive">
+        <div className="rounded-2xl bg-destructive/10 border border-destructive/20 p-3.5 text-xs sm:text-sm font-medium text-destructive">
           Une partie des courses n’a pas pu être chargée. Nouvel essai automatique dans quelques secondes.
-        </p>
+        </div>
       )}
 
       {isPending && taches.length === 0 ? (
         <div className="space-y-3">
-          <Skeleton className="h-48 w-full rounded-2xl" />
-          <Skeleton className="h-48 w-full rounded-2xl" />
+          <Skeleton className="h-48 w-full rounded-3xl" />
+          <Skeleton className="h-48 w-full rounded-3xl" />
         </div>
       ) : visibles.length === 0 ? (
-        <div className="rounded-2xl bg-card px-6 py-12 text-center ring-1 ring-foreground/10">
-          <Inbox className="mx-auto size-8 text-muted-foreground" aria-hidden="true" />
-          <p className="mt-2 font-semibold">Rien à prendre pour le moment</p>
-          <p className="text-sm text-muted-foreground">Les nouvelles courses apparaîtront ici automatiquement.</p>
+        <div className="rounded-3xl bg-card px-6 py-12 text-center border border-border/70 shadow-xs">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-2xs">
+            <Inbox className="size-7" aria-hidden="true" />
+          </div>
+          <p className="mt-4 font-heading text-base font-bold text-foreground">Rien à prendre pour le moment</p>
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">Les nouvelles courses apparaîtront ici automatiquement.</p>
         </div>
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-3.5">
           {visibles.map((tache) => (
             <CarteTache key={`${tache.service}:${tache.id}`} tache={tache} mode="disponible" />
           ))}

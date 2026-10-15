@@ -33,57 +33,68 @@ export function SubmitBar({
   return (
     <div className="lg:sticky lg:top-24">
       {/* Desktop side panel. */}
-      <aside className="hidden space-y-4 rounded-2xl bg-card p-5 ring-1 ring-foreground/10 lg:block">
-        <h2 className="font-heading text-lg font-semibold">{titre}</h2>
+      <aside className="hidden space-y-5 rounded-3xl bg-card p-6 border border-border/70 shadow-sm lg:block">
+        <h2 className="font-heading text-lg font-bold text-foreground">{titre}</h2>
 
-        <div className="flex items-baseline justify-between border-b border-border pb-4">
+        <div className="flex items-baseline justify-between border-b border-border/70 pb-4">
           <span className="text-sm text-muted-foreground">{tarifLabel}</span>
-          <span className="font-heading text-xl font-semibold">
+          <span className="font-heading text-2xl font-bold text-primary">
             {tarif !== undefined ? formatPrixFcfa(tarif) : '—'}
           </span>
         </div>
 
         {pret ? (
-          <p className="flex items-center gap-2 text-sm font-medium text-primary">
-            <CheckCircle2 className="size-4" aria-hidden="true" /> Tout est prêt, vous pouvez confirmer.
-          </p>
+          <div className="flex items-center gap-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="size-4.5 shrink-0" aria-hidden="true" />
+            <span>Tout est prêt, vous pouvez confirmer.</span>
+          </div>
         ) : (
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Il reste à renseigner :</p>
-            <ul className="space-y-1.5 text-sm text-muted-foreground">
+          <div className="space-y-2.5 rounded-2xl bg-secondary/50 p-3.5 border border-border/50">
+            <p className="text-xs font-bold text-foreground uppercase tracking-wider">Il reste à renseigner :</p>
+            <ul className="space-y-1.5 text-xs text-muted-foreground">
               {manquant.map((item) => (
                 <li key={item} className="flex items-start gap-2">
-                  <Circle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-                  <span className="first-letter:uppercase">{item}</span>
+                  <Circle className="mt-0.5 size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
+                  <span className="first-letter:uppercase text-foreground/80 font-medium">{item}</span>
                 </li>
               ))}
             </ul>
           </div>
         )}
 
-        <Button size="lg" className="w-full" disabled={!pret || enCours} onClick={onConfirmer}>
+        <Button
+          size="lg"
+          className="w-full rounded-xl shadow-md shadow-primary/20 font-bold transition-all active:scale-[0.99]"
+          disabled={!pret || enCours}
+          onClick={onConfirmer}
+        >
           {enCours ? 'Envoi en cours...' : libelle}
         </Button>
       </aside>
 
       {/* Mobile / tablet: spacer keeps the end of the form scrollable above the fixed bar. */}
       <div className="h-36 lg:hidden" aria-hidden="true" />
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-card/90 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl shadow-2xl lg:hidden">
         <div className="mx-auto max-w-2xl space-y-2 px-4 py-3">
           <div className="flex items-baseline justify-between gap-3 text-sm">
-            <span className="min-w-0 truncate text-muted-foreground" aria-live="polite">
+            <span className="min-w-0 truncate text-xs text-muted-foreground" aria-live="polite">
               {pret
                 ? 'Tout est prêt.'
                 : `Il manque : ${manquant[0]}${manquant.length > 1 ? `, et ${manquant.length - 1} autre${manquant.length > 2 ? 's' : ''}` : ''}`}
             </span>
             {tarif !== undefined && (
-              <span className="shrink-0 font-semibold">
+              <span className="shrink-0 font-heading font-bold text-base text-primary">
                 <span className="sr-only">{tarifLabel} : </span>
                 {formatPrixFcfa(tarif)}
               </span>
             )}
           </div>
-          <Button size="lg" className="w-full" disabled={!pret || enCours} onClick={onConfirmer}>
+          <Button
+            size="lg"
+            className="w-full rounded-xl shadow-md shadow-primary/20 font-bold"
+            disabled={!pret || enCours}
+            onClick={onConfirmer}
+          >
             {enCours ? 'Envoi en cours...' : libelle}
           </Button>
         </div>

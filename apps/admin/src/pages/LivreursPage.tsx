@@ -1,6 +1,6 @@
 import { useState } from 'react';
+import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,29 +8,21 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCreateLivreur, useLivreurs, useUpdateLivreur } from '@/api/livreurs';
 import { ZoneSelect } from '@/components/zones/ZoneSelect';
 import { formatPrixFcfa } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import type { Livreur } from '@/api/types';
 
-function NouveauLivreurForm() {
+function NouveauLivreurForm({ onFermer }: { onFermer: () => void }) {
   const createLivreur = useCreateLivreur();
-  const [ouvert, setOuvert] = useState(false);
   const [telephone, setTelephone] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
   const [nom, setNom] = useState('');
   const [zoneId, setZoneId] = useState('');
-  const [plafondAvance, setPlafondAvance] = useState('');
-  const [plafondCaisse, setPlafondCaisse] = useState('');
-
-  if (!ouvert) {
-    return (
-      <Button size="sm" onClick={() => setOuvert(true)}>
-        Nouveau livreur
-      </Button>
-    );
-  }
+  const [plafondAvance, setPlafondAvance] = useState('50000');
+  const [plafondCaisse, setPlafondCaisse] = useState('100000');
 
   return (
     <form
-      className="grid gap-3 rounded-xl p-4 ring-1 ring-foreground/10 sm:grid-cols-3"
+      className="space-y-4 rounded-3xl border border-primary/30 bg-card p-5 sm:p-6 shadow-md"
       onSubmit={(event) => {
         event.preventDefault();
         createLivreur.mutate(
@@ -44,75 +36,85 @@ function NouveauLivreurForm() {
           },
           {
             onSuccess: () => {
-              toast.success('Livreur créé.');
-              setOuvert(false);
-              setTelephone('');
-              setMotDePasse('');
-              setNom('');
-              setZoneId('');
-              setPlafondAvance('');
-              setPlafondCaisse('');
+              toast.success('Livreur créé avec succès.');
+              onFermer();
             },
             onError: (error) => toast.error(error.message),
           },
         );
       }}
     >
-      <div className="space-y-1.5">
-        <Label htmlFor="livreur-nom">Nom</Label>
-        <Input id="livreur-nom" value={nom} onChange={(e) => setNom(e.target.value)} required />
+      <div className="border-b border-border/60 pb-3">
+        <h2 className="font-heading font-bold text-lg text-foreground">Ajouter un nouveau livreur</h2>
+        <p className="text-xs text-muted-foreground">Création du compte coursier et affectation de zone de départ.</p>
       </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="livreur-telephone">Téléphone</Label>
-        <Input
-          id="livreur-telephone"
-          value={telephone}
-          onChange={(e) => setTelephone(e.target.value)}
-          placeholder="+22900000000"
-          required
-        />
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="livreur-nom" className="text-xs font-semibold">Nom complet *</Label>
+          <Input id="livreur-nom" value={nom} onChange={(e) => setNom(e.target.value)} required className="rounded-xl" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="livreur-telephone" className="text-xs font-semibold">Téléphone de connexion *</Label>
+          <Input
+            id="livreur-telephone"
+            value={telephone}
+            onChange={(e) => setTelephone(e.target.value)}
+            placeholder="+229 01 00 00 00"
+            className="rounded-xl font-mono"
+            required
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="livreur-mdp" className="text-xs font-semibold">Mot de passe provisoire *</Label>
+          <Input
+            id="livreur-mdp"
+            type="password"
+            value={motDePasse}
+            onChange={(e) => setMotDePasse(e.target.value)}
+            className="rounded-xl"
+            required
+            minLength={6}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="livreur-zone" className="text-xs font-semibold">Zone d'attachement *</Label>
+          <ZoneSelect id="livreur-zone" value={zoneId} onChange={setZoneId} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="livreur-plafond-avance" className="text-xs font-semibold">Plafond d'avance (FCFA) *</Label>
+          <Input
+            id="livreur-plafond-avance"
+            type="number"
+            min="0"
+            value={plafondAvance}
+            onChange={(e) => setPlafondAvance(e.target.value)}
+            className="rounded-xl font-mono"
+            required
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="livreur-plafond-caisse" className="text-xs font-semibold">Plafond de caisse (FCFA) *</Label>
+          <Input
+            id="livreur-plafond-caisse"
+            type="number"
+            min="0"
+            value={plafondCaisse}
+            onChange={(e) => setPlafondCaisse(e.target.value)}
+            className="rounded-xl font-mono"
+            required
+          />
+        </div>
       </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="livreur-mdp">Mot de passe provisoire</Label>
-        <Input
-          id="livreur-mdp"
-          type="password"
-          value={motDePasse}
-          onChange={(e) => setMotDePasse(e.target.value)}
-          required
-        />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="livreur-zone">Zone</Label>
-        <ZoneSelect id="livreur-zone" value={zoneId} onChange={setZoneId} />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="livreur-plafond-avance">Plafond d'avance (FCFA)</Label>
-        <Input
-          id="livreur-plafond-avance"
-          type="number"
-          min="0"
-          value={plafondAvance}
-          onChange={(e) => setPlafondAvance(e.target.value)}
-          required
-        />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="livreur-plafond-caisse">Plafond de caisse (FCFA)</Label>
-        <Input
-          id="livreur-plafond-caisse"
-          type="number"
-          min="0"
-          value={plafondCaisse}
-          onChange={(e) => setPlafondCaisse(e.target.value)}
-          required
-        />
-      </div>
-      <div className="flex items-end gap-2 sm:col-span-3">
-        <Button type="submit" size="sm" disabled={createLivreur.isPending}>
-          Créer
+      <div className="flex gap-2 pt-2 border-t border-border/60">
+        <Button
+          type="submit"
+          disabled={createLivreur.isPending}
+          className="h-10 rounded-xl font-bold bg-primary text-white px-6"
+        >
+          {createLivreur.isPending ? 'Création...' : 'Créer le livreur'}
         </Button>
-        <Button type="button" size="sm" variant="outline" onClick={() => setOuvert(false)}>
+        <Button type="button" variant="ghost" className="h-10 rounded-xl" onClick={onFermer}>
           Annuler
         </Button>
       </div>
@@ -129,23 +131,38 @@ function LivreurRow({ livreur }: { livreur: Livreur }) {
 
   if (!edition) {
     return (
-      <tr className="border-t border-border">
-        <td className="px-3 py-2">
-          <div className="font-medium">{livreur.user.nom}</div>
-          <div className="text-xs text-muted-foreground">{livreur.user.telephone}</div>
+      <tr className="hover:bg-muted/30 transition-colors">
+        <td className="px-4 py-3.5">
+          <div className="font-semibold text-foreground">{livreur.user.nom}</div>
+          <a href={`tel:${livreur.user.telephone}`} className="text-xs font-mono text-muted-foreground hover:text-primary transition-colors">
+            {livreur.user.telephone}
+          </a>
         </td>
-        <td className="px-3 py-2">
-          <Badge variant={livreur.disponible ? 'default' : 'outline'}>
+        <td className="px-4 py-3.5">
+          <span
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold shadow-2xs',
+              livreur.disponible
+                ? 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30'
+                : 'bg-muted text-muted-foreground border border-border/60',
+            )}
+          >
+            <span
+              className={cn(
+                'size-1.5 rounded-full',
+                livreur.disponible ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground/50',
+              )}
+            />
             {livreur.disponible ? 'Disponible' : 'Indisponible'}
-          </Badge>
+          </span>
         </td>
-        <td className="px-3 py-2">{livreur.zone.nom}</td>
-        <td className="px-3 py-2">{formatPrixFcfa(livreur.plafondAvance)}</td>
-        <td className="px-3 py-2">{formatPrixFcfa(livreur.plafondCaisse)}</td>
-        <td className="px-3 py-2">{formatPrixFcfa(livreur.avanceEnCours)}</td>
-        <td className="px-3 py-2">{formatPrixFcfa(livreur.caisseAReverser)}</td>
-        <td className="px-3 py-2">
-          <Button size="sm" variant="outline" onClick={() => setEdition(true)}>
+        <td className="px-4 py-3.5 font-medium text-foreground">{livreur.zone.nom}</td>
+        <td className="px-4 py-3.5 font-mono text-xs">{formatPrixFcfa(livreur.plafondAvance)}</td>
+        <td className="px-4 py-3.5 font-mono text-xs">{formatPrixFcfa(livreur.plafondCaisse)}</td>
+        <td className="px-4 py-3.5 font-mono text-xs font-semibold text-foreground">{formatPrixFcfa(livreur.avanceEnCours)}</td>
+        <td className="px-4 py-3.5 font-mono text-xs font-bold text-primary">{formatPrixFcfa(livreur.caisseAReverser)}</td>
+        <td className="px-4 py-3.5 text-right">
+          <Button size="sm" variant="outline" className="h-8 rounded-xl text-xs font-semibold" onClick={() => setEdition(true)}>
             Modifier
           </Button>
         </td>
@@ -154,43 +171,49 @@ function LivreurRow({ livreur }: { livreur: Livreur }) {
   }
 
   return (
-    <tr className="border-t border-border bg-muted/30">
-      <td className="px-3 py-2">
-        <div className="font-medium">{livreur.user.nom}</div>
-        <div className="text-xs text-muted-foreground">{livreur.user.telephone}</div>
+    <tr className="border-t border-border bg-primary/5">
+      <td className="px-4 py-3.5">
+        <div className="font-semibold text-foreground">{livreur.user.nom}</div>
+        <div className="text-xs font-mono text-muted-foreground">{livreur.user.telephone}</div>
       </td>
-      <td className="px-3 py-2">
-        <Badge variant={livreur.disponible ? 'default' : 'outline'}>
+      <td className="px-4 py-3.5">
+        <span
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold',
+            livreur.disponible ? 'bg-emerald-500/15 text-emerald-700' : 'bg-muted text-muted-foreground',
+          )}
+        >
           {livreur.disponible ? 'Disponible' : 'Indisponible'}
-        </Badge>
+        </span>
       </td>
-      <td className="px-3 py-2">
+      <td className="px-4 py-3.5">
         <ZoneSelect value={zoneId} onChange={setZoneId} />
       </td>
-      <td className="px-3 py-2">
+      <td className="px-4 py-3.5">
         <Input
           type="number"
           min="0"
-          className="h-7 w-28"
+          className="h-8 w-28 rounded-xl font-mono text-xs"
           value={plafondAvance}
           onChange={(e) => setPlafondAvance(e.target.value)}
         />
       </td>
-      <td className="px-3 py-2">
+      <td className="px-4 py-3.5">
         <Input
           type="number"
           min="0"
-          className="h-7 w-28"
+          className="h-8 w-28 rounded-xl font-mono text-xs"
           value={plafondCaisse}
           onChange={(e) => setPlafondCaisse(e.target.value)}
         />
       </td>
-      <td className="px-3 py-2 text-muted-foreground">{formatPrixFcfa(livreur.avanceEnCours)}</td>
-      <td className="px-3 py-2 text-muted-foreground">{formatPrixFcfa(livreur.caisseAReverser)}</td>
-      <td className="px-3 py-2">
-        <div className="flex gap-2">
+      <td className="px-4 py-3.5 text-xs font-mono text-muted-foreground">{formatPrixFcfa(livreur.avanceEnCours)}</td>
+      <td className="px-4 py-3.5 text-xs font-mono text-muted-foreground">{formatPrixFcfa(livreur.caisseAReverser)}</td>
+      <td className="px-4 py-3.5 text-right">
+        <div className="flex justify-end gap-1.5">
           <Button
             size="sm"
+            className="h-8 rounded-xl text-xs font-bold bg-primary text-white"
             disabled={updateLivreur.isPending}
             onClick={() => {
               updateLivreur.mutate(
@@ -214,7 +237,7 @@ function LivreurRow({ livreur }: { livreur: Livreur }) {
           >
             Enregistrer
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setEdition(false)}>
+          <Button size="sm" variant="ghost" className="h-8 rounded-xl text-xs" onClick={() => setEdition(false)}>
             Annuler
           </Button>
         </div>
@@ -225,41 +248,57 @@ function LivreurRow({ livreur }: { livreur: Livreur }) {
 
 export function LivreursPage() {
   const { data: livreurs, isPending } = useLivreurs();
+  const [creationOuverte, setCreationOuverte] = useState(false);
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold">Livreurs</h1>
-        <p className="text-sm text-muted-foreground">
-          Enregistrement, zone et plafonds d'avance/de caisse (F-ADM-09). Avance en cours et
-          solde à reverser (F-LIV-09) sont calculés en direct depuis les commandes et
-          encaissements. La gestion des pièces d'identité et les statistiques de performance
-          restent hors périmètre (pas de stockage de fichiers).
-        </p>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Flotte de livreurs</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Gestion de l'équipe des coursiers, zones d'intervention et suivi des plafonds de caisse.
+          </p>
+        </div>
+        {!creationOuverte && (
+          <Button
+            className="gap-2 rounded-full bg-primary px-4 font-bold text-white shadow-sm hover:bg-primary/90 active:scale-95 transition-all self-start sm:self-auto"
+            onClick={() => setCreationOuverte(true)}
+          >
+            <Plus className="size-4" />
+            Nouveau livreur
+          </Button>
+        )}
       </div>
 
-      <NouveauLivreurForm />
+      {creationOuverte && <NouveauLivreurForm onFermer={() => setCreationOuverte(false)} />}
 
       {isPending ? (
-        <Skeleton className="h-32 w-full" />
+        <div className="space-y-3">
+          <Skeleton className="h-12 w-full rounded-2xl" />
+          <Skeleton className="h-16 w-full rounded-2xl" />
+          <Skeleton className="h-16 w-full rounded-2xl" />
+        </div>
       ) : !livreurs || livreurs.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aucun livreur.</p>
+        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border/80 bg-card/60 p-8 sm:p-12 text-center shadow-xs">
+          <p className="font-heading text-lg font-bold text-foreground">Aucun coursier enregistré</p>
+          <p className="mt-1 text-sm text-muted-foreground">Ajoutez les premiers livreurs de la flotte ChapExpress.</p>
+        </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl ring-1 ring-foreground/10">
+        <div className="overflow-x-auto rounded-3xl border border-border/70 bg-card shadow-xs">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
+            <thead className="border-b border-border/60 bg-muted/40 text-left text-xs font-semibold text-muted-foreground">
               <tr>
-                <th className="px-3 py-2 font-medium">Livreur</th>
-                <th className="px-3 py-2 font-medium">Statut</th>
-                <th className="px-3 py-2 font-medium">Zone</th>
-                <th className="px-3 py-2 font-medium">Plafond avance</th>
-                <th className="px-3 py-2 font-medium">Plafond caisse</th>
-                <th className="px-3 py-2 font-medium">Avance en cours</th>
-                <th className="px-3 py-2 font-medium">Solde à reverser</th>
-                <th className="px-3 py-2 font-medium"></th>
+                <th className="px-4 py-3">Livreur</th>
+                <th className="px-4 py-3">Disponibilité</th>
+                <th className="px-4 py-3">Zone</th>
+                <th className="px-4 py-3">Plafond avance</th>
+                <th className="px-4 py-3">Plafond caisse</th>
+                <th className="px-4 py-3">Avance en cours</th>
+                <th className="px-4 py-3">Solde à reverser</th>
+                <th className="px-4 py-3 text-right">Action</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border/60">
               {livreurs.map((livreur) => (
                 <LivreurRow key={livreur.id} livreur={livreur} />
               ))}

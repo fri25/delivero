@@ -21,20 +21,22 @@ export function FormStep({
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-4 rounded-2xl bg-card p-4 ring-1 ring-foreground/10 sm:p-5">
-      <header className="flex items-start gap-3">
+    <section className="space-y-4 rounded-3xl bg-card p-5 sm:p-6 border border-border/70 shadow-xs">
+      <header className="flex items-start gap-3.5">
         <span
           className={cn(
-            'flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-colors',
-            complete ? 'bg-primary text-primary-foreground' : 'bg-secondary text-primary',
+            'flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-all shadow-2xs',
+            complete
+              ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
+              : 'bg-primary/10 text-primary border border-primary/20',
           )}
           aria-hidden="true"
         >
-          {complete ? <Check className="size-4" /> : numero}
+          {complete ? <Check className="size-4 stroke-[3]" /> : numero}
         </span>
         <div className="min-w-0 pt-0.5">
-          <h2 className="font-heading text-lg leading-tight font-semibold">{titre}</h2>
-          {aide && <p className="mt-0.5 text-sm text-muted-foreground">{aide}</p>}
+          <h2 className="font-heading text-lg leading-snug font-bold text-foreground">{titre}</h2>
+          {aide && <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed">{aide}</p>}
         </div>
       </header>
       {children}

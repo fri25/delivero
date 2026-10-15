@@ -32,6 +32,23 @@ describe('recommander', () => {
     });
   });
 
+  it('copies the parcel nature when present', () => {
+    const colis = {
+      adresseEnlevement: { id: 'a1' },
+      zone: { id: 'z1' },
+      taille: 'petit',
+      nature: 'Documents officiels',
+      destinataireNom: 'Destinataire',
+      destinataireTelephone: '+2290197000000',
+      adresseLivraison: 'Rue 1',
+      pointDeRepereLivraison: 'Marché',
+      valeurDeclaree: null,
+      fragile: false,
+    } as unknown as CommandeColis;
+
+    expect(modeleColis(colis).nature).toBe('Documents officiels');
+  });
+
   it('copies the errand steps in order', () => {
     const course = {
       description: 'Déposer un dossier',

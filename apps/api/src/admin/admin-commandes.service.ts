@@ -30,13 +30,14 @@ const OVERVIEW_SELECT = {
   montantTotal: true,
   livreurId: true,
   saisieParId: true,
-  client: { select: { nom: true, telephone: true } },
+  client: { select: { nom: true, telephone: true, email: true } },
   clientNomInvite: true,
   clientTelephoneInvite: true,
+  clientEmailInvite: true,
   livreur: { select: { user: { select: { nom: true, telephone: true } } } },
   paiement: { select: { mode: true, statut: true } },
   commandeRepas: { select: { statut: true } },
-  commandeColis: { select: { statut: true } },
+  commandeColis: { select: { statut: true, nature: true } },
   commandeEmplettes: { select: { statut: true } },
   commandeCoursesExpress: { select: { statut: true } },
 } satisfies Prisma.CommandeSelect;
@@ -49,10 +50,11 @@ export interface AdminCommandeRow {
   id: string;
   typeService: TypeService;
   statut: string | null;
+  nature?: string | null;
   createdAt: Date;
   montantTotal: string | null;
   livreurId: string | null;
-  client: { nom: string; telephone: string } | null;
+  client: { nom: string; telephone: string; email?: string | null } | null;
   livreur: { nom: string; telephone: string } | null;
   paiement: { mode: string; statut: string } | null;
   /** Entered by the dispatcher (F-ADM-04): payment confirmed by hand. */
@@ -135,6 +137,30 @@ export class AdminCommandesService {
       page,
       pageSize,
     };
+  }
+
+  // F-ADM-15 : export des commandes pour reporting / comptabilité.
+  async exportRows(typeService?: TypeService, debut?: string, fin?: string) {
+    const where: Prisma.CommandeWhereInput = {
+      ...(typeService ? { typeService } : {}),
+      ...(debut || fin
+        ? {
+            createdAt: {
+              ...(debut ? { gte: new Date(debut) } : {}),
+              ...(fin ? { lte: new Date(fin) } : {}),
+            },
+          }
+        : {}),
+    };
+
+    const rows = await this.prisma.commande.findMany({
+      where,
+      select: OVERVIEW_SELECT,
+      orderBy: { createdAt: 'desc' },
+      take: 5000,
+    });
+
+    return rows.map((row) => this.toRow(row));
   }
 
   // F-ADM-02 (livreurId omis, rotation automatique) / F-ADM-03 (livreurId
@@ -322,18 +348,25 @@ export class AdminCommandesService {
       id: row.id,
       typeService: row.typeService,
       statut,
+      nature: row.commandeColis?.nature ?? null,
       createdAt: row.createdAt,
       montantTotal: row.montantTotal?.toString() ?? null,
       livreurId: row.livreurId,
       // Guest orders (F-CLI-02) have no account: show the contact they gave.
       client:
-        row.client ??
-        (row.clientTelephoneInvite
+        row.client
           ? {
-              nom: `${row.clientNomInvite ?? 'Client'} (sans compte)`,
-              telephone: row.clientTelephoneInvite,
+              nom: row.client.nom,
+              telephone: row.client.telephone,
+              email: row.client.email ?? null,
             }
-          : null),
+          : (row.clientTelephoneInvite || row.clientEmailInvite)
+            ? {
+                nom: `${row.clientNomInvite ?? 'Client'} (sans compte)`,
+                telephone: row.clientTelephoneInvite ?? '',
+                email: row.clientEmailInvite ?? null,
+              }
+            : null,
       livreur: row.livreur?.user ?? null,
       paiement: row.paiement,
       saisieManuelle: row.saisieParId !== null,

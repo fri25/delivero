@@ -41,3 +41,12 @@ export function useAttribuerCommande() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-commandes'] }),
   });
 }
+
+export async function fetchCommandesExport(typeService?: TypeService, debut?: string, fin?: string) {
+  const token = useAuthStore.getState().token;
+  return apiFetch<AdminCommandeRow[]>('/admin/commandes/export', {
+    token,
+    query: { typeService, debut, fin },
+  });
+}
+

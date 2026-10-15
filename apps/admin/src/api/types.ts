@@ -16,6 +16,7 @@ export interface AdminCommandeRow {
   id: string;
   typeService: TypeService;
   statut: string | null;
+  nature?: string | null;
   createdAt: string;
   montantTotal: string | null;
   livreurId: string | null;

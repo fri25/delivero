@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { TypePartenaire } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { MediasService } from '../medias/medias.service';
 import { CreatePlatDto } from './dto/create-plat.dto';
 import { UpdatePlatDto } from './dto/update-plat.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
@@ -24,7 +25,10 @@ function prixMoyenRepas(
 
 @Injectable()
 export class RestaurantsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly medias: MediasService,
+  ) {}
 
   async findAllPublic(search?: string) {
     const restaurants = await this.prisma.partenaire.findMany({
@@ -130,14 +134,32 @@ export class RestaurantsService {
 
   async createPlat(userId: string, dto: CreatePlatDto) {
     const partenaire = await this.getOwn(userId);
+    if (dto.photoUrl && dto.photoUrl.trim() !== '') {
+      this.medias.assertUrlsAutorisees([dto.photoUrl], 'plats');
+    }
     return this.prisma.plat.create({
-      data: { ...dto, partenaireId: partenaire.id },
+      data: {
+        ...dto,
+        photoUrl: dto.photoUrl?.trim() || null,
+        partenaireId: partenaire.id,
+      },
     });
   }
 
   async updatePlat(userId: string, platId: string, dto: UpdatePlatDto) {
     const plat = await this.getOwnPlat(userId, platId);
-    return this.prisma.plat.update({ where: { id: plat.id }, data: dto });
+    if (dto.photoUrl && dto.photoUrl.trim() !== '') {
+      this.medias.assertUrlsAutorisees([dto.photoUrl], 'plats');
+    }
+    return this.prisma.plat.update({
+      where: { id: plat.id },
+      data: {
+        ...dto,
+        ...(dto.photoUrl !== undefined
+          ? { photoUrl: dto.photoUrl?.trim() || null }
+          : {}),
+      },
+    });
   }
 
   async togglePlatDisponibilite(

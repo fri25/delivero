@@ -184,7 +184,11 @@ export class InviteService {
         'Numéro béninois invalide (ex. 01 57 86 69 59).',
       );
     }
-    return { nom: invite.nom.trim(), telephone };
+    return {
+      nom: invite.nom.trim(),
+      telephone,
+      email: invite.email?.trim().toLowerCase() || undefined,
+    };
   }
 
   private async creerAdresse(adresse: AdresseInviteDto): Promise<string> {
@@ -229,7 +233,7 @@ export class InviteService {
     commandeServiceId: string,
     contact: InfosInvite,
   ) {
-    this.notifications.commandeInviteCreee(contact.telephone, commandeId);
+    this.notifications.commandeInviteCreee(contact, commandeId);
     return {
       jeton: this.jetonInvite.generer(commandeId),
       typeService,

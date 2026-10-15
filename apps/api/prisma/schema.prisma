@@ -49,6 +49,7 @@ model RolePermission {
 model User {
   id           String   @id @default(cuid())
   telephone    String   @unique
+  email        String?  @unique @map("email")
   passwordHash String?  @map("password_hash")
   nom          String
   roleId       String   @map("role_id")
@@ -256,7 +257,6 @@ model Partenaire {
   plats          Plat[]
   commandesRepas CommandeRepas[]
   notations      Notation[]
-  avis           AvisPartenaire[]
 
   @@map("partenaires")
 }
@@ -279,7 +279,6 @@ model Livreur {
   notations              Notation[]
   mouvementsPortefeuille MouvementPortefeuille[]
   cloturesCaisse         ClotureCaisse[]
-  avis                   AvisLivreur[]
 
   @@map("livreurs")
 }
@@ -363,6 +362,7 @@ model Commande {
   client                User?   @relation("CommandeClient", fields: [clientId], references: [id])
   clientNomInvite       String? @map("client_nom_invite")
   clientTelephoneInvite String? @map("client_telephone_invite")
+  clientEmailInvite     String? @map("client_email_invite")
 
   adresseId String?  @map("adresse_id")
   adresse   Adresse? @relation(fields: [adresseId], references: [id])
@@ -404,40 +404,8 @@ model Commande {
   paiement               Paiement?
   notations              Notation[]
   mouvementsPortefeuille MouvementPortefeuille[]
-  avisPartenaire         AvisPartenaire?
-  avisLivreur            AvisLivreur?
 
   @@map("commandes")
-}
-
-// A completed order can receive at most one client review for each eligible
-// target. Reviews are linked to the shared order so ownership is verifiable.
-model AvisPartenaire {
-  id           String     @id @default(cuid())
-  commandeId   String     @unique @map("commande_id")
-  commande     Commande   @relation(fields: [commandeId], references: [id], onDelete: Cascade)
-  partenaireId String     @map("partenaire_id")
-  partenaire   Partenaire @relation(fields: [partenaireId], references: [id], onDelete: Cascade)
-  note         Int
-  commentaire  String?
-  createdAt    DateTime   @default(now()) @map("created_at")
-
-  @@index([partenaireId, createdAt])
-  @@map("avis_partenaires")
-}
-
-model AvisLivreur {
-  id          String   @id @default(cuid())
-  commandeId  String   @unique @map("commande_id")
-  commande    Commande @relation(fields: [commandeId], references: [id], onDelete: Cascade)
-  livreurId   String   @map("livreur_id")
-  livreur     Livreur  @relation(fields: [livreurId], references: [id], onDelete: Cascade)
-  note        Int
-  commentaire String?
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  @@index([livreurId, createdAt])
-  @@map("avis_livreurs")
 }
 
 // --- Module Repas ---------------------------------------------------------
@@ -631,10 +599,18 @@ model CommandeColis {
   zone   Zone        @relation(fields: [zoneId], references: [id])
   taille TailleColis
 
+  // F-CLI-16: Description of parcel content (documents, clothes, etc.)
+  nature                     String?  @map("nature")
   valeurDeclaree             Decimal? @map("valeur_declaree") @db.Decimal(12, 2)
   fragile                    Boolean  @default(false)
   // F-CLI-16: Cloudinary URL of the parcel photo (see src/medias).
   photoUrl                   String?  @map("photo_url")
+  // F-CLI-22: Cloudinary URL of the delivery proof photo taken by the livreur.
+  photoPreuveUrl             String?  @map("photo_preuve_url")
+  // F-LIV-06: Cloudinary URL of the parcel photo taken by the livreur at pickup.
+  photoEnlevementUrl         String?  @map("photo_enlevement_url")
+  // F-LIV-06: Visual check state or remarks at pickup (e.g. "intact", "emballage_abime").
+  etatEnlevement             String?  @map("etat_enlevement")
   montantContreRemboursement Decimal? @map("montant_contre_remboursement") @db.Decimal(12, 2)
   // Montant réellement encaissé par le livreur à la livraison (RG-04). Simple
   // traçabilité sur la commande à ce stade : le reversement périodique à

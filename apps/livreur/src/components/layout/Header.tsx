@@ -17,10 +17,29 @@ export function Header() {
   const logout = useAuthStore((state) => state.logout);
 
   return (
-    <header className="sticky top-0 z-20 bg-brand-navy text-white">
-      <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-3 px-4">
-        <Link to="/" className="font-heading text-lg font-semibold tracking-tight text-white">
-          ChapExpress <span className="text-sm font-normal text-white/60">Livreur</span>
+    <header className="sticky top-0 z-20 bg-brand-navy border-b border-white/10 text-white shadow-md">
+      <div className="mx-auto flex h-16 max-w-3xl items-center justify-between gap-3 px-4">
+        <Link to="/" className="flex items-center gap-2.5 focus-visible:outline-none">
+          <div className="relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-blue to-[#002b66] shadow-sm ring-1 ring-white/20">
+            <svg viewBox="0 0 24 24" className="size-5 fill-none stroke-white stroke-[2.4]" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <span className="font-heading text-lg font-bold tracking-tight text-white leading-none">
+                Chap<span className="text-[#4aa3ea]">Express</span>
+              </span>
+              <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider backdrop-blur-md">
+                Livreur
+              </span>
+            </div>
+            {user && (
+              <span className="text-[11px] text-white/70 font-medium leading-tight truncate max-w-[120px] sm:max-w-[180px]">
+                {user.nom}
+              </span>
+            )}
+          </div>
         </Link>
 
         {user ? (
@@ -30,7 +49,7 @@ export function Header() {
               variant="ghost"
               size="icon"
               aria-label="Déconnexion"
-              className="text-white/90 hover:bg-white/10 hover:text-white"
+              className="size-9 rounded-full text-white/80 hover:bg-white/15 hover:text-white"
               onClick={() => {
                 // Unsent offline actions only replay for their own account.
                 const enAttente = useFileActionsStore
@@ -49,11 +68,11 @@ export function Header() {
                 navigate('/connexion');
               }}
             >
-              <LogOut className="size-5" />
+              <LogOut className="size-4.5" />
             </Button>
           </div>
         ) : (
-          <Button asChild size="sm">
+          <Button asChild size="sm" className="rounded-full font-semibold">
             <Link to="/connexion">Connexion</Link>
           </Button>
         )}

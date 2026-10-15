@@ -14,9 +14,13 @@ export function DisponibiliteToggle() {
   return (
     <Button
       size="sm"
-      variant={livreur.disponible ? 'default' : 'outline'}
-      className={livreur.disponible ? 'bg-success hover:bg-success/85' : ''}
+      variant="ghost"
       disabled={toggleDisponibilite.isPending}
+      className={
+        livreur.disponible
+          ? 'h-9 rounded-full bg-emerald-500/90 hover:bg-emerald-600 text-white font-bold text-xs px-3.5 shadow-sm shadow-emerald-500/30 gap-1.5 transition-all active:scale-95'
+          : 'h-9 rounded-full bg-slate-800/80 hover:bg-slate-700/80 text-white/80 border border-white/20 font-semibold text-xs px-3.5 gap-1.5 transition-all active:scale-95'
+      }
       onClick={() => {
         toggleDisponibilite.mutate(!livreur.disponible, {
           onSuccess: (data) =>
@@ -25,7 +29,14 @@ export function DisponibiliteToggle() {
         });
       }}
     >
-      {livreur.disponible ? 'Disponible' : 'Indisponible'}
+      <span
+        className={
+          livreur.disponible
+            ? 'size-2 rounded-full bg-white animate-pulse'
+            : 'size-2 rounded-full bg-white/40'
+        }
+      />
+      <span>{livreur.disponible ? 'Disponible' : 'Indisponible'}</span>
     </Button>
   );
 }

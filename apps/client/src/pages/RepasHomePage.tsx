@@ -45,37 +45,54 @@ export function RepasHomePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl leading-tight font-semibold text-foreground lg:text-3xl">
-          Natitingou a faim ? On s'en occupe.
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Vos restaurants préférés, livrés chez vous — payez{' '}
-          {ESPECES_ACTIF ? 'en espèces ou en Mobile Money' : 'par Mobile Money'}.
-        </p>
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-navy via-[#0c2f66] to-brand-blue p-6 text-white shadow-lg md:p-8">
+        <div className="absolute -right-12 -top-12 size-48 rounded-full bg-brand-light/20 blur-2xl pointer-events-none" />
+        <div className="relative z-10 max-w-xl">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/95 backdrop-blur-md mb-2">
+            🍔 Livraison de plats chauds à Natitingou
+          </span>
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-white lg:text-3xl">
+            Natitingou a faim ? On s'en occupe.
+          </h1>
+          <p className="mt-2 text-sm text-white/80 leading-relaxed">
+            Vos restaurants préférés livrés en un éclair — payez{' '}
+            {ESPECES_ACTIF ? 'en espèces ou en Mobile Money' : 'par Mobile Money'}.
+          </p>
+        </div>
       </div>
 
-      <div className="sticky top-14 z-10 md:top-16 -mx-4 bg-background/90 px-4 py-2.5 backdrop-blur-md">
+      <div className="sticky top-14 z-10 md:top-16 -mx-4 bg-background/85 px-4 py-3 backdrop-blur-xl border-b border-border/40 shadow-xs">
         <div className="relative">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Un restaurant, un plat..."
-            className="h-11 rounded-full border-transparent bg-secondary pl-9 text-base shadow-sm focus-visible:border-ring focus-visible:bg-card"
+            className="h-11 rounded-2xl border-border/60 bg-card pl-10 pr-9 text-sm shadow-xs transition-all focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             onFocus={() => setSuggestionsOpen(true)}
-            onBlur={() => setTimeout(() => setSuggestionsOpen(false), 100)}
+            onBlur={() => setTimeout(() => setSuggestionsOpen(false), 150)}
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+              aria-label="Effacer la recherche"
+            >
+              <X className="size-4" />
+            </button>
+          )}
           {suggestionsOpen && suggestions.length > 0 && (
-            <ul className="fade-in-0 slide-in-from-top-1 animate-in absolute inset-x-0 top-full z-20 mt-1.5 overflow-hidden rounded-xl bg-card py-1 shadow-lg ring-1 ring-foreground/10 duration-(--duration-fast)">
+            <ul className="fade-in-0 slide-in-from-top-1 animate-in absolute inset-x-0 top-full z-20 mt-1.5 overflow-hidden rounded-2xl bg-card py-1.5 shadow-xl border border-border/80 duration-(--duration-fast)">
               {suggestions.map((r) => (
                 <li key={r.id}>
                   <Link
                     to={`/restaurants/${r.id}`}
-                    className="block px-3.5 py-2 text-sm hover:bg-secondary"
+                    className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-secondary/70 transition-colors"
                     onMouseDown={(e) => e.preventDefault()}
                   >
-                    {r.nom}
+                    <span className="font-medium">{r.nom}</span>
+                    <span className="text-xs text-muted-foreground">Voir le menu →</span>
                   </Link>
                 </li>
               ))}
@@ -87,19 +104,42 @@ export function RepasHomePage() {
       </div>
 
       {!search && !filtresActifs(filtres) && ouvertsMaintenant.length > 0 && (
-        <section className="space-y-2.5">
-          <h2 className="font-heading text-sm font-semibold tracking-wide text-foreground uppercase">
-            Ouverts maintenant
-          </h2>
-          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-heading text-sm font-bold tracking-wider text-foreground uppercase flex items-center gap-2">
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+              Ouverts maintenant
+            </h2>
+            <span className="text-xs text-muted-foreground">{ouvertsMaintenant.length} disponibles</span>
+          </div>
+          <div className="-mx-4 flex snap-x snap-mandatory gap-3.5 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
             {ouvertsMaintenant.map((r) => (
               <Link
                 key={r.id}
                 to={`/restaurants/${r.id}`}
-                className="w-40 shrink-0 snap-start overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10"
+                className="group w-44 shrink-0 snap-start overflow-hidden rounded-2xl bg-card border border-border/70 shadow-xs transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-primary/30"
               >
-                <MediaFrame nom={r.nom} image={r.imageUrl ?? getRestaurantImage(r.nom)} ratio="square" />
-                <p className="line-clamp-1 px-2.5 py-2 text-xs font-medium">{r.nom}</p>
+                <div className="relative overflow-hidden">
+                  <MediaFrame
+                    nom={r.nom}
+                    image={r.imageUrl ?? getRestaurantImage(r.nom)}
+                    ratio="square"
+                    className="transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute top-2 right-2">
+                    <span className="inline-flex size-2 rounded-full bg-emerald-500 ring-2 ring-white" />
+                  </div>
+                </div>
+                <div className="p-2.5">
+                  <p className="line-clamp-1 text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
+                    {r.nom}
+                  </p>
+                  {(r.delaiPreparationMin ?? r.delaiMoyenMinutes) != null && (
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      ~{r.delaiPreparationMin ?? r.delaiMoyenMinutes} min
+                    </p>
+                  )}
+                </div>
               </Link>
             ))}
           </div>

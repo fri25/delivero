@@ -64,6 +64,16 @@ export const envValidationSchema = Joi.object({
   }),
   // Optional WhatsApp sender (+…): tried first, SMS as fallback.
   TWILIO_WHATSAPP_FROM: Joi.string().allow('').default(''),
+  // F-CLI-09: E-mail notifications.
+  COURRIEL_FOURNISSEUR: Joi.string()
+    .valid('console', 'resend')
+    .default('console'),
+  RESEND_API_KEY: Joi.string().when('COURRIEL_FOURNISSEUR', {
+    is: 'resend',
+    then: Joi.required(),
+    otherwise: Joi.allow('').default(''),
+  }),
+  COURRIEL_EXPEDITEUR: Joi.string().default('ChapExpress <notifications@chapexpress.bj>'),
   // Cloudinary (photos colis / courses). Missing => photo fields hidden.
   CLOUDINARY_CLOUD_NAME: Joi.string().allow('').default(''),
   CLOUDINARY_API_KEY: Joi.string().allow('').default(''),

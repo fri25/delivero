@@ -21,6 +21,7 @@ import { doitEtrePaye } from '../lib/paiement';
 export interface ContactInvite {
   nom: string;
   telephone: string;
+  email?: string;
 }
 
 export interface AdresseInvite {

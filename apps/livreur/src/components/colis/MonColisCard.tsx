@@ -2,12 +2,12 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ColisInfo } from './ColisInfo';
 import { LivraisonColisForm } from './LivraisonColisForm';
+import { RecuperationColisForm } from './RecuperationColisForm';
 import { LitigeColisForm } from './LitigeColisForm';
-import { useMarquerColisEnRoute, useMarquerColisRecupere } from '@/api/commandes-colis';
+import { useMarquerColisEnRoute } from '@/api/commandes-colis';
 import type { CommandeColis } from '@/api/types';
 
 export function MonColisCard({ commande }: { commande: CommandeColis }) {
-  const marquerRecupere = useMarquerColisRecupere();
   const marquerEnRoute = useMarquerColisEnRoute();
 
   const peutSignalerLitige =
@@ -19,24 +19,13 @@ export function MonColisCard({ commande }: { commande: CommandeColis }) {
       <ColisInfo commande={commande} />
 
       {commande.statut === 'livreur_en_route_enlevement' && (
-        <Button
-          size="lg"
-          className="w-full"
-          disabled={marquerRecupere.isPending}
-          onClick={() => {
-            marquerRecupere.mutate(commande.id, {
-              onError: (error) => toast.error(error.message),
-            });
-          }}
-        >
-          Colis récupéré
-        </Button>
+        <RecuperationColisForm commande={commande} />
       )}
 
       {commande.statut === 'colis_recupere' && (
         <Button
           size="lg"
-          className="w-full"
+          className="w-full rounded-xl font-bold shadow-md shadow-primary/20 transition-all active:scale-[0.99]"
           disabled={marquerEnRoute.isPending}
           onClick={() => {
             marquerEnRoute.mutate(commande.id, {
@@ -44,14 +33,16 @@ export function MonColisCard({ commande }: { commande: CommandeColis }) {
             });
           }}
         >
-          Marquer en route
+          {marquerEnRoute.isPending ? 'En cours...' : 'Marquer en route'}
         </Button>
       )}
 
       {commande.statut === 'en_route' && <LivraisonColisForm commande={commande} />}
 
       {commande.statut === 'litige' && commande.motif && (
-        <p className="rounded-md bg-destructive/10 px-2 py-1.5 text-sm text-destructive">{commande.motif}</p>
+        <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-xs sm:text-sm font-semibold text-destructive">
+          ⚠️ Motif du litige : {commande.motif}
+        </div>
       )}
 
       {peutSignalerLitige && <LitigeColisForm commandeId={commande.id} />}

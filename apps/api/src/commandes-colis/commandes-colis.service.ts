@@ -38,6 +38,7 @@ import {
   marquerARembourserSiPaye,
   PAIEMENT_ENGAGE_WHERE,
 } from '../paiements/paiement-engage';
+import { RecupererColisDto } from './dto/recuperer-colis.dto';
 import { CreateCommandeColisDto } from './dto/create-commande-colis.dto';
 import { DeclarerLitigeColisDto } from './dto/declarer-litige-colis.dto';
 import { LivrerColisDto } from './dto/livrer-colis.dto';
@@ -79,7 +80,11 @@ const DISPONIBLES_INCLUDE = {
   commande: {
     // V11 also covers guest orders (F-CLI-02): their contact lives on
     // Commande itself, so it must be omitted explicitly here.
-    omit: { clientNomInvite: true, clientTelephoneInvite: true },
+    omit: {
+      clientNomInvite: true,
+      clientTelephoneInvite: true,
+      clientEmailInvite: true,
+    },
     include: {
       adresse: true,
       paiement: { select: { mode: true, statut: true } },
@@ -102,7 +107,11 @@ const SUIVI_PUBLIC_SELECT = {
   id: true,
   statut: true,
   taille: true,
+  nature: true,
   fragile: true,
+  photoEnlevementUrl: true,
+  etatEnlevement: true,
+  photoPreuveUrl: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.CommandeColisSelect;
@@ -231,6 +240,7 @@ export class CommandesColisService {
           adresseEnlevementId: dto.adresseEnlevementId,
           zoneId: dto.zoneId,
           taille: dto.taille,
+          nature: dto.nature?.trim() || null,
           destinataireNom: dto.destinataireNom,
           destinataireTelephone: dto.destinataireTelephone,
           adresseLivraison,
@@ -354,6 +364,7 @@ export class CommandesColisService {
             id: true,
             clientId: true,
             clientTelephoneInvite: true,
+            clientEmailInvite: true,
             montantTotal: true,
             paiement: { select: { mode: true } },
           },
@@ -417,14 +428,33 @@ export class CommandesColisService {
     return updated;
   }
 
-  // Contrôle visuel à l'enlèvement, sans photo (aucun stockage de fichiers
-  // S3 intégré à ce stade — voir CLAUDE.md [À FAIRE]).
-  async marquerRecupere(userId: string, id: string) {
+  // F-LIV-06: Contrôle visuel et photo à l'enlèvement.
+  async marquerRecupere(
+    userId: string,
+    id: string,
+    dto?: RecupererColisDto,
+  ) {
     const commandeColis = await this.getOwnedByLivreur(userId, id);
     this.assertStatut(commandeColis, StatutColis.livreur_en_route_enlevement);
+
+    if (dto?.photoEnlevementUrl) {
+      await this.medias.assertUrlsAutorisees(
+        [dto.photoEnlevementUrl],
+        'colis',
+      );
+    }
+
     const updated = await this.prisma.commandeColis.update({
       where: { id },
-      data: { statut: StatutColis.colis_recupere },
+      data: {
+        statut: StatutColis.colis_recupere,
+        ...(dto?.photoEnlevementUrl
+          ? { photoEnlevementUrl: dto.photoEnlevementUrl }
+          : {}),
+        ...(dto?.etatEnlevement
+          ? { etatEnlevement: dto.etatEnlevement.trim() }
+          : {}),
+      },
       include: DETAIL_INCLUDE,
       omit: LIVREUR_OMIT,
     });
@@ -458,6 +488,9 @@ export class CommandesColisService {
         'Le montant encaissé est obligatoire pour un colis en contre-remboursement.',
       );
     }
+    if (dto.photoPreuveUrl) {
+      this.medias.assertUrlsAutorisees([dto.photoPreuveUrl], 'colis');
+    }
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const result = await tx.commandeColis.update({
@@ -466,6 +499,7 @@ export class CommandesColisService {
           statut: StatutColis.livre,
           nomReceptionnaire: dto.nomReceptionnaire,
           montantEncaisse: dto.montantEncaisse,
+          photoPreuveUrl: dto.photoPreuveUrl,
         },
         include: DETAIL_INCLUDE,
         omit: LIVREUR_OMIT,

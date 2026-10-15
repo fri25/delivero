@@ -1,6 +1,7 @@
 import { Global, Logger, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AlertesLivreursService } from './alertes-livreurs.service';
+import { ConsoleCourrielService, CourrielService, ResendCourrielService } from './courriel.service';
 import { JetonInviteService } from './jeton-invite.service';
 import { ConsoleMessagerie, Messagerie } from './messagerie';
 import { TwilioMessagerie } from './twilio-messagerie';
@@ -44,10 +45,27 @@ import { NotificationsService } from './notifications.service';
         return new ConsoleMessagerie();
       },
     },
+    {
+      provide: CourrielService,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService): CourrielService => {
+        const fournisseur = config.get<string>('COURRIEL_FOURNISSEUR');
+        if (fournisseur === 'resend') {
+          return new ResendCourrielService({
+            apiKey: config.getOrThrow<string>('RESEND_API_KEY'),
+            expediteur:
+              config.get<string>('COURRIEL_EXPEDITEUR') ??
+              'ChapExpress <notifications@chapexpress.bj>',
+          });
+        }
+        return new ConsoleCourrielService();
+      },
+    },
   ],
   exports: [
     NotificationsService,
     Messagerie,
+    CourrielService,
     JetonInviteService,
     AlertesLivreursService,
   ],

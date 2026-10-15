@@ -64,13 +64,15 @@ export function CartPage() {
 
   if (cart.items.length === 0) {
     return (
-      <div className="mx-auto max-w-md rounded-2xl bg-card px-6 py-12 text-center ring-1 ring-foreground/10">
-        <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-secondary text-primary">
-          <ShoppingCart className="size-6" aria-hidden="true" />
+      <div className="mx-auto max-w-md rounded-3xl bg-card px-6 py-12 text-center border border-border/70 shadow-sm">
+        <div className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-primary/10 text-primary shadow-xs">
+          <ShoppingCart className="size-8" aria-hidden="true" />
         </div>
-        <h1 className="font-heading mt-4 text-xl font-semibold">Votre panier est vide</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Choisissez un restaurant et ajoutez vos plats avec le bouton +.</p>
-        <Button asChild className="mt-5">
+        <h1 className="font-heading mt-5 text-xl font-bold text-foreground">Votre panier est vide</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+          Choisissez un restaurant à Natitingou et ajoutez vos plats avec le bouton +.
+        </p>
+        <Button asChild size="lg" className="mt-6 rounded-xl font-semibold shadow-md shadow-primary/20">
           <Link to="/repas">Voir les restaurants</Link>
         </Button>
       </div>
@@ -152,20 +154,22 @@ export function CartPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 lg:max-w-6xl lg:space-y-6">
-      <header>
-        <h1 className="font-heading text-2xl font-semibold lg:text-3xl">Votre panier</h1>
-        {cart.restaurantId && (
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            Chez{' '}
-            <Link to={`/restaurants/${cart.restaurantId}`} className="font-medium text-primary hover:underline">
-              {cart.restaurantNom}
-            </Link>
-          </p>
-        )}
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <h1 className="font-heading text-2xl font-bold lg:text-3xl text-foreground">Votre panier</h1>
+          {cart.restaurantId && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Commande préparée par{' '}
+              <Link to={`/restaurants/${cart.restaurantId}`} className="font-bold text-primary hover:underline">
+                {cart.restaurantNom}
+              </Link>
+            </p>
+          )}
+        </div>
       </header>
 
       {!navigator.onLine && (
-        <p role="status" className="rounded-xl bg-secondary px-3 py-2 text-sm text-foreground">
+        <p role="status" className="rounded-2xl bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-xs sm:text-sm text-amber-900 dark:text-amber-200">
           Vous êtes hors ligne. Votre panier est conservé sur cet appareil ; vous pourrez commander dès le retour du
           réseau.
         </p>
@@ -175,7 +179,7 @@ export function CartPage() {
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
         <div className="space-y-4">
           <FormStep numero={1} titre="Vos plats" complete>
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-border/60">
               {cart.items.map((item) => (
                 <CartItemRow
                   key={item.platId}
@@ -186,39 +190,41 @@ export function CartPage() {
               ))}
             </div>
             {cart.restaurantId && (
-              <Link
-                to={`/restaurants/${cart.restaurantId}`}
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
-              >
-                <Plus className="size-4" aria-hidden="true" /> Ajouter d’autres plats
-              </Link>
+              <div className="pt-2">
+                <Link
+                  to={`/restaurants/${cart.restaurantId}`}
+                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-primary hover:underline"
+                >
+                  <Plus className="size-4" aria-hidden="true" /> Ajouter d’autres plats
+                </Link>
+              </div>
             )}
 
             {/* Décompte transparent (RG-08). */}
-            <dl className="space-y-1.5 rounded-xl bg-secondary/60 p-3 text-sm">
+            <dl className="space-y-2 rounded-2xl bg-secondary/50 p-4 text-xs sm:text-sm border border-border/60">
               <div className="flex justify-between text-muted-foreground">
                 <dt>Plats</dt>
-                <dd>{formatPrixFcfa(sousTotal)}</dd>
+                <dd className="font-medium text-foreground">{formatPrixFcfa(sousTotal)}</dd>
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <dt>
                   Livraison
-                  {quartierLivraison && <span className="block text-xs">Quartier {quartierLivraison.nom}</span>}
+                  {quartierLivraison && <span className="block text-xs text-muted-foreground/80">Quartier {quartierLivraison.nom}</span>}
                 </dt>
-                <dd className="shrink-0">
+                <dd className="shrink-0 font-medium text-foreground">
                   {fraisLivraison !== undefined ? formatPrixFcfa(fraisLivraison) : 'selon le quartier'}
                 </dd>
               </div>
               <div className="flex justify-between gap-3 text-muted-foreground">
                 <dt>
                   Frais de service ChapExpress
-                  <span className="block text-xs">15 % des plats + livraison</span>
+                  <span className="block text-xs text-muted-foreground/80">15 % des plats + livraison</span>
                 </dt>
-                <dd className="shrink-0">{fraisService !== undefined ? formatPrixFcfa(fraisService) : '—'}</dd>
+                <dd className="shrink-0 font-medium text-foreground">{fraisService !== undefined ? formatPrixFcfa(fraisService) : '—'}</dd>
               </div>
-              <div className="flex items-baseline justify-between border-t border-border pt-2 text-foreground">
-                <dt className="font-semibold">Total à payer</dt>
-                <dd className="font-heading text-xl font-semibold">
+              <div className="flex items-baseline justify-between border-t border-border/70 pt-2.5 text-foreground">
+                <dt className="font-bold">Total à payer</dt>
+                <dd className="font-heading text-xl font-bold text-primary">
                   {fraisLivraison !== undefined ? formatPrixFcfa(total) : '—'}
                 </dd>
               </div>

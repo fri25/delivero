@@ -89,22 +89,18 @@ Repas → Colis → Emplettes → Courses express) :
       *(06/10 : 1 à 5 étoiles + commentaire facultatif, une note par cible et
       par commande, seulement après livraison ; le partenaire ne se note que
       pour Repas. Recalcule `noteMoyenne` du partenaire et du livreur —
-      `apps/api/src/notations/`. **Doublon à résoudre** : la branche
-      `berghinos` a ajouté un second système (`apps/api/src/avis/`, tables
-      `AvisPartenaire`/`AvisLivreur`) qui recalcule lui aussi `noteMoyenne`,
-      chacun écrasant la moyenne de l'autre. Le 12/10, l'app client n'affiche
-      plus que « Notations » (décision utilisateur) ; l'API avis reste en
-      place en attendant d'être retirée ou fusionnée)*
-- [ ] F-CLI-09 — Notifications SMS/WhatsApp/e-mail aux étapes clés — *(partiel,
-      05/10 : Web Push (VAPID) sur l'app client + repli WhatsApp/SMS dès
+      `apps/api/src/notations/`. **Doublon résolu** (14/10) : l'ancien module
+      doublon `apps/api/src/avis/` et ses tables `AvisPartenaire`/`AvisLivreur` ont
+      été supprimés, `notations/` restant l'unique système de notation).*
+- [x] F-CLI-09 — Notifications SMS/WhatsApp/e-mail aux étapes clés — *(complet,
+      14/10 : Web Push (VAPID) sur l'app client + repli WhatsApp/SMS dès
       qu'aucun push n'est remis, aux étapes clés des 4 services, au paiement
       reçu et à la nouvelle commande restaurant — voir
-      `apps/api/src/notifications/`. Fournisseur choisi le 13/10 : **Twilio**
-      (pilote `TwilioMessagerie`, WhatsApp puis repli SMS,
-      `MESSAGERIE_FOURNISSEUR="twilio"`) — **identifiants Twilio à fournir**,
-      `console` par défaut en attendant. Clés VAPID à générer par
-      environnement (faites en dev local le 13/10). Pas d'e-mail ; push non
-      proposé dans les apps partenaires/livreur)*
+      `apps/api/src/notifications/`. Support de l'e-mail complet via `CourrielService`
+      (pilote console en dev et Resend en production, `COURRIEL_FOURNISSEUR="console"|"resend"`),
+      envoyé aux clients inscrits ayant renseigné un e-mail et aux commandes invités
+      avec lien de suivi sécurisé. Fournisseur WhatsApp/SMS : **Twilio**
+      (`MESSAGERIE_FOURNISSEUR="twilio"`, repli SMS automatique, console en dev))*
 - [x] F-CLI-10 — Accueil présentant les 4 services et orientant vers le bon parcours
       — *(`ServicesHubPage` est la route `/`, une carte photo par service
       (Colis / Courses express : photos Pexels provisoires), « Comment ça
@@ -128,8 +124,8 @@ Repas → Colis → Emplettes → Courses express) :
 ### Colis
 - [x] F-CLI-15 — Création d'une demande d'envoi (adresses, coordonnées destinataire)
 - [x] F-CLI-16 — Description du colis (nature, taille, valeur déclarée, photo, fragile)
-      — *(partiel : taille/valeur déclarée/fragile + photo (Cloudinary, 06/10)
-      faits ; pas de champ "nature")*
+      — *(complet : taille, nature du colis, valeur déclarée, option fragile et photo
+      Cloudinary faits ; champ nature disponible à la création, au suivi et sur l'app livreur)*
 - [x] F-CLI-17 — Estimation immédiate du tarif — *(13/10 : prix = quartier de
       livraison du destinataire, calculé dès le choix du quartier, aussi sans compte)*
 - [x] F-CLI-18 — Option contre-remboursement — *(implémenté et testé, mais
@@ -138,9 +134,9 @@ Repas → Colis → Emplettes → Courses express) :
 - [x] F-CLI-19 — Programmation de l'enlèvement (immédiat ou planifié)
 - [x] F-CLI-20 — Rappel des objets interdits + acceptation des conditions
 - [x] F-CLI-21 — Suivi de statut Colis
-- [x] F-CLI-22 — Consultation de la preuve de livraison — *(côté client Colis :
-      date de remise, nom du réceptionnaire et code de remise vérifié affichés ;
-      aucune photo, stockage S3 absent)*
+- [x] F-CLI-22 — Consultation de la preuve de livraison — *(complet : date de remise,
+      nom du réceptionnaire, code OTP vérifié et photo de preuve de livraison Cloudinary
+      prise par le livreur consultable sur l'écran détail et le suivi public)*
 
 *(Backend + écrans client/livreur/suivi public livrés le 2026-08-27, voir
 [api-colis.md](api-colis.md) et [service-colis.md](service-colis.md). Hors
@@ -290,11 +286,10 @@ ne sert aujourd'hui que les restaurants.)*
 - [ ] F-LIV-05 — Emplettes : appel client intégré — *(partiel : lien `tel:` vers
       le client affiché sur chaque commande Emplettes, pas de messagerie
       intégrée)*
-- [ ] F-LIV-06 — Colis : contrôle visuel + photo à l'enlèvement — *(partiel :
-      confirmation de récupération faite ; ni contrôle visuel formalisé ni photo
-      — aucun stockage S3 intégré. Écart avec la demande initiale : le "nom du
-      réceptionnaire" a été implémenté à la livraison, pas à l'enlèvement, pour
-      rester fidèle au contrat d'API de la passe 1 — voir api-colis.md)*
+- [x] F-LIV-06 — Colis : contrôle visuel + photo à l'enlèvement — *(complet,
+      14/10 : contrôle de l'état extérieur du colis avec motifs rapides et remarques
+      facultatives, capture et upload signé Cloudinary de la photo à l'enlèvement
+      (`photoEnlevementUrl`), vérification côté serveur et affichage sur le suivi client)*
 - [x] F-LIV-07 — Colis : saisie du code de confirmation ou photo de remise +
       encaissement du contre-remboursement — *(code de remise désormais
       obligatoire à la livraison (correctif sécurité V01 du 27/08, RG-07

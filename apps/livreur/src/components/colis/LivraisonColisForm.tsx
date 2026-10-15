@@ -1,18 +1,44 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { Camera, X } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLivrerColis } from '@/api/commandes-colis';
+import { apiFetch } from '@/api/client';
+import { envoyerPhoto, miniature, type MediasConfig } from '@/lib/medias';
 import type { CommandeColis } from '@/api/types';
 
 export function LivraisonColisForm({ commande }: { commande: CommandeColis }) {
   const [codeOtp, setCodeOtp] = useState('');
   const [nomReceptionnaire, setNomReceptionnaire] = useState('');
   const [montantEncaisse, setMontantEncaisse] = useState('');
+  const [photoPreuveUrl, setPhotoPreuveUrl] = useState<string | null>(null);
+  const [envoiPhoto, setEnvoiPhoto] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const inputFichier = useRef<HTMLInputElement>(null);
   const livrer = useLivrerColis();
 
+  const { data: configMedias } = useQuery({
+    queryKey: ['medias-config'],
+    queryFn: () => apiFetch<MediasConfig>('/medias/config'),
+    staleTime: Infinity,
+  });
+
   const contreRembourseAttendu = commande.montantContreRemboursement !== null;
+
+  const capturerPhoto = async (fichier: File) => {
+    setEnvoiPhoto(true);
+    try {
+      const url = await envoyerPhoto(fichier, 'colis', configMedias?.tailleMaxOctets ?? 300 * 1024);
+      setPhotoPreuveUrl(url);
+    } catch (error) {
+      toast.error((error as Error).message);
+    } finally {
+      setEnvoiPhoto(false);
+    }
+  };
 
   const confirmer = () => {
     setErreur(null);
@@ -25,6 +51,10 @@ export function LivraisonColisForm({ commande }: { commande: CommandeColis }) {
       setErreur('Le montant encaissé est obligatoire pour ce colis (contre-remboursement).');
       return;
     }
+    if (envoiPhoto) {
+      setErreur('L’envoi de la photo de preuve est en cours. Veuillez patienter.');
+      return;
+    }
 
     livrer.mutate(
       {
@@ -32,6 +62,7 @@ export function LivraisonColisForm({ commande }: { commande: CommandeColis }) {
         codeOtp: codeOtp.trim(),
         nomReceptionnaire: nomReceptionnaire.trim() || undefined,
         montantEncaisse: montantEncaisse ? Number(montantEncaisse) : undefined,
+        photoPreuveUrl: photoPreuveUrl ?? undefined,
       },
       {
         // La saisie n'est volontairement pas réinitialisée en cas d'erreur
@@ -80,9 +111,59 @@ export function LivraisonColisForm({ commande }: { commande: CommandeColis }) {
         </div>
       )}
 
+      {/* F-CLI-22 : photo de preuve de livraison */}
+      {configMedias?.actif && (
+        <div className="space-y-1.5">
+          <Label>Photo de preuve de livraison (facultatif)</Label>
+          {photoPreuveUrl ? (
+            <div className="relative inline-block">
+              <img
+                src={miniature(photoPreuveUrl)}
+                alt="Preuve capturée"
+                className="size-20 rounded-lg object-cover ring-1 ring-foreground/20"
+              />
+              <button
+                type="button"
+                onClick={() => setPhotoPreuveUrl(null)}
+                aria-label="Supprimer la photo"
+                className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+          ) : (
+            <div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                disabled={envoiPhoto}
+                onClick={() => inputFichier.current?.click()}
+              >
+                <Camera className="size-4" />
+                {envoiPhoto ? 'Envoi...' : 'Prendre une photo'}
+              </Button>
+            </div>
+          )}
+          <input
+            ref={inputFichier}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = '';
+              if (f) void capturerPhoto(f);
+            }}
+          />
+        </div>
+      )}
+
       {erreur && <p className="text-sm text-destructive">{erreur}</p>}
 
-      <Button className="w-full" disabled={livrer.isPending} onClick={confirmer}>
+      <Button className="w-full" disabled={livrer.isPending || envoiPhoto} onClick={confirmer}>
         {livrer.isPending ? 'Envoi...' : 'Confirmer la livraison'}
       </Button>
     </div>

@@ -130,6 +130,7 @@ export class AdminSaisieManuelleService {
         adresseEnlevementId: adresseEnlevement.id,
         zoneId: dto.zoneId,
         taille: dto.taille,
+        nature: dto.nature,
         destinataireNom: dto.destinataireNom,
         destinataireTelephone: dto.destinataireTelephone,
         adresseLivraison: dto.adresseLivraison,

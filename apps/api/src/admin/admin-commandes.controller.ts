@@ -29,6 +29,16 @@ export class AdminCommandesController {
     return this.adminCommandesService.findAll(dto);
   }
 
+  @RequirePermissions('commandes.consulter_toutes')
+  @Get('export')
+  exportData(
+    @Query('typeService') typeService?: ListCommandesDto['typeService'],
+    @Query('debut') debut?: string,
+    @Query('fin') fin?: string,
+  ) {
+    return this.adminCommandesService.exportRows(typeService, debut, fin);
+  }
+
   @RequirePermissions('commandes.attribuer')
   @Patch(':id/attribuer')
   attribuer(@Param('id') id: string, @Body() dto: AttribuerCommandeDto) {

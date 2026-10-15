@@ -114,8 +114,12 @@ export interface CommandeColis {
   id: string;
   statut: StatutColis;
   taille: TailleColis;
+  nature?: string | null;
   fragile: boolean;
   photoUrl: string | null;
+  photoPreuveUrl?: string | null;
+  photoEnlevementUrl?: string | null;
+  etatEnlevement?: string | null;
   valeurDeclaree: string | null;
   montantContreRemboursement: string | null;
   montantEncaisse: string | null;

@@ -1,5 +1,16 @@
 import { useState } from 'react';
-import { AlertTriangle, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import {
+  Activity,
+  AlertOctagon,
+  AlertTriangle,
+  ArrowDownRight,
+  ArrowUpRight,
+  CheckCircle2,
+  Clock,
+  Receipt,
+  Store,
+  Bike,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useStatistiques } from '@/api/statistiques';
@@ -11,23 +22,23 @@ const PERIODES: { valeur: Periode; label: string; comparaison: string; precedent
   { valeur: 'jour', label: 'Aujourd’hui', comparaison: 'par rapport à hier', precedent: 'hier' },
   {
     valeur: '7j',
-    label: '7 jours',
-    comparaison: 'par rapport aux 7 jours précédents',
+    label: '7 derniers jours',
+    comparaison: 'par rapport aux 7j précédents',
     precedent: 'sur les 7 jours précédents',
   },
   {
     valeur: '30j',
-    label: '30 jours',
-    comparaison: 'par rapport aux 30 jours précédents',
+    label: '30 derniers jours',
+    comparaison: 'par rapport aux 30j précédents',
     precedent: 'sur les 30 jours précédents',
   },
 ];
 
 const SERVICE_LABELS: Record<TypeService, string> = {
-  repas: 'Repas',
-  colis: 'Colis',
-  emplettes: 'Emplettes',
-  courses_express: 'Course en ville',
+  repas: 'Repas restaurants',
+  colis: 'Colis express',
+  emplettes: 'Courses emplettes',
+  courses_express: 'Courses en ville',
 };
 
 const formatJour = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', timeZone: 'UTC' });
@@ -40,26 +51,49 @@ function evolution(actuel: number, precedent: number): number | null {
 
 function Evolution({ actuel, precedent, comparaison }: { actuel: number; precedent: number; comparaison: string }) {
   const pourcentage = evolution(actuel, precedent);
-  if (pourcentage === null) return <p className="text-sm text-white/75">Rien à comparer {comparaison}</p>;
+  if (pourcentage === null) return <p className="text-xs text-white/70">Rien à comparer {comparaison}</p>;
   const Icone = pourcentage >= 0 ? ArrowUpRight : ArrowDownRight;
+  const positif = pourcentage >= 0;
   return (
-    <p className="flex flex-wrap items-center gap-1.5 text-sm text-white/75">
-      <span className="inline-flex items-center gap-0.5 rounded-full bg-white/15 px-2 py-0.5 font-semibold text-white">
-        <Icone className="size-4" aria-hidden="true" />
-        {pourcentage >= 0 ? '+' : ''}
+    <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-white/80">
+      <span
+        className={cn(
+          'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold shadow-2xs',
+          positif ? 'bg-emerald-500/25 text-emerald-300 ring-1 ring-emerald-400/30' : 'bg-rose-500/25 text-rose-200 ring-1 ring-rose-400/30',
+        )}
+      >
+        <Icone className="size-3.5" aria-hidden="true" />
+        {positif ? '+' : ''}
         {pourcentage} %
       </span>
-      {comparaison}
-    </p>
+      <span>{comparaison}</span>
+    </div>
   );
 }
 
-function Tuile({ label, valeur, detail }: { label: string; valeur: string; detail?: string }) {
+function Tuile({
+  label,
+  valeur,
+  detail,
+  icone: Icone,
+}: {
+  label: string;
+  valeur: string;
+  detail?: string;
+  icone: typeof Activity;
+}) {
   return (
-    <div className="rounded-2xl bg-card p-4 ring-1 ring-foreground/10">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-1 font-heading text-2xl font-semibold">{valeur}</p>
-      {detail && <p className="mt-0.5 text-xs text-muted-foreground">{detail}</p>}
+    <div className="flex flex-col justify-between rounded-3xl bg-card p-4 sm:p-5 border border-border/70 shadow-xs transition-all hover:shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-semibold text-muted-foreground">{label}</span>
+        <div className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Icone className="size-4" aria-hidden="true" />
+        </div>
+      </div>
+      <div className="mt-3">
+        <p className="font-heading text-2xl font-bold tracking-tight text-foreground">{valeur}</p>
+        {detail && <p className="mt-1 text-xs text-muted-foreground">{detail}</p>}
+      </div>
     </div>
   );
 }
@@ -75,25 +109,31 @@ function DemandesParJour({ parJour }: { parJour: Statistiques['parJour'] }) {
   const max = Math.max(...parJour.map((jour) => jour.demandes), 1);
   const tous = parJour.length <= 7;
   return (
-    <section className="space-y-3 rounded-2xl bg-card p-4 ring-1 ring-foreground/10">
-      <h2 className="font-heading font-semibold">Demandes par jour</h2>
-      <div className="flex h-40 items-end gap-0.5" aria-hidden="true">
+    <section className="space-y-4 rounded-3xl bg-card p-5 border border-border/70 shadow-xs">
+      <div className="flex items-center justify-between">
+        <h2 className="font-heading font-bold text-base text-foreground">Demandes par jour</h2>
+        <span className="text-xs text-muted-foreground">Volume de commandes</span>
+      </div>
+      <div className="flex h-44 items-end gap-1 sm:gap-2 pt-4 px-1" aria-hidden="true">
         {parJour.map((jour) => (
           <div key={jour.jour} className="group relative flex h-full flex-1 items-end justify-center">
             <div
-              className={cn('w-full max-w-10 rounded-t-[4px] bg-primary group-hover:opacity-80', jour.demandes === 0 && 'bg-muted')}
-              style={{ height: jour.demandes === 0 ? 2 : `${Math.max((jour.demandes / max) * 100, 3)}%` }}
+              className={cn(
+                'w-full max-w-10 rounded-t-lg bg-gradient-to-t from-brand-blue to-cyan-400 transition-all group-hover:brightness-110 shadow-2xs',
+                jour.demandes === 0 && 'bg-muted opacity-40',
+              )}
+              style={{ height: jour.demandes === 0 ? 3 : `${Math.max((jour.demandes / max) * 100, 4)}%` }}
             />
-            <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 rounded-lg bg-foreground px-2.5 py-1.5 text-xs whitespace-nowrap text-background shadow-lg group-hover:block">
-              <p className="font-semibold">{jourLisible(jour.jour)}</p>
-              <p>
+            <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden -translate-x-1/2 rounded-xl bg-brand-navy border border-white/10 px-3 py-2 text-xs whitespace-nowrap text-white shadow-xl group-hover:block">
+              <p className="font-bold text-cyan-300">{jourLisible(jour.jour)}</p>
+              <p className="text-white font-medium">
                 {jour.demandes} demande{jour.demandes > 1 ? 's' : ''}
               </p>
             </div>
           </div>
         ))}
       </div>
-      <div className="flex gap-0.5 border-t border-border pt-1.5 text-[11px] text-muted-foreground" aria-hidden="true">
+      <div className="flex gap-1 border-t border-border/60 pt-2 text-[11px] text-muted-foreground font-medium" aria-hidden="true">
         {parJour.map((jour, index) => (
           <span key={jour.jour} className="flex flex-1 justify-center whitespace-nowrap">
             {tous || (parJour.length - 1 - index) % 7 === 0 ? jourLisible(jour.jour, tous ? formatJour : formatJourCourt) : ''}
@@ -120,31 +160,46 @@ function Classement({
   lignes,
   unite,
   libelleMontant,
+  icone: Icone,
 }: {
   titre: string;
   lignes: ClassementStatistique[];
   unite: string;
   libelleMontant: string;
+  icone: typeof Store;
 }) {
   const max = Math.max(...lignes.map((ligne) => ligne.terminees), 1);
   return (
-    <section className="space-y-3 rounded-2xl bg-card p-4 ring-1 ring-foreground/10">
-      <h2 className="font-heading font-semibold">{titre}</h2>
+    <section className="space-y-4 rounded-3xl bg-card p-5 border border-border/70 shadow-xs">
+      <div className="flex items-center gap-2">
+        <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Icone className="size-4" />
+        </div>
+        <h2 className="font-heading font-bold text-base text-foreground">{titre}</h2>
+      </div>
       {lignes.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Rien de terminé sur la période.</p>
+        <p className="py-8 text-center text-sm text-muted-foreground">Aucune activité terminée sur la période.</p>
       ) : (
-        <ol className="space-y-3">
-          {lignes.map((ligne) => (
-            <li key={ligne.id} className="space-y-1">
-              <div className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="truncate font-medium">{ligne.nom}</span>
-                <span className="shrink-0 text-muted-foreground">
-                  <span className="font-semibold text-foreground">{ligne.terminees}</span> {unite}
-                  {ligne.terminees > 1 ? 's' : ''} · {libelleMontant} {formatPrixFcfa(ligne.montant)}
+        <ol className="space-y-3.5">
+          {lignes.map((ligne, idx) => (
+            <li key={ligne.id} className="space-y-1.5">
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="flex items-center gap-2 truncate font-semibold text-foreground">
+                  <span className="flex size-5 items-center justify-center rounded-full bg-muted text-[11px] font-bold text-muted-foreground tabular-nums shrink-0">
+                    {idx + 1}
+                  </span>
+                  <span className="truncate">{ligne.nom}</span>
+                </span>
+                <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                  <span className="font-mono font-bold text-foreground">{ligne.terminees}</span> {unite}
+                  {ligne.terminees > 1 ? 's' : ''} · <span className="font-mono text-primary font-semibold">{formatPrixFcfa(ligne.montant)}</span> ({libelleMontant})
                 </span>
               </div>
-              <div className="h-2 rounded-full bg-secondary" aria-hidden="true">
-                <div className="h-full rounded-full bg-primary" style={{ width: `${(ligne.terminees / max) * 100}%` }} />
+              <div className="h-2 rounded-full bg-secondary overflow-hidden" aria-hidden="true">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-brand-blue to-cyan-400 transition-all duration-500"
+                  style={{ width: `${(ligne.terminees / max) * 100}%` }}
+                />
               </div>
             </li>
           ))}
@@ -164,10 +219,13 @@ export function TableauDeBordPage() {
   const { comparaison, precedent } = PERIODES.find((p) => p.valeur === periode)!;
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-heading text-xl font-semibold">Tableau de bord</h1>
-        <div role="radiogroup" aria-label="Période" className="flex rounded-full bg-secondary p-1">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Tableau de bord général</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Supervision globale des opérations ChapExpress</p>
+        </div>
+        <div role="radiogroup" aria-label="Période" className="flex rounded-full bg-muted/80 p-1 border border-border/60 self-start sm:self-auto">
           {PERIODES.map((option) => (
             <button
               key={option.valeur}
@@ -176,8 +234,10 @@ export function TableauDeBordPage() {
               aria-checked={periode === option.valeur}
               onClick={() => setPeriode(option.valeur)}
               className={cn(
-                'h-9 rounded-full px-4 text-sm font-medium transition-colors',
-                periode === option.valeur ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground',
+                'h-8.5 rounded-full px-3.5 text-xs font-semibold transition-all',
+                periode === option.valeur
+                  ? 'bg-card text-foreground shadow-2xs font-bold'
+                  : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {option.label}
@@ -187,91 +247,121 @@ export function TableauDeBordPage() {
       </div>
 
       {isPending ? (
-        <div className="space-y-3">
-          <Skeleton className="h-32 w-full rounded-2xl" />
-          <Skeleton className="h-24 w-full rounded-2xl" />
+        <div className="space-y-4">
+          <Skeleton className="h-36 w-full rounded-3xl" />
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
+            <Skeleton className="h-28 w-full rounded-3xl" />
+            <Skeleton className="h-28 w-full rounded-3xl" />
+            <Skeleton className="h-28 w-full rounded-3xl" />
+            <Skeleton className="h-28 w-full rounded-3xl" />
+            <Skeleton className="h-28 w-full rounded-3xl" />
+          </div>
         </div>
       ) : isError ? (
-        <p className="text-sm text-destructive">Impossible de charger les statistiques.</p>
+        <div className="rounded-3xl border border-destructive/30 bg-destructive/5 p-6 text-center text-destructive">
+          <p className="font-heading font-semibold text-base">Impossible de charger les statistiques</p>
+          <p className="mt-1 text-xs text-muted-foreground">Veuillez vérifier votre connexion au serveur API.</p>
+        </div>
       ) : (
         <>
           {stats.aRembourser.nombre > 0 && (
             <Link
               to="/remboursements"
-              className="flex items-center gap-3 rounded-2xl bg-destructive/10 p-4 text-sm text-destructive hover:bg-destructive/15"
+              className="flex items-center gap-3.5 rounded-3xl border border-destructive/30 bg-destructive/10 p-4 sm:p-5 text-sm text-destructive shadow-sm hover:bg-destructive/15 transition-colors group"
             >
-              <AlertTriangle className="size-5 shrink-0" aria-hidden="true" />
-              <span>
-                <span className="font-semibold">
+              <div className="flex size-10 items-center justify-center rounded-2xl bg-destructive text-white shadow-xs shrink-0">
+                <AlertTriangle className="size-5 animate-pulse" aria-hidden="true" />
+              </div>
+              <div>
+                <span className="font-heading font-bold text-base block">
                   {stats.aRembourser.nombre} remboursement{stats.aRembourser.nombre > 1 ? 's' : ''} en attente
-                </span>{' '}
-                · {formatPrixFcfa(stats.aRembourser.montant)} à renvoyer aux clients
+                </span>
+                <span className="text-xs sm:text-sm text-destructive/85">
+                  {formatPrixFcfa(stats.aRembourser.montant)} à restituer aux clients
+                </span>
+              </div>
+              <span className="ml-auto font-bold text-xs sm:text-sm rounded-full bg-destructive text-white px-3 py-1.5 shadow-2xs group-hover:scale-105 transition-transform">
+                Traiter →
               </span>
-              <span className="ml-auto font-medium">Traiter →</span>
             </Link>
           )}
 
-          <section className="rounded-2xl bg-brand-navy p-5 text-white">
-            <p className="text-sm text-white/75">Montant des commandes terminées</p>
-            <p className="mt-1 font-heading text-5xl font-semibold tracking-tight">
-              {formatPrixFcfa(stats.actuel.montantTermine)}
-            </p>
-            <div className="mt-2">
-              <Evolution
-                actuel={stats.actuel.montantTermine}
-                precedent={stats.precedent.montantTermine}
-                comparaison={comparaison}
-              />
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-navy via-brand-navy to-brand-blue/90 p-6 text-white shadow-md">
+            <div className="relative z-10">
+              <span className="text-xs font-semibold uppercase tracking-wider text-cyan-300">
+                Volume d'affaires terminé
+              </span>
+              <p className="mt-1.5 font-heading text-4xl sm:text-5xl font-bold tracking-tight">
+                {formatPrixFcfa(stats.actuel.montantTermine)}
+              </p>
+              <div className="mt-3">
+                <Evolution
+                  actuel={stats.actuel.montantTermine}
+                  precedent={stats.precedent.montantTermine}
+                  comparaison={comparaison}
+                />
+              </div>
             </div>
+            <div className="pointer-events-none absolute -right-6 -bottom-10 size-48 rounded-full bg-cyan-400/10 blur-2xl" />
           </section>
 
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-            <Tuile label="Demandes" valeur={String(stats.actuel.demandes)} detail={`${stats.precedent.demandes} ${precedent}`} />
+          <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-5">
+            <Tuile
+              label="Demandes"
+              valeur={String(stats.actuel.demandes)}
+              detail={`${stats.precedent.demandes} ${precedent}`}
+              icone={Activity}
+            />
             <Tuile
               label="Terminées"
               valeur={String(stats.actuel.terminees)}
-              detail={`${stats.actuel.enCours} en cours ou en litige`}
+              detail={`${stats.actuel.enCours} en cours / litige`}
+              icone={CheckCircle2}
             />
             <Tuile
               label="Panier moyen"
               valeur={stats.actuel.panierMoyen === null ? '—' : formatPrixFcfa(stats.actuel.panierMoyen)}
+              detail="Total / commande"
+              icone={Receipt}
             />
             <Tuile
               label="Taux d’annulation"
               valeur={stats.actuel.tauxAnnulation === null ? '—' : `${stats.actuel.tauxAnnulation} %`}
-              detail={`${stats.actuel.annulees} annulée${stats.actuel.annulees > 1 ? 's' : ''} ou refusée${stats.actuel.annulees > 1 ? 's' : ''}`}
+              detail={`${stats.actuel.annulees} annulée${stats.actuel.annulees > 1 ? 's' : ''}`}
+              icone={AlertOctagon}
             />
             <Tuile
               label="Délai moyen"
               valeur={formatDuree(stats.actuel.delaiMoyenMinutes)}
-              detail="De la commande à la livraison, approximatif"
+              detail="Commande à livraison"
+              icone={Clock}
             />
           </div>
 
           {stats.parService.length > 0 && (
-            <section className="space-y-3">
-              <h2 className="font-heading font-semibold">Par service</h2>
-              <div className="overflow-x-auto rounded-xl bg-card ring-1 ring-foreground/10">
+            <section className="space-y-3.5">
+              <h2 className="font-heading font-bold text-lg text-foreground">Répartition par service</h2>
+              <div className="overflow-x-auto rounded-3xl border border-border/70 bg-card shadow-xs">
                 <table className="w-full text-sm">
-                  <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
+                  <thead className="border-b border-border/60 bg-muted/40 text-left text-xs text-muted-foreground font-semibold">
                     <tr>
-                      <th className="px-3 py-2 font-medium">Service</th>
-                      <th className="px-3 py-2 text-right font-medium">Demandes</th>
-                      <th className="px-3 py-2 text-right font-medium">Terminées</th>
-                      <th className="px-3 py-2 text-right font-medium">Annulées</th>
-                      <th className="px-3 py-2 text-right font-medium">Montant terminé</th>
-                      <th className="px-3 py-2 text-right font-medium">Délai moyen</th>
+                      <th className="px-4 py-3">Service</th>
+                      <th className="px-4 py-3 text-right">Demandes</th>
+                      <th className="px-4 py-3 text-right">Terminées</th>
+                      <th className="px-4 py-3 text-right">Annulées</th>
+                      <th className="px-4 py-3 text-right">Montant terminé</th>
+                      <th className="px-4 py-3 text-right">Délai moyen</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-border/60">
                     {stats.parService.map((service) => (
-                      <tr key={service.typeService} className="border-t border-border">
-                        <td className="px-3 py-2 font-medium">{SERVICE_LABELS[service.typeService]}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{service.demandes}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{service.terminees}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{service.annulees}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{formatPrixFcfa(service.montantTermine)}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{formatDuree(service.delaiMoyenMinutes)}</td>
+                      <tr key={service.typeService} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-4 py-3 font-semibold text-foreground">{SERVICE_LABELS[service.typeService]}</td>
+                        <td className="px-4 py-3 text-right font-mono tabular-nums text-foreground">{service.demandes}</td>
+                        <td className="px-4 py-3 text-right font-mono tabular-nums text-emerald-600 font-semibold">{service.terminees}</td>
+                        <td className="px-4 py-3 text-right font-mono tabular-nums text-destructive font-semibold">{service.annulees}</td>
+                        <td className="px-4 py-3 text-right font-mono tabular-nums font-bold text-foreground">{formatPrixFcfa(service.montantTermine)}</td>
+                        <td className="px-4 py-3 text-right font-mono tabular-nums text-muted-foreground">{formatDuree(service.delaiMoyenMinutes)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -282,15 +372,15 @@ export function TableauDeBordPage() {
 
           <div className="grid gap-4 xl:grid-cols-3">
             {stats.parJour.length > 1 && <DemandesParJour parJour={stats.parJour} />}
-            <Classement titre="Restaurants" lignes={stats.restaurants} unite="commande" libelleMontant="plats" />
-            <Classement titre="Livreurs" lignes={stats.livreurs} unite="course" libelleMontant="montant" />
+            <Classement titre="Top Restaurants" lignes={stats.restaurants} unite="commande" libelleMontant="plats" icone={Store} />
+            <Classement titre="Top Livreurs" lignes={stats.livreurs} unite="course" libelleMontant="montant" icone={Bike} />
           </div>
 
-          <p className="text-xs text-muted-foreground">
+          <div className="rounded-2xl border border-border/60 bg-muted/30 p-3.5 text-xs text-muted-foreground">
             Les commandes Mobile Money jamais payées ne sont pas comptées. « Montant » = total payé par les clients
             (plats, livraison et commission compris). Le délai moyen se base sur la dernière mise à jour de la commande
-            livrée : c’est une estimation.
-          </p>
+            livrée : estimation calculée pour la zone de Natitingou.
+          </div>
         </>
       )}
     </div>

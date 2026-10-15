@@ -35,55 +35,62 @@ export function LigneCommande({
 }) {
   const Icone = ICONES[commande.typeService];
   return (
-    <li className="overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/10 transition-shadow hover:shadow-md">
-      <Link to={commande.lien} className="flex items-center gap-3 p-3 sm:p-4">
+    <li className="overflow-hidden rounded-3xl bg-card border border-border/70 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/25 group">
+      <Link to={commande.lien} className="flex items-center gap-3.5 p-4 sm:p-5">
         <span
           className={cn(
-            'flex size-11 shrink-0 items-center justify-center rounded-xl',
-            commande.issue === 'en_cours' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-primary',
+            'flex size-12 shrink-0 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:scale-105 shadow-2xs',
+            commande.issue === 'en_cours'
+              ? 'bg-gradient-to-br from-brand-navy to-brand-blue text-white shadow-primary/20'
+              : 'bg-primary/10 text-primary',
           )}
         >
-          <Icone className="size-5" aria-hidden="true" />
+          <Icone className="size-5.5" aria-hidden="true" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-semibold">{commande.titre}</span>
-          <span className="block truncate text-sm text-muted-foreground">
+          <span className="block truncate font-heading text-base font-bold text-foreground group-hover:text-primary transition-colors">
+            {commande.titre}
+          </span>
+          <span className="block truncate text-xs sm:text-sm text-muted-foreground mt-0.5">
             {TYPE_SERVICE_LABELS[commande.typeService]} · {dateCourte(commande.createdAt)}
             {commande.montantTotal ? ` · ${formatPrixFcfa(commande.montantTotal)}` : ''}
           </span>
           <span
             className={cn(
-              'mt-1.5 inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium',
-              commande.aPayer && 'bg-brand-navy text-white',
-              !commande.aPayer && commande.issue === 'en_cours' && 'bg-primary/10 text-primary',
-              commande.issue === 'terminee' && 'bg-secondary text-foreground',
+              'mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold',
+              commande.aPayer && 'bg-brand-navy text-white shadow-2xs',
+              !commande.aPayer && commande.issue === 'en_cours' && 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+              commande.issue === 'terminee' && 'bg-secondary text-foreground/80',
               commande.issue === 'annulee' && 'bg-muted text-muted-foreground',
             )}
           >
+            {!commande.aPayer && commande.issue === 'en_cours' && (
+              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            )}
             {commande.statutLabel}
           </span>
         </span>
-        <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <ChevronRight className="size-5 shrink-0 text-muted-foreground/60 group-hover:text-primary transition-colors group-hover:translate-x-0.5" aria-hidden="true" />
       </Link>
 
       {refaire && (
-        <div className="border-t border-border px-3 py-2 sm:px-4">
+        <div className="border-t border-border/50 bg-secondary/25 px-4 py-2.5">
           {refaire.to ? (
             <Link
               to={refaire.to}
               state={refaire.state}
-              className="inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+              className="inline-flex min-h-8 items-center gap-1.5 text-xs sm:text-sm font-semibold text-primary hover:underline"
             >
-              <RotateCcw className="size-4" aria-hidden="true" /> {refaire.libelle}
+              <RotateCcw className="size-3.5" aria-hidden="true" /> {refaire.libelle}
             </Link>
           ) : (
             <button
               type="button"
               disabled={refaire.enCours}
               onClick={refaire.onClick}
-              className="inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-primary hover:underline disabled:opacity-50"
+              className="inline-flex min-h-8 items-center gap-1.5 text-xs sm:text-sm font-semibold text-primary hover:underline disabled:opacity-50 cursor-pointer"
             >
-              <RotateCcw className="size-4" aria-hidden="true" /> {refaire.enCours ? 'Préparation...' : refaire.libelle}
+              <RotateCcw className="size-3.5" aria-hidden="true" /> {refaire.enCours ? 'Préparation...' : refaire.libelle}
             </button>
           )}
         </div>

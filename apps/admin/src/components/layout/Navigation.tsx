@@ -55,18 +55,23 @@ function Lien({ lien, badge, compact }: { lien: Lien; badge?: number; compact?: 
       end={lien.end}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
-          compact ? 'h-9 px-3' : 'h-10 px-3',
-          isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+          'flex items-center gap-3 rounded-2xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all active:scale-98',
+          compact ? 'h-9 px-3.5' : 'h-10 px-3.5',
+          isActive
+            ? 'bg-primary/10 text-primary font-bold shadow-2xs'
+            : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
         )
       }
     >
-      <Icone className="size-4 shrink-0" aria-hidden="true" />
-      {lien.label}
+      <Icone className="size-4 shrink-0 transition-transform" aria-hidden="true" />
+      <span>{lien.label}</span>
       {badge ? (
-        <span className="ml-auto rounded-full bg-destructive px-1.5 text-xs font-bold text-white tabular-nums">
-          {badge}
-          <span className="sr-only"> à traiter</span>
+        <span className="relative ml-auto flex items-center justify-center">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-40" />
+          <span className="relative rounded-full bg-destructive px-2 py-0.5 text-[10px] font-bold text-white tabular-nums shadow-xs">
+            {badge}
+            <span className="sr-only"> à traiter</span>
+          </span>
         </span>
       ) : null}
     </NavLink>
@@ -81,21 +86,23 @@ export function Navigation({ aRembourser }: { aRembourser: number }) {
   const badge = (to: string) => (to === '/remboursements' ? aRembourser : undefined);
   return (
     <>
-      <nav aria-label="Navigation principale" className="hidden w-56 shrink-0 lg:block">
-        <div className="sticky top-20 space-y-5">
+      <nav aria-label="Navigation principale" className="hidden w-60 shrink-0 lg:block">
+        <div className="sticky top-24 rounded-3xl border border-border/70 bg-card/70 p-3.5 shadow-xs backdrop-blur-md space-y-5">
           {GROUPES.map((groupe) => (
             <div key={groupe.titre} className="space-y-1">
-              <p className="px-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{groupe.titre}</p>
-              {groupe.liens.map((lien) => (
-                <Lien key={lien.to} lien={lien} badge={badge(lien.to)} />
-              ))}
+              <p className="px-3.5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">{groupe.titre}</p>
+              <div className="space-y-0.5">
+                {groupe.liens.map((lien) => (
+                  <Lien key={lien.to} lien={lien} badge={badge(lien.to)} />
+                ))}
+              </div>
             </div>
           ))}
         </div>
       </nav>
       <nav
         aria-label="Navigation principale"
-        className="-mx-4 flex gap-1 overflow-x-auto border-b border-border px-4 pb-3 lg:hidden"
+        className="-mx-4 flex gap-1.5 overflow-x-auto border-b border-border/60 bg-card/60 px-4 py-2.5 backdrop-blur-md lg:hidden"
       >
         {GROUPES.flatMap((groupe) => groupe.liens).map((lien) => (
           <Lien key={lien.to} lien={lien} badge={badge(lien.to)} compact />

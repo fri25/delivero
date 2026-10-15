@@ -1,6 +1,6 @@
 import { useZones } from '@/api/zones';
 
-/** Zone picker shared by the livreur and restaurant forms. */
+/** Zone picker shared by the livreur, restaurant, and order entry forms. */
 export function ZoneSelect({
   value,
   onChange,
@@ -14,7 +14,7 @@ export function ZoneSelect({
   return (
     <select
       id={id}
-      className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+      className="h-10 w-full rounded-xl border border-input bg-card px-3 text-sm font-medium text-foreground outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 shadow-xs transition-colors cursor-pointer"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       required

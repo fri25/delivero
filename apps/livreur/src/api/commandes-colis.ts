@@ -48,19 +48,35 @@ export function usePrendreEnChargeColis() {
   });
 }
 
+export interface RecupererColisInput {
+  id: string;
+  photoEnlevementUrl?: string;
+  etatEnlevement?: string;
+}
+
 // Status updates go through the offline queue (docs/pwa-offline.md).
 export function useMarquerColisRecupere() {
   const executer = useExecuterAction();
   return useMutation({
-    mutationFn: (id: string) =>
-      executer({
+    mutationFn: (input: string | RecupererColisInput) => {
+      const id = typeof input === 'string' ? input : input.id;
+      const corps =
+        typeof input === 'object'
+          ? {
+              photoEnlevementUrl: input.photoEnlevementUrl,
+              etatEnlevement: input.etatEnlevement,
+            }
+          : undefined;
+      return executer({
         libelle: 'Colis récupéré',
         service: 'colis',
         commandeId: id,
         methode: 'PATCH',
         chemin: `/commandes/colis/${id}/recupere`,
+        corps,
         attendu: { statut: 'colis_recupere' },
-      }),
+      });
+    },
   });
 }
 
@@ -84,6 +100,7 @@ interface LivrerColisInput {
   codeOtp: string;
   nomReceptionnaire?: string;
   montantEncaisse?: number;
+  photoPreuveUrl?: string;
 }
 
 // Queued offline too (decision of 13/10): the delivery code is checked by

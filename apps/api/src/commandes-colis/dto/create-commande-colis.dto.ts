@@ -27,6 +27,12 @@ export class CreateCommandeColisDto {
   @IsEnum(TailleColis)
   taille!: TailleColis;
 
+  /** F-CLI-16: Description or nature of the parcel (e.g. documents, clothes...). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  nature?: string;
+
   /** Recipient's neighbourhood (GET /quartiers): sets the price (Q-28, 13/10). */
   @IsString()
   @IsNotEmpty()

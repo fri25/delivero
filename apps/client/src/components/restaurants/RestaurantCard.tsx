@@ -1,6 +1,5 @@
 import { Clock, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
 import { MediaFrame } from '@/components/restaurants/MediaFrame';
 import { getRestaurantImage } from '@/data/images';
 import type { RestaurantSummary } from '@/api/types';
@@ -24,53 +23,65 @@ export function RestaurantCard({
       className="group fill-mode-both animate-in slide-in-from-bottom-3 fade-in-0 block duration-(--duration-base) ease-(--ease-signature) focus-visible:outline-none"
       style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
     >
-      <article className="overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/10 transition-[transform,box-shadow] duration-(--duration-fast) ease-(--ease-signature) group-hover:-translate-y-0.5 group-hover:shadow-lg group-active:translate-y-0 group-active:shadow-none group-focus-visible:ring-2 group-focus-visible:ring-ring">
-        <MediaFrame
-          nom={restaurant.nom}
-          image={image}
-          ratio="wide"
-          priority={priority}
-          vignette
-          className={ouvert ? undefined : 'grayscale-[55%]'}
-        >
-          <Badge
-            variant="secondary"
-            className={
-              ouvert
-                ? 'absolute top-2.5 right-2.5 border-0 bg-success text-success-foreground'
-                : 'absolute top-2.5 right-2.5 border-0 bg-black/55 text-white'
-            }
+      <article className="overflow-hidden rounded-3xl bg-card border border-border/70 shadow-xs transition-all duration-300 ease-(--ease-signature) group-hover:-translate-y-1 group-hover:shadow-xl group-hover:shadow-primary/5 group-hover:border-primary/25 group-active:translate-y-0 group-active:shadow-none group-focus-visible:ring-2 group-focus-visible:ring-ring">
+        <div className="relative overflow-hidden">
+          <MediaFrame
+            nom={restaurant.nom}
+            image={image}
+            ratio="wide"
+            priority={priority}
+            vignette
+            className={ouvert ? 'transition-transform duration-500 ease-out group-hover:scale-105' : 'grayscale-[55%]'}
           >
-            {ouvert ? 'Ouvert' : 'Fermé'}
-          </Badge>
-          <h3 className="font-heading absolute inset-x-3 bottom-2.5 line-clamp-1 text-base font-semibold text-white drop-shadow-sm">
-            {restaurant.nom}
-          </h3>
-        </MediaFrame>
+            <div className="absolute top-3 right-3 z-10">
+              {ouvert ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/90 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-md">
+                  <span className="size-1.5 animate-pulse rounded-full bg-white" />
+                  Ouvert
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white/90 backdrop-blur-md">
+                  Fermé
+                </span>
+              )}
+            </div>
 
-        <div className="space-y-1 px-3.5 py-3 text-sm text-muted-foreground">
-          {restaurant.description && <p className="line-clamp-1">{restaurant.description}</p>}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
             {restaurant.noteMoyenne && (
-              <span className="inline-flex items-center gap-1 font-medium text-foreground">
-                <Star className="size-3.5 fill-brand-blue text-brand-blue" />
-                {restaurant.noteMoyenne}
-              </span>
+              <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-0.5 text-xs font-bold text-slate-800 shadow-sm backdrop-blur-md dark:bg-slate-900/90 dark:text-slate-100">
+                <Star className="size-3 fill-amber-400 text-amber-400" />
+                <span>{restaurant.noteMoyenne}</span>
+              </div>
             )}
+          </MediaFrame>
+        </div>
+
+        <div className="p-4 space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-heading text-base font-bold text-foreground transition-colors group-hover:text-primary line-clamp-1">
+              {restaurant.nom}
+            </h3>
+          </div>
+
+          {restaurant.description && (
+            <p className="line-clamp-1 text-xs text-muted-foreground">{restaurant.description}</p>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
             {(restaurant.delaiPreparationMin ?? restaurant.delaiMoyenMinutes) != null && (
-              <span className="inline-flex items-center gap-1">
-                <Clock className="size-3.5" aria-hidden="true" />
+              <span className="inline-flex items-center gap-1 rounded-md bg-secondary/80 px-2 py-0.5 font-medium text-foreground">
+                <Clock className="size-3 text-primary" aria-hidden="true" />
                 {restaurant.delaiPreparationMin ?? restaurant.delaiMoyenMinutes} min
               </span>
             )}
-            {(restaurant.typesCuisine?.length ? restaurant.typesCuisine.join(' · ') : restaurant.specialiteCuisine) && (
-              <span className="line-clamp-1">
-                {restaurant.typesCuisine?.length ? restaurant.typesCuisine.join(' · ') : restaurant.specialiteCuisine}
+            {(restaurant.typesCuisine?.length ? restaurant.typesCuisine.slice(0, 2).join(' · ') : restaurant.specialiteCuisine) && (
+              <span className="line-clamp-1 font-medium text-muted-foreground">
+                {restaurant.typesCuisine?.length ? restaurant.typesCuisine.slice(0, 2).join(' · ') : restaurant.specialiteCuisine}
               </span>
             )}
-            {/* An average: rounded so it reads as an order of magnitude, not a price. */}
             {restaurant.prixMoyen != null && (
-              <span>Plat moyen ≈ {formatPrixFcfa(Math.round(restaurant.prixMoyen / 50) * 50)}</span>
+              <span className="text-muted-foreground/80">
+                · Plat ≈ {formatPrixFcfa(Math.round(restaurant.prixMoyen / 50) * 50)}
+              </span>
             )}
           </div>
         </div>
@@ -78,3 +89,4 @@ export function RestaurantCard({
     </Link>
   );
 }
+
