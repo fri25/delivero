@@ -1,4 +1,10 @@
-import { IsNumber, IsOptional, IsPositive, IsString } from 'class-validator';
+import {
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class UpdateLivreurDto {
   @IsOptional()
@@ -14,4 +20,9 @@ export class UpdateLivreurDto {
   @IsNumber()
   @IsPositive()
   plafondCaisse?: number;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(8)
+  motDePasse?: string;
 }

@@ -1,5 +1,5 @@
 import { useState, type ComponentProps } from 'react';
-import { Pencil, Plus } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ZoneSelect } from '@/components/zones/ZoneSelect';
 import {
   useCreatePartenaire,
+  useDeletePartenaire,
   usePartenaires,
   useSuspendrePartenaire,
   useUpdatePartenaire,
@@ -195,6 +196,7 @@ function ModifierRestaurantForm({ restaurant, onTermine }: { restaurant: Partena
 function CarteRestaurant({ restaurant }: { restaurant: PartenaireAdmin }) {
   const [edition, setEdition] = useState(false);
   const suspendre = useSuspendrePartenaire();
+  const supprimer = useDeletePartenaire();
 
   return (
     <li className="space-y-4 rounded-3xl border border-border/70 bg-card p-5 shadow-xs transition-all hover:shadow-sm">
@@ -281,6 +283,28 @@ function CarteRestaurant({ restaurant }: { restaurant: PartenaireAdmin }) {
             }}
           >
             {restaurant.suspendu ? 'Réactiver' : 'Suspendre'}
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            title="Supprimer ce restaurant"
+            aria-label={`Supprimer ${restaurant.nom}`}
+            disabled={supprimer.isPending}
+            onClick={() => {
+              if (!window.confirm(`Supprimer définitivement ${restaurant.nom}, son accès et son menu ? Cette action est irréversible. Les restaurants associés à des commandes ne peuvent pas être supprimés.`)) {
+                return;
+              }
+              supprimer.mutate(
+                { id: restaurant.id },
+                {
+                  onSuccess: () => toast.success(`${restaurant.nom} a été supprimé.`),
+                  onError: (error) => toast.error(error.message),
+                },
+              );
+            }}
+          >
+            <Trash2 className="size-4" aria-hidden="true" />
           </Button>
         </div>
       </div>

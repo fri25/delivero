@@ -104,14 +104,45 @@ export class AdminLivreursService {
       }
     }
 
+    const passwordHash = dto.motDePasse
+      ? await bcrypt.hash(dto.motDePasse, SALT_ROUNDS)
+      : undefined;
+
     return this.prisma.livreur.update({
       where: { id },
       data: {
-        zoneId: dto.zoneId,
+        ...(dto.zoneId ? { zone: { connect: { id: dto.zoneId } } } : {}),
         plafondAvance: dto.plafondAvance,
         plafondCaisse: dto.plafondCaisse,
+        ...(passwordHash
+          ? { user: { update: { passwordHash } } }
+          : {}),
       },
       include: LIVREUR_INCLUDE,
     });
+  }
+
+  async remove(id: string) {
+    const livreur = await this.prisma.livreur.findUnique({
+      where: { id },
+      select: { id: true, userId: true },
+    });
+    if (!livreur) {
+      throw new NotFoundException('Livreur introuvable.');
+    }
+
+    const [commandes, mouvements, clotures] = await Promise.all([
+      this.prisma.commande.count({ where: { livreurId: id } }),
+      this.prisma.mouvementPortefeuille.count({ where: { livreurId: id } }),
+      this.prisma.clotureCaisse.count({ where: { livreurId: id } }),
+    ]);
+    if (commandes || mouvements || clotures) {
+      throw new ConflictException(
+        'Impossible de supprimer ce livreur : son compte est associé à un historique de commandes ou de caisse.',
+      );
+    }
+
+    await this.prisma.user.delete({ where: { id: livreur.userId } });
+    return { id };
   }
 }

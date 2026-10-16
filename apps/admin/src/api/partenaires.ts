@@ -58,3 +58,16 @@ export function useSuspendrePartenaire() {
     apiFetch<PartenaireAdmin>(`/admin/partenaires/${id}/suspension`, { method: 'PATCH', body: { suspendu }, token }),
   );
 }
+
+export function useDeletePartenaire() {
+  const token = useAuthStore((state) => state.token);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id }: { id: string }) =>
+      apiFetch<{ id: string }>(`/admin/partenaires/${id}`, {
+        method: 'DELETE',
+        token,
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-partenaires'] }),
+  });
+}

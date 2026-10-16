@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCreateLivreur, useLivreurs, useUpdateLivreur } from '@/api/livreurs';
+import { useCreateLivreur, useDeleteLivreur, useLivreurs, useUpdateLivreur } from '@/api/livreurs';
 import { ZoneSelect } from '@/components/zones/ZoneSelect';
 import { formatPrixFcfa } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -124,10 +124,12 @@ function NouveauLivreurForm({ onFermer }: { onFermer: () => void }) {
 
 function LivreurRow({ livreur }: { livreur: Livreur }) {
   const updateLivreur = useUpdateLivreur();
+  const supprimer = useDeleteLivreur();
   const [edition, setEdition] = useState(false);
   const [zoneId, setZoneId] = useState(livreur.zone.id);
   const [plafondAvance, setPlafondAvance] = useState(livreur.plafondAvance);
   const [plafondCaisse, setPlafondCaisse] = useState(livreur.plafondCaisse);
+  const [motDePasse, setMotDePasse] = useState('');
 
   if (!edition) {
     return (
@@ -162,9 +164,33 @@ function LivreurRow({ livreur }: { livreur: Livreur }) {
         <td className="px-4 py-3.5 font-mono text-xs font-semibold text-foreground">{formatPrixFcfa(livreur.avanceEnCours)}</td>
         <td className="px-4 py-3.5 font-mono text-xs font-bold text-primary">{formatPrixFcfa(livreur.caisseAReverser)}</td>
         <td className="px-4 py-3.5 text-right">
-          <Button size="sm" variant="outline" className="h-8 rounded-xl text-xs font-semibold" onClick={() => setEdition(true)}>
-            Modifier
-          </Button>
+          <div className="flex justify-end gap-1.5">
+            <Button size="sm" variant="outline" className="h-8 rounded-xl text-xs font-semibold" onClick={() => setEdition(true)}>
+              Modifier
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              title="Supprimer ce livreur"
+              aria-label={`Supprimer ${livreur.user.nom}`}
+              disabled={supprimer.isPending}
+              onClick={() => {
+                if (!window.confirm(`Supprimer définitivement le compte de ${livreur.user.nom} ? Cette action est irréversible. Un compte avec un historique de commandes ou de caisse ne peut pas être supprimé.`)) {
+                  return;
+                }
+                supprimer.mutate(
+                  { id: livreur.id },
+                  {
+                    onSuccess: () => toast.success('Livreur supprimé.'),
+                    onError: (error) => toast.error(error.message),
+                  },
+                );
+              }}
+            >
+              <Trash2 className="size-4" aria-hidden="true" />
+            </Button>
+          </div>
         </td>
       </tr>
     );
@@ -210,36 +236,62 @@ function LivreurRow({ livreur }: { livreur: Livreur }) {
       <td className="px-4 py-3.5 text-xs font-mono text-muted-foreground">{formatPrixFcfa(livreur.avanceEnCours)}</td>
       <td className="px-4 py-3.5 text-xs font-mono text-muted-foreground">{formatPrixFcfa(livreur.caisseAReverser)}</td>
       <td className="px-4 py-3.5 text-right">
-        <div className="flex justify-end gap-1.5">
-          <Button
-            size="sm"
-            className="h-8 rounded-xl text-xs font-bold bg-primary text-white"
-            disabled={updateLivreur.isPending}
-            onClick={() => {
-              updateLivreur.mutate(
-                {
-                  id: livreur.id,
-                  dto: {
-                    zoneId,
-                    plafondAvance: Number(plafondAvance),
-                    plafondCaisse: Number(plafondCaisse),
+        <div className="flex min-w-52 flex-col items-end gap-2">
+          <Input
+            type="password"
+            autoComplete="new-password"
+            minLength={8}
+            placeholder="Nouveau mot de passe"
+            aria-label={`Nouveau mot de passe pour ${livreur.user.nom}`}
+            className="h-8 w-full rounded-xl text-xs"
+            value={motDePasse}
+            onChange={(event) => setMotDePasse(event.target.value)}
+          />
+          <div className="flex justify-end gap-1.5">
+            <Button
+              size="sm"
+              className="h-8 rounded-xl text-xs font-bold bg-primary text-white"
+              disabled={updateLivreur.isPending}
+              onClick={() => {
+                updateLivreur.mutate(
+                  {
+                    id: livreur.id,
+                    dto: {
+                      zoneId,
+                      plafondAvance: Number(plafondAvance),
+                      plafondCaisse: Number(plafondCaisse),
+                      motDePasse: motDePasse || undefined,
+                    },
                   },
-                },
-                {
-                  onSuccess: () => {
-                    toast.success('Livreur mis à jour.');
-                    setEdition(false);
+                  {
+                    onSuccess: () => {
+                      toast.success(
+                        motDePasse
+                          ? 'Livreur mis à jour et mot de passe modifié.'
+                          : 'Livreur mis à jour.',
+                      );
+                      setMotDePasse('');
+                      setEdition(false);
+                    },
+                    onError: (error) => toast.error(error.message),
                   },
-                  onError: (error) => toast.error(error.message),
-                },
-              );
-            }}
-          >
-            Enregistrer
-          </Button>
-          <Button size="sm" variant="ghost" className="h-8 rounded-xl text-xs" onClick={() => setEdition(false)}>
-            Annuler
-          </Button>
+                );
+              }}
+            >
+              Enregistrer
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 rounded-xl text-xs"
+              onClick={() => {
+                setMotDePasse('');
+                setEdition(false);
+              }}
+            >
+              Annuler
+            </Button>
+          </div>
         </div>
       </td>
     </tr>

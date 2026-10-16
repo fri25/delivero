@@ -124,6 +124,28 @@ export class AdminPartenairesService {
     });
   }
 
+  async remove(id: string) {
+    const partenaire = await this.prisma.partenaire.findFirst({
+      where: { id, type: TypePartenaire.restaurant },
+      select: { id: true, userId: true },
+    });
+    if (!partenaire) {
+      throw new NotFoundException('Restaurant introuvable.');
+    }
+
+    const commandes = await this.prisma.commandeRepas.count({
+      where: { partenaireId: id },
+    });
+    if (commandes > 0) {
+      throw new ConflictException(
+        'Impossible de supprimer ce restaurant : il est associé à des commandes. Suspendez-le pour le retirer du catalogue.',
+      );
+    }
+
+    await this.prisma.user.delete({ where: { id: partenaire.userId } });
+    return { id };
+  }
+
   private async getOrThrow(id: string) {
     const partenaire = await this.prisma.partenaire.findFirst({
       where: { id, type: TypePartenaire.restaurant },

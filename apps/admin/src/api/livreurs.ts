@@ -16,6 +16,7 @@ interface UpdateLivreurInput {
   zoneId?: string;
   plafondAvance?: number;
   plafondCaisse?: number;
+  motDePasse?: string;
 }
 
 export function useLivreurs() {
@@ -43,6 +44,19 @@ export function useUpdateLivreur() {
   return useMutation({
     mutationFn: ({ id, dto }: { id: string; dto: UpdateLivreurInput }) =>
       apiFetch<Livreur>(`/admin/livreurs/${id}`, { method: 'PATCH', body: dto, token }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-livreurs'] }),
+  });
+}
+
+export function useDeleteLivreur() {
+  const token = useAuthStore((state) => state.token);
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id }: { id: string }) =>
+      apiFetch<{ id: string }>(`/admin/livreurs/${id}`, {
+        method: 'DELETE',
+        token,
+      }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-livreurs'] }),
   });
 }

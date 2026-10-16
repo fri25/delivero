@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -43,5 +44,10 @@ export class AdminPartenairesController {
   @Patch(':id/suspension')
   suspendre(@Param('id') id: string, @Body() dto: SuspendrePartenaireDto) {
     return this.partenaires.suspendre(id, dto.suspendu);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.partenaires.remove(id);
   }
 }
