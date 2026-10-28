@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { resolveQuartierId } from './quartiers';
 
 // S'appuie sur le restaurant de démonstration créé par `prisma/seed.ts`
 // (+22900000001 / demo12345, voir prisma/seed.ts) — la base doit avoir été
@@ -30,15 +31,6 @@ describe('Repas (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeAll(async () => {
-    // Ces suites valident l'implémentation complète (encaissement espèces,
-    // portefeuille livreur, contre-remboursement), qui reste en place : le
-    // périmètre V1 est une configuration de déploiement, pas une suppression
-    // de code. On ouvre donc explicitement ce que la V1 ferme. À poser avant
-    // la construction du module : dotenv n'écrase pas une variable déjà
-    // présente dans process.env.
-    process.env.MODES_PAIEMENT_ACTIFS = 'mobile_money,especes';
-    process.env.CONTRE_REMBOURSEMENT_ACTIF = 'true';
-
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -95,6 +87,7 @@ describe('Repas (e2e)', () => {
       .set('Authorization', `Bearer ${clientToken}`)
       .send({
         libelle: 'Test',
+        quartierId: await resolveQuartierId(server),
         pointDeRepere: 'Repère e2e',
         estParDefaut: true,
       })

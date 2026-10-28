@@ -1,7 +1,11 @@
 import { Global, Logger, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AlertesLivreursService } from './alertes-livreurs.service';
-import { ConsoleCourrielService, CourrielService, ResendCourrielService } from './courriel.service';
+import {
+  ConsoleCourrielService,
+  CourrielService,
+  ResendCourrielService,
+} from './courriel.service';
 import { JetonInviteService } from './jeton-invite.service';
 import { ConsoleMessagerie, Messagerie } from './messagerie';
 import { TwilioMessagerie } from './twilio-messagerie';

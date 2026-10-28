@@ -1,4 +1,7 @@
-import { ConsoleCourrielService, ResendCourrielService } from './courriel.service';
+import {
+  ConsoleCourrielService,
+  ResendCourrielService,
+} from './courriel.service';
 
 describe('CourrielService', () => {
   describe('ConsoleCourrielService', () => {
@@ -24,14 +27,19 @@ describe('CourrielService', () => {
 
   describe('ResendCourrielService', () => {
     it('envoie une requête HTTP POST à Resend avec les en-têtes et le payload attendus', async () => {
-      const mockFetch = jest.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ id: 'email_123' }),
-      });
+      const mockFetch = jest
+        .fn<Promise<Response>, Parameters<typeof fetch>>()
+        .mockResolvedValue({
+          ok: true,
+          json: () => Promise.resolve({ id: 'email_123' }),
+        } as Response);
 
       const service = new ResendCourrielService(
-        { apiKey: 're_test_key_123', expediteur: 'ChapExpress <contact@chapexpress.bj>' },
-        mockFetch as unknown as typeof fetch,
+        {
+          apiKey: 're_test_key_123',
+          expediteur: 'ChapExpress <contact@chapexpress.bj>',
+        },
+        mockFetch,
       );
 
       await service.envoyer({
@@ -44,11 +52,12 @@ describe('CourrielService', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
       const [url, init] = mockFetch.mock.calls[0];
       expect(url).toBe('https://api.resend.com/emails');
-      expect(init.method).toBe('POST');
-      expect(init.headers['Authorization']).toBe('Bearer re_test_key_123');
-      expect(init.headers['Content-Type']).toBe('application/json');
+      expect(init?.method).toBe('POST');
+      const headers = init?.headers as Record<string, string>;
+      expect(headers['Authorization']).toBe('Bearer re_test_key_123');
+      expect(headers['Content-Type']).toBe('application/json');
 
-      const body = JSON.parse(init.body as string);
+      const body = JSON.parse(init?.body as string) as Record<string, unknown>;
       expect(body.from).toBe('ChapExpress <contact@chapexpress.bj>');
       expect(body.to).toEqual(['client@test.bj']);
       expect(body.subject).toBe('Confirmation');
@@ -57,15 +66,20 @@ describe('CourrielService', () => {
     });
 
     it('lève une erreur lorsque Resend répond avec une erreur HTTP', async () => {
-      const mockFetch = jest.fn().mockResolvedValue({
-        ok: false,
-        status: 422,
-        text: async () => 'Invalid recipient email',
-      });
+      const mockFetch = jest
+        .fn<Promise<Response>, Parameters<typeof fetch>>()
+        .mockResolvedValue({
+          ok: false,
+          status: 422,
+          text: () => Promise.resolve('Invalid recipient email'),
+        } as Response);
 
       const service = new ResendCourrielService(
-        { apiKey: 're_bad_key', expediteur: 'ChapExpress <contact@chapexpress.bj>' },
-        mockFetch as unknown as typeof fetch,
+        {
+          apiKey: 're_bad_key',
+          expediteur: 'ChapExpress <contact@chapexpress.bj>',
+        },
+        mockFetch,
       );
 
       await expect(

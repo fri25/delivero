@@ -3,6 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { creerAutreLivreur } from './livreurs';
+import { resolveQuartierId } from './quartiers';
 
 // S'appuie sur la zone et le livreur de démonstration créés par
 // `prisma/seed.ts` (zone "Natitingou centre", livreur +22900000003 /
@@ -31,17 +33,9 @@ describe('Courses express (e2e)', () => {
   let clientToken: string;
   let livreurToken: string;
   let zoneId: string;
+  let quartierId: string;
 
   beforeAll(async () => {
-    // Ces suites valident l'implémentation complète (encaissement espèces,
-    // portefeuille livreur, contre-remboursement), qui reste en place : le
-    // périmètre V1 est une configuration de déploiement, pas une suppression
-    // de code. On ouvre donc explicitement ce que la V1 ferme. À poser avant
-    // la construction du module : dotenv n'écrase pas une variable déjà
-    // présente dans process.env.
-    process.env.MODES_PAIEMENT_ACTIFS = 'mobile_money,especes';
-    process.env.CONTRE_REMBOURSEMENT_ACTIF = 'true';
-
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -80,6 +74,7 @@ describe('Courses express (e2e)', () => {
       .set('Authorization', `Bearer ${livreurToken}`)
       .expect(200);
     zoneId = (meRes.body as { zoneId: string }).zoneId;
+    quartierId = await resolveQuartierId(server);
   });
 
   afterAll(async () => {
@@ -96,7 +91,7 @@ describe('Courses express (e2e)', () => {
         description: 'Retirer un colis à la poste et le déposer au bureau',
         zoneId,
         modePaiement: 'especes',
-        etapes,
+        etapes: etapes.map((etape) => ({ ...etape, quartierId })),
       });
   }
 
@@ -104,12 +99,12 @@ describe('Courses express (e2e)', () => {
     const unArret = await request(server)
       .get('/api/commandes/courses-express/estimation')
       .set('Authorization', `Bearer ${clientToken}`)
-      .query({ zoneId, nombreEtapes: 1 })
+      .query({ quartierIds: quartierId })
       .expect(200);
     const deuxArrets = await request(server)
       .get('/api/commandes/courses-express/estimation')
       .set('Authorization', `Bearer ${clientToken}`)
-      .query({ zoneId, nombreEtapes: 2 })
+      .query({ quartierIds: `${quartierId},${quartierId}` })
       .expect(200);
     expect((deuxArrets.body as { tarif: number }).tarif).toBeGreaterThan(
       (unArret.body as { tarif: number }).tarif,
@@ -184,13 +179,14 @@ describe('Courses express (e2e)', () => {
     ]);
     const id = (createRes.body as CommandeCoursesExpressBody).id;
 
+    const autreLivreurToken = await creerAutreLivreur(server, zoneId);
     const [first, second] = await Promise.all([
       request(server)
         .patch(`/api/commandes/courses-express/${id}/prendre-en-charge`)
         .set('Authorization', `Bearer ${livreurToken}`),
       request(server)
         .patch(`/api/commandes/courses-express/${id}/prendre-en-charge`)
-        .set('Authorization', `Bearer ${livreurToken}`),
+        .set('Authorization', `Bearer ${autreLivreurToken}`),
     ]);
     const statuses = [first.status, second.status].sort();
     expect(statuses).toEqual([200, 409]);

@@ -3,6 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { creerAutreLivreur } from './livreurs';
+import { resolveQuartierId } from './quartiers';
 
 // S'appuie sur la zone/grille et le livreur de démonstration créés par
 // `prisma/seed.ts` (zone "Natitingou centre", livreur +22900000003 /
@@ -30,17 +32,9 @@ describe('Colis (e2e)', () => {
   let clientAdresseId: string;
   let livreurToken: string;
   let zoneId: string;
+  let quartierId: string;
 
   beforeAll(async () => {
-    // Ces suites valident l'implémentation complète (encaissement espèces,
-    // portefeuille livreur, contre-remboursement), qui reste en place : le
-    // périmètre V1 est une configuration de déploiement, pas une suppression
-    // de code. On ouvre donc explicitement ce que la V1 ferme. À poser avant
-    // la construction du module : dotenv n'écrase pas une variable déjà
-    // présente dans process.env.
-    process.env.MODES_PAIEMENT_ACTIFS = 'mobile_money,especes';
-    process.env.CONTRE_REMBOURSEMENT_ACTIF = 'true';
-
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -66,12 +60,14 @@ describe('Colis (e2e)', () => {
       .send({ telephone, motDePasse: 'motdepasse123', nom: 'Expéditeur E2E' })
       .expect(201);
     clientToken = (registerRes.body as AuthResponseBody).accessToken;
+    quartierId = await resolveQuartierId(server);
 
     const adresseRes = await request(server)
       .post('/api/adresses')
       .set('Authorization', `Bearer ${clientToken}`)
       .send({
         libelle: 'Domicile',
+        quartierId,
         pointDeRepere: 'Repère e2e colis',
         estParDefaut: true,
       })
@@ -98,7 +94,7 @@ describe('Colis (e2e)', () => {
     const res = await request(server)
       .get('/api/commandes/colis/estimation')
       .set('Authorization', `Bearer ${clientToken}`)
-      .query({ zoneId, taille: 'moyen' })
+      .query({ quartierLivraisonId: quartierId })
       .expect(200);
     expect((res.body as { tarif: number }).tarif).toBeGreaterThan(0);
   });
@@ -107,7 +103,7 @@ describe('Colis (e2e)', () => {
     const estimationRes = await request(server)
       .get('/api/commandes/colis/estimation')
       .set('Authorization', `Bearer ${clientToken}`)
-      .query({ zoneId, taille: 'moyen' })
+      .query({ quartierLivraisonId: quartierId })
       .expect(200);
     const tarifAttendu = (estimationRes.body as { tarif: number }).tarif;
 
@@ -121,6 +117,7 @@ describe('Colis (e2e)', () => {
       .send({
         adresseEnlevementId: clientAdresseId,
         zoneId,
+        quartierLivraisonId: quartierId,
         taille: 'moyen',
         destinataireNom: 'Destinataire E2E',
         destinataireTelephone: '+22991234567',
@@ -211,12 +208,13 @@ describe('Colis (e2e)', () => {
       .send({
         adresseEnlevementId: clientAdresseId,
         zoneId,
+        quartierLivraisonId: quartierId,
         taille: 'petit',
         destinataireNom: 'Destinataire planifié',
         destinataireTelephone: '+22991234568',
         adresseLivraison: 'Quartier Y, Natitingou',
         pointDeRepereLivraison: 'Près du marché',
-        modePaiement: 'mobile_money',
+        modePaiement: 'especes',
         conditionsAcceptees: true,
         programmationAt: demain,
       })
@@ -238,6 +236,7 @@ describe('Colis (e2e)', () => {
       .send({
         adresseEnlevementId: clientAdresseId,
         zoneId,
+        quartierLivraisonId: quartierId,
         taille: 'petit',
         destinataireNom: 'Destinataire concurrence',
         destinataireTelephone: '+22991234569',
@@ -249,13 +248,14 @@ describe('Colis (e2e)', () => {
       .expect(201);
     const colisId = (createRes.body as CommandeColisBody).id;
 
+    const autreLivreurToken = await creerAutreLivreur(server, zoneId);
     const [first, second] = await Promise.all([
       request(server)
         .patch(`/api/commandes/colis/${colisId}/prendre-en-charge`)
         .set('Authorization', `Bearer ${livreurToken}`),
       request(server)
         .patch(`/api/commandes/colis/${colisId}/prendre-en-charge`)
-        .set('Authorization', `Bearer ${livreurToken}`),
+        .set('Authorization', `Bearer ${autreLivreurToken}`),
     ]);
     const statuses = [first.status, second.status].sort();
     expect(statuses).toEqual([200, 409]);
@@ -268,6 +268,7 @@ describe('Colis (e2e)', () => {
       .send({
         adresseEnlevementId: clientAdresseId,
         zoneId,
+        quartierLivraisonId: quartierId,
         taille: 'petit',
         destinataireNom: 'Destinataire non attribue',
         destinataireTelephone: '+22991234570',
@@ -294,6 +295,7 @@ describe('Colis (e2e)', () => {
       .send({
         adresseEnlevementId: clientAdresseId,
         zoneId,
+        quartierLivraisonId: quartierId,
         taille: 'petit',
         destinataireNom: 'Destinataire transition illégale',
         destinataireTelephone: '+22991234571',

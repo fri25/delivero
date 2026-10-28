@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- signatures mirror @nestjs/mapped-types */
 export function OmitType<T>(classRef: new () => T, _keys: readonly any[]) {
   return class extends (classRef as any) {};
 }

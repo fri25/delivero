@@ -3,6 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { creerAutreLivreur } from './livreurs';
+import { resolveQuartierId } from './quartiers';
 
 // S'appuie sur la zone et le livreur de démonstration créés par
 // `prisma/seed.ts` (zone "Natitingou centre", livreur +22900000003 /
@@ -39,13 +41,6 @@ describe('Emplettes (e2e)', () => {
   let zoneId: string;
 
   beforeAll(async () => {
-    // Emplettes est hors périmètre V1 : la création est refusée tant que le
-    // service n'est pas listé dans SERVICES_ACTIFS (voir
-    // src/config/env.validation.ts). Ce test valide le service complet, il
-    // l'ouvre donc explicitement. À poser avant la construction du module :
-    // dotenv n'écrase pas une variable déjà présente dans process.env.
-    process.env.SERVICES_ACTIFS = 'repas,colis,courses_express,emplettes';
-
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -81,6 +76,7 @@ describe('Emplettes (e2e)', () => {
       .set('Authorization', `Bearer ${clientToken}`)
       .send({
         libelle: 'Domicile',
+        quartierId: await resolveQuartierId(server),
         pointDeRepere: 'Repère e2e emplettes',
         estParDefaut: true,
       })
@@ -310,13 +306,14 @@ describe('Emplettes (e2e)', () => {
     const createRes = await creerCommande(5000, ['Piment']);
     const id = (createRes.body as CommandeEmplettesBody).id;
 
+    const autreLivreurToken = await creerAutreLivreur(server, zoneId);
     const [first, second] = await Promise.all([
       request(server)
         .patch(`/api/commandes/emplettes/${id}/prendre-en-charge`)
         .set('Authorization', `Bearer ${livreurToken}`),
       request(server)
         .patch(`/api/commandes/emplettes/${id}/prendre-en-charge`)
-        .set('Authorization', `Bearer ${livreurToken}`),
+        .set('Authorization', `Bearer ${autreLivreurToken}`),
     ]);
     const statuses = [first.status, second.status].sort();
     expect(statuses).toEqual([200, 409]);

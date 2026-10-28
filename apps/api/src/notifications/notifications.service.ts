@@ -189,10 +189,7 @@ export class NotificationsService implements OnModuleInit {
     };
     if (commande.clientId) {
       this.envoyerEnArrierePlan(commande.clientId, notification);
-    } else if (
-      commande.clientTelephoneInvite ||
-      commande.clientEmailInvite
-    ) {
+    } else if (commande.clientTelephoneInvite || commande.clientEmailInvite) {
       this.envoyerInviteEnArrierePlan(
         {
           telephone: commande.clientTelephoneInvite,
@@ -216,10 +213,7 @@ export class NotificationsService implements OnModuleInit {
     };
     if (commande.clientId) {
       this.envoyerEnArrierePlan(commande.clientId, notification);
-    } else if (
-      commande.clientTelephoneInvite ||
-      commande.clientEmailInvite
-    ) {
+    } else if (commande.clientTelephoneInvite || commande.clientEmailInvite) {
       this.envoyerInviteEnArrierePlan(
         {
           telephone: commande.clientTelephoneInvite,
@@ -336,9 +330,9 @@ export class NotificationsService implements OnModuleInit {
         'http://localhost:5173',
       );
       const lien = notification.url
-        ? (notification.url.startsWith('http')
-            ? notification.url
-            : `${baseUrl}${notification.url}`)
+        ? notification.url.startsWith('http')
+          ? notification.url
+          : `${baseUrl}${notification.url}`
         : undefined;
       const texteCourriel = lien
         ? `${notification.message}\n\nConsulter : ${lien}`

@@ -429,19 +429,12 @@ export class CommandesColisService {
   }
 
   // F-LIV-06: Contrôle visuel et photo à l'enlèvement.
-  async marquerRecupere(
-    userId: string,
-    id: string,
-    dto?: RecupererColisDto,
-  ) {
+  async marquerRecupere(userId: string, id: string, dto?: RecupererColisDto) {
     const commandeColis = await this.getOwnedByLivreur(userId, id);
     this.assertStatut(commandeColis, StatutColis.livreur_en_route_enlevement);
 
     if (dto?.photoEnlevementUrl) {
-      await this.medias.assertUrlsAutorisees(
-        [dto.photoEnlevementUrl],
-        'colis',
-      );
+      this.medias.assertUrlsAutorisees([dto.photoEnlevementUrl], 'colis');
     }
 
     const updated = await this.prisma.commandeColis.update({

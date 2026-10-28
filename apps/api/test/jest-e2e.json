@@ -9,5 +9,6 @@
   "moduleNameMapper": {
     "^@nestjs/mapped-types$": "<rootDir>/mapped-types.mock.ts"
   },
+  "setupFiles": ["<rootDir>/setup-e2e.ts"],
   "testTimeout": 30000
 }

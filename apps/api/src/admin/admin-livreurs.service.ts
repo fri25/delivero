@@ -114,9 +114,7 @@ export class AdminLivreursService {
         ...(dto.zoneId ? { zone: { connect: { id: dto.zoneId } } } : {}),
         plafondAvance: dto.plafondAvance,
         plafondCaisse: dto.plafondCaisse,
-        ...(passwordHash
-          ? { user: { update: { passwordHash } } }
-          : {}),
+        ...(passwordHash ? { user: { update: { passwordHash } } } : {}),
       },
       include: LIVREUR_INCLUDE,
     });

@@ -36,12 +36,12 @@ export class ConsoleCourrielService extends CourrielService {
     texte?: string,
     html?: string,
   ): Promise<void> {
-    const { destinataire, sujet: s, texte: t, html: h } = extraireParametres(
-      destinataireOrOptions,
-      sujet,
-      texte,
-      html,
-    );
+    const {
+      destinataire,
+      sujet: s,
+      texte: t,
+      html: h,
+    } = extraireParametres(destinataireOrOptions, sujet, texte, html);
 
     this.logger.log(
       `[E-mail -> ${destinataire}] Sujet: "${s}"\n${t}${h ? `\n(HTML inclus)` : ''}`,
@@ -72,12 +72,12 @@ export class ResendCourrielService extends CourrielService {
     texte?: string,
     html?: string,
   ): Promise<void> {
-    const { destinataire, sujet: s, texte: t, html: h } = extraireParametres(
-      destinataireOrOptions,
-      sujet,
-      texte,
-      html,
-    );
+    const {
+      destinataire,
+      sujet: s,
+      texte: t,
+      html: h,
+    } = extraireParametres(destinataireOrOptions, sujet, texte, html);
 
     const response = await this.fetchImpl('https://api.resend.com/emails', {
       method: 'POST',

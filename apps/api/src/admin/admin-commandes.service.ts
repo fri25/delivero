@@ -353,20 +353,19 @@ export class AdminCommandesService {
       montantTotal: row.montantTotal?.toString() ?? null,
       livreurId: row.livreurId,
       // Guest orders (F-CLI-02) have no account: show the contact they gave.
-      client:
-        row.client
+      client: row.client
+        ? {
+            nom: row.client.nom,
+            telephone: row.client.telephone,
+            email: row.client.email ?? null,
+          }
+        : row.clientTelephoneInvite || row.clientEmailInvite
           ? {
-              nom: row.client.nom,
-              telephone: row.client.telephone,
-              email: row.client.email ?? null,
+              nom: `${row.clientNomInvite ?? 'Client'} (sans compte)`,
+              telephone: row.clientTelephoneInvite ?? '',
+              email: row.clientEmailInvite ?? null,
             }
-          : (row.clientTelephoneInvite || row.clientEmailInvite)
-            ? {
-                nom: `${row.clientNomInvite ?? 'Client'} (sans compte)`,
-                telephone: row.clientTelephoneInvite ?? '',
-                email: row.clientEmailInvite ?? null,
-              }
-            : null,
+          : null,
       livreur: row.livreur?.user ?? null,
       paiement: row.paiement,
       saisieManuelle: row.saisieParId !== null,

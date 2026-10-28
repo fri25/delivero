@@ -76,7 +76,9 @@ export const envValidationSchema = Joi.object({
     then: Joi.required(),
     otherwise: Joi.allow('').default(''),
   }),
-  COURRIEL_EXPEDITEUR: Joi.string().default('ChapExpress <notifications@chapexpress.bj>'),
+  COURRIEL_EXPEDITEUR: Joi.string().default(
+    'ChapExpress <notifications@chapexpress.bj>',
+  ),
   // Cloudinary (photos colis / courses). Missing => photo fields hidden.
   CLOUDINARY_CLOUD_NAME: Joi.string().allow('').default(''),
   CLOUDINARY_API_KEY: Joi.string().allow('').default(''),
