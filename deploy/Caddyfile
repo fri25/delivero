@@ -1,0 +1,6 @@
+# Caddy obtains and renews the Let's Encrypt certificate for API_DOMAIN on its
+# own; reverse_proxy forwards Socket.IO WebSocket upgrades without extra config.
+{$API_DOMAIN} {
+	encode gzip zstd
+	reverse_proxy api:3000
+}

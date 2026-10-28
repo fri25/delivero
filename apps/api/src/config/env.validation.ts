@@ -6,6 +6,9 @@ export const envValidationSchema = Joi.object({
     .default('development'),
   PORT: Joi.number().default(3000),
   DATABASE_URL: Joi.string().uri().required(),
+  // Number of reverse-proxy hops in front of the API (see main.ts). Empty
+  // when the API is exposed directly (local dev).
+  TRUST_PROXY: Joi.string().pattern(/^\d+$/).allow('').default(''),
   // V04 : plus de fallback "reflète n'importe quel Origin" — obligatoire dès
   // que NODE_ENV=production, optionnel seulement en dev/test.
   CORS_ORIGINS: Joi.string()

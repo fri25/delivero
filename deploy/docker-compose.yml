@@ -1,0 +1,59 @@
+# Fallback, not used for the pilot (Render + Neon, see render.yaml and
+# docs/deploiement.md): self-hosted stack on a single VM (Oracle Cloud Always
+# Free or any VPS) — PostgreSQL + API + Caddy (automatic HTTPS,
+# WebSocket-aware reverse proxy). The PWAs are hosted separately.
+#
+#   cd deploy && cp .env.example .env   # then fill it in
+#   docker compose up -d --build
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: delivero
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant dans deploy/.env}
+      POSTGRES_DB: delivero
+    # No published port: the database is only reachable from the api container.
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U delivero -d delivero"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://delivero:${POSTGRES_PASSWORD}@db:5432/delivero?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?API_DOMAIN manquant dans deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

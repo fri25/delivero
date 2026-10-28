@@ -1,0 +1,188 @@
+# Render Blueprint: API + the four PWAs, free plan. Database on Neon.
+# Guide: docs/deploiement.md
+#
+# Variables marked `sync: false` are asked for when the Blueprint is created
+# and are then edited in the Render dashboard (never committed).
+
+services:
+  - type: web
+    name: chapexpress-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: >-
+      pnpm install --frozen-lockfile --filter @delivero/api... &&
+      pnpm --filter @delivero/api exec prisma generate &&
+      pnpm --filter @delivero/api build
+    # NODE_ENV is set here rather than in envVars: set globally it would also
+    # apply to the build and make pnpm skip the dev dependencies (Nest CLI,
+    # prisma CLI). No pre-deploy hook on the free plan, so migrations run at
+    # startup (no-op when already applied).
+    startCommand: >-
+      cd apps/api &&
+      pnpm exec prisma migrate deploy &&
+      NODE_ENV=production node dist/src/main.js
+    healthCheckPath: /api/health
+    buildFilter:
+      paths:
+        - apps/api/**
+        - pnpm-lock.yaml
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: TRUST_PROXY
+        value: "1"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 2h
+      - key: CORS_ORIGINS
+        sync: false
+      - key: CLIENT_APP_URL
+        sync: false
+      - key: SERVICES_ACTIFS
+        value: repas,colis,courses_express
+      - key: MODES_PAIEMENT_ACTIFS
+        value: mobile_money
+      - key: CONTRE_REMBOURSEMENT_ACTIF
+        value: "false"
+      - key: FEDAPAY_ENVIRONMENT
+        value: sandbox
+      - key: FEDAPAY_SECRET_KEY
+        sync: false
+      - key: FEDAPAY_WEBHOOK_SECRET
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        value: mailto:contact@chapexpress.bj
+      - key: MESSAGERIE_FOURNISSEUR
+        value: console
+      - key: COURRIEL_FOURNISSEUR
+        value: console
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+  - type: web
+    name: chapexpress-client
+    runtime: static
+    buildCommand: >-
+      pnpm install --frozen-lockfile --filter @delivero/client... &&
+      pnpm --filter @delivero/client build
+    staticPublishPath: apps/client/dist
+    buildFilter:
+      paths:
+        - apps/client/**
+        - packages/**
+        - pnpm-lock.yaml
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_API_URL
+        sync: false
+
+  - type: web
+    name: chapexpress-livreur
+    runtime: static
+    buildCommand: >-
+      pnpm install --frozen-lockfile --filter @delivero/livreur... &&
+      pnpm --filter @delivero/livreur build
+    staticPublishPath: apps/livreur/dist
+    buildFilter:
+      paths:
+        - apps/livreur/**
+        - packages/**
+        - pnpm-lock.yaml
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_API_URL
+        sync: false
+
+  - type: web
+    name: chapexpress-partenaires
+    runtime: static
+    buildCommand: >-
+      pnpm install --frozen-lockfile --filter @delivero/partenaires... &&
+      pnpm --filter @delivero/partenaires build
+    staticPublishPath: apps/partenaires/dist
+    buildFilter:
+      paths:
+        - apps/partenaires/**
+        - packages/**
+        - pnpm-lock.yaml
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_API_URL
+        sync: false
+
+  - type: web
+    name: chapexpress-admin
+    runtime: static
+    buildCommand: >-
+      pnpm install --frozen-lockfile --filter @delivero/admin... &&
+      pnpm --filter @delivero/admin build
+    staticPublishPath: apps/admin/dist
+    buildFilter:
+      paths:
+        - apps/admin/**
+        - packages/**
+        - pnpm-lock.yaml
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_API_URL
+        sync: false

@@ -164,6 +164,7 @@ Détail complet : [docs/regles-gestion.md](docs/regles-gestion.md).
 | Le schéma de données, une entité, un statut | [docs/modele-donnees.md](docs/modele-donnees.md) |
 | L'architecture, la stack, les intégrations externes | [docs/architecture.md](docs/architecture.md) |
 | Le mode hors ligne, le service worker, le module Livreur | [docs/pwa-offline.md](docs/pwa-offline.md) |
+| Le déploiement (Render + Neon), le premier compte admin | [docs/deploiement.md](docs/deploiement.md) |
 | Un budget de perf, une exigence mesurable | [docs/exigences-non-fonctionnelles.md](docs/exigences-non-fonctionnelles.md) |
 | Un point non tranché (Q-NN) avant de décider seul | [docs/decisions-ouvertes.md](docs/decisions-ouvertes.md) |
 | Le catalogue de lancement Repas (7 restaurants pilotes, REST-NN) | [docs/annexe-a-catalogue-lancement.md](docs/annexe-a-catalogue-lancement.md) |
