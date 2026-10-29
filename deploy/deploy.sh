@@ -44,6 +44,16 @@ echo "    /api/health : OK"
 
 echo "==> 4/4 Accès public via Traefik"
 API_DOMAIN="$(grep -E '^API_DOMAIN=' .env | cut -d'"' -f2)"
+# Le check public peut rater juste après un recreate (Traefik se ré-abonne) :
+# 3 essais espacés avant de conclure.
+ok_public=""
+for _ in 1 2 3; do
+  if [ -n "${API_DOMAIN:-}" ] && curl -sk --max-time 15 "https://$API_DOMAIN/api/health" | grep -q '"status":"ok"'; then
+    ok_public="1"
+    break
+  fi
+  sleep 15
+done
 for var in CLIENT_DOMAIN LIVREUR_DOMAIN PARTENAIRES_DOMAIN ADMIN_DOMAIN; do
   domain="$(grep -E "^${var}=" .env | cut -d'"' -f2)"
   if [ -n "${domain:-}" ] && curl -sk --max-time 15 "https://$domain/" -o /dev/null -w '%{http_code}' | grep -q '^200$'; then
@@ -53,7 +63,7 @@ for var in CLIENT_DOMAIN LIVREUR_DOMAIN PARTENAIRES_DOMAIN ADMIN_DOMAIN; do
     echo "    Vérifier : DNS $domain -> IP du VPS, router Traefik, ACME."
   fi
 done
-if [ -n "${API_DOMAIN:-}" ] && curl -sk --max-time 15 "https://$API_DOMAIN/api/health" | grep -q '"status":"ok"'; then
+if [ -n "$ok_public" ]; then
   echo "    https://$API_DOMAIN/api/health : OK"
 else
   echo "    AVERTISSEMENT: https://$API_DOMAIN/api/health injoignable."
