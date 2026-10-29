@@ -27,4 +27,9 @@ RUN pnpm exec prisma generate && pnpm build
 
 ENV NODE_ENV=production
 EXPOSE 3000
+# Least privilege: never run the API as root (container escape = host root).
+RUN chown -R node:node /app
+USER node
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node dist/src/main.js"]

@@ -43,8 +43,12 @@ export class ConsoleCourrielService extends CourrielService {
       html: h,
     } = extraireParametres(destinataireOrOptions, sujet, texte, html);
 
+    // Never log email bodies in production: docker logs are readable by
+    // anyone with server access (invitation links, reset tokens).
+    const corps =
+      process.env.NODE_ENV === 'production' ? '(masqué en production)' : t;
     this.logger.log(
-      `[E-mail -> ${destinataire}] Sujet: "${s}"\n${t}${h ? `\n(HTML inclus)` : ''}`,
+      `[E-mail -> ${destinataire}] Sujet: "${s}"\n${corps}${h && process.env.NODE_ENV !== 'production' ? `\n(HTML inclus)` : ''}`,
     );
     return Promise.resolve();
   }

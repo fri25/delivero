@@ -23,7 +23,13 @@ export class ConsoleMessagerie extends Messagerie {
   private readonly logger = new Logger('Messagerie');
 
   envoyer(telephone: string, texte: string): Promise<void> {
-    this.logger.log(`[WhatsApp/SMS -> ${telephone}] ${texte}`);
+    // Never log message bodies (OTP codes) in production: docker logs are
+    // readable by anyone with server access.
+    const contenu =
+      process.env.NODE_ENV === 'production'
+        ? `(${texte.length} caractères, masqué en production)`
+        : texte;
+    this.logger.log(`[WhatsApp/SMS -> ${telephone}] ${contenu}`);
     return Promise.resolve();
   }
 }
