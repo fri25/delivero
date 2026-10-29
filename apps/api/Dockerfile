@@ -5,7 +5,7 @@
 FROM node:22-bookworm-slim
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && apt-get install -y --no-install-recommends openssl ca-certificates wget \
   && rm -rf /var/lib/apt/lists/* \
   && corepack enable
 
@@ -18,6 +18,10 @@ RUN pnpm install --frozen-lockfile --filter @delivero/api...
 
 COPY apps/api apps/api
 WORKDIR /app/apps/api
+# Prisma 7 resolves env('DATABASE_URL') from prisma.config.ts at generate
+# time: provide a dummy for the build (no connection is opened). The real
+# URL is injected at runtime via deploy/.env and used by `migrate deploy`.
+ARG DATABASE_URL=postgresql://build:build@localhost:5432/build?schema=public
 # Dev dependencies are kept: the prisma CLI runs `migrate deploy` at startup.
 RUN pnpm exec prisma generate && pnpm build
 
