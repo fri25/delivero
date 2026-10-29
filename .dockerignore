@@ -5,6 +5,5 @@
 !**/.env.example
 .git
 docs
-deploy
 *.log
 *.pdf
