@@ -41,7 +41,7 @@ export function LigneCommande({
           className={cn(
             'flex size-12 shrink-0 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:scale-105 shadow-2xs',
             commande.issue === 'en_cours'
-              ? 'bg-gradient-to-br from-brand-navy to-brand-blue text-white shadow-primary/20'
+              ? 'bg-primary text-primary-foreground'
               : 'bg-primary/10 text-primary',
           )}
         >
@@ -58,14 +58,14 @@ export function LigneCommande({
           <span
             className={cn(
               'mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold',
-              commande.aPayer && 'bg-brand-navy text-white shadow-2xs',
-              !commande.aPayer && commande.issue === 'en_cours' && 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+              commande.aPayer && 'bg-brand-red text-white',
+              !commande.aPayer && commande.issue === 'en_cours' && 'bg-secondary text-primary',
               commande.issue === 'terminee' && 'bg-secondary text-foreground/80',
               commande.issue === 'annulee' && 'bg-muted text-muted-foreground',
             )}
           >
             {!commande.aPayer && commande.issue === 'en_cours' && (
-              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="size-1.5 rounded-full bg-brand-red animate-pulse" />
             )}
             {commande.statutLabel}
           </span>

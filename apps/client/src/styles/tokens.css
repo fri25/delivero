@@ -3,15 +3,18 @@
  * tokens partagés (packages/config/tailwind-theme.css). N'affecte que cette
  * app : admin, livreur et partenaires gardent leurs tokens par défaut.
  *
- * Palette : retour à l'identité d'origine (bleu marine + bleu ciel, fond
- * blanc), sans le vert — décision utilisateur du 2026-08-26. --success et
- * --accent héritent donc du bleu à la place.
+ * Palette (décision utilisateur du 2026-10-31) : blanc, bleu, un peu de rouge.
+ * - Fond blanc pur, surfaces secondaires très légèrement bleutées.
+ * - Bleu vif = couleur d'action (boutons, liens, états actifs) ; --success
+ *   hérite du bleu (« c'est fait » reste dans la palette).
+ * - Rouge = signal, en petite dose : logo, badge panier, « en direct »,
+ *   « fermé », « populaire », alertes. Jamais en aplat de grande surface.
  */
 
 @theme {
-  --color-brand-navy: #002050;
-  --color-brand-blue: #1070c0;
-  --color-brand-sable: #f6f8fc;
+  --color-brand-navy: #0a2a66;
+  --color-brand-blue: #1554e0;
+  --color-brand-red: #e3262f;
 
   --font-heading: 'Bricolage Grotesque Variable', var(--font-sans);
 
@@ -24,68 +27,75 @@
 }
 
 :root {
-  --background: #f6f8fc;
-  --foreground: #0b1b33;
+  --background: #ffffff;
+  --foreground: #0d1b3e;
   --card: #ffffff;
-  --card-foreground: #0b1b33;
+  --card-foreground: #0d1b3e;
   --popover: #ffffff;
-  --popover-foreground: #0b1b33;
-  --primary: #1070c0;
+  --popover-foreground: #0d1b3e;
+  --primary: #1554e0;
   --primary-foreground: #ffffff;
-  --secondary: #e8f1fb;
-  --secondary-foreground: #0b1b33;
-  --muted: #eef2f7;
-  --muted-foreground: #5b6b82;
-  --accent: #e8f1fb;
-  --accent-foreground: #0b3d77;
-  --success: #1070c0;
+  --secondary: #eef3fe;
+  --secondary-foreground: #0d1b3e;
+  --muted: #f3f6fb;
+  --muted-foreground: #5a6785;
+  --accent: #eef3fe;
+  --accent-foreground: #0f44b8;
+  --success: #1554e0;
   --success-foreground: #ffffff;
-  --border: #dde4ee;
-  --input: #dde4ee;
-  --ring: #1070c0;
+  --destructive: #e3262f;
+  --border: #e3e9f4;
+  --input: #d8e0ee;
+  --ring: #1554e0;
   --radius: 1rem;
 }
 
 .dark {
-  --background: #0a1424;
-  --foreground: #e9f1fa;
-  --card: #101e33;
-  --card-foreground: #e9f1fa;
-  --popover: #101e33;
-  --popover-foreground: #e9f1fa;
-  --primary: #4aa3ea;
-  --primary-foreground: #06182b;
-  --secondary: #16283f;
-  --secondary-foreground: #e9f1fa;
-  --muted: #16283f;
-  --muted-foreground: #93a6be;
-  --accent: #16283f;
-  --accent-foreground: #7fc0f0;
-  --success: #4aa3ea;
-  --success-foreground: #06182b;
+  --background: #08132b;
+  --foreground: #eaf0fc;
+  --card: #0e1d3d;
+  --card-foreground: #eaf0fc;
+  --popover: #0e1d3d;
+  --popover-foreground: #eaf0fc;
+  --primary: #5b8cff;
+  --primary-foreground: #061433;
+  --secondary: #15284f;
+  --secondary-foreground: #eaf0fc;
+  --muted: #15284f;
+  --muted-foreground: #98a7c7;
+  --accent: #15284f;
+  --accent-foreground: #a9c2ff;
+  --success: #5b8cff;
+  --success-foreground: #061433;
+  --destructive: #ff5a61;
   --border: color-mix(in oklab, white 10%, transparent);
   --input: color-mix(in oklab, white 15%, transparent);
-  --ring: #4aa3ea;
+  --ring: #5b8cff;
 }
 
-@keyframes shimmer-sweep {
-  from {
-    background-position: -150% 0;
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 0.6;
   }
-  to {
-    background-position: 150% 0;
+  50% {
+    opacity: 1;
   }
 }
 
 .shimmer {
-  background-image: linear-gradient(
-    100deg,
-    transparent 30%,
-    color-mix(in oklab, var(--foreground) 7%, transparent) 50%,
-    transparent 70%
-  );
-  background-size: 200% 100%;
-  animation: shimmer-sweep 1.6s ease-in-out infinite;
+  background-color: var(--muted);
+  animation: pulse-subtle 1.5s ease-in-out infinite;
+}
+
+@keyframes pop-in {
+  0% {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

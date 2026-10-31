@@ -54,7 +54,7 @@ export function DetailCommandeLayout({
             href={WHATSAPP_SUPPORT}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center justify-center gap-2 rounded-2xl border border-border/70 bg-card px-4 py-3 text-xs sm:text-sm font-semibold text-foreground shadow-2xs hover:bg-secondary/70 hover:border-emerald-500/30 transition-all active:scale-[0.99]"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-border/70 bg-card px-4 py-3 text-xs sm:text-sm font-semibold text-foreground shadow-2xs hover:bg-secondary/70 hover:border-primary/30 transition-all active:scale-[0.99]"
           >
             <MessageCircle className="size-4 text-[#25D366]" aria-hidden="true" />
             <span>Un souci ? Écrivez-nous sur WhatsApp</span>

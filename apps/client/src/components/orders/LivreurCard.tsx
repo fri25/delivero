@@ -23,8 +23,8 @@ export function LivreurCard({ livreur, actif }: { livreur: LivreurContact | null
           <div className="flex items-center gap-2">
             <p className="text-xs font-medium text-muted-foreground">{actif ? 'Votre livreur' : 'Livré par'}</p>
             {actif && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" /> Actif
+              <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-primary">
+                <span className="size-1.5 rounded-full bg-brand-red animate-pulse" /> Actif
               </span>
             )}
           </div>

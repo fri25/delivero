@@ -57,7 +57,7 @@ export function MediaFrame({
         <Enseigne nom={nom} />
       )}
       {vignette && (
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0" />
+        <div className="pointer-events-none absolute inset-0 bg-black/25" />
       )}
       {children}
     </div>

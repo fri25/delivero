@@ -16,10 +16,10 @@ export function FilterChip({
       aria-pressed={actif}
       onClick={onClick}
       className={cn(
-        'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-xs font-semibold whitespace-nowrap transition-all duration-200 active:scale-95 cursor-pointer',
+        'inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-4 text-xs font-semibold whitespace-nowrap transition-colors duration-200 active:scale-95',
         actif
-          ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/30 border border-primary'
-          : 'bg-card text-foreground/80 hover:bg-secondary hover:text-foreground border border-border/80 shadow-2xs',
+          ? 'border-primary bg-primary text-primary-foreground'
+          : 'border-border bg-card text-foreground/80 hover:border-primary/40 hover:text-foreground',
       )}
     >
       {children}

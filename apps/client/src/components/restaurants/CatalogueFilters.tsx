@@ -1,4 +1,3 @@
-import { TYPES_CUISINE } from '@delivero/config/types-cuisine';
 import { Clock, Star } from 'lucide-react';
 import { FilterChip } from '@/components/restaurants/FilterChip';
 import {
@@ -9,8 +8,9 @@ import {
   type TranchePrix,
 } from '@/lib/filtres-catalogue';
 
-// F-CLI-11 : filtres cuisine / prix / note / délai, en une seule rangée de
-// puces défilantes (pas de panneau à ouvrir : un tap par filtre sur mobile).
+// F-CLI-11 : filtres prix / note / délai, en une seule rangée de puces
+// défilantes (pas de panneau à ouvrir : un tap par filtre sur mobile). La
+// cuisine se choisit dans CategoryCarousel, juste au-dessus.
 export function CatalogueFilters({
   filtres,
   onChange,
@@ -22,12 +22,12 @@ export function CatalogueFilters({
     onChange({ ...filtres, [cle]: filtres[cle] === valeur ? vide : valeur });
 
   return (
-    <div className="-mx-4 mt-2.5 flex gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none]">
+    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none]">
       <FilterChip actif={filtres.ouvertsSeulement} onClick={() => basculer('ouvertsSeulement', true, false)}>
         Ouverts maintenant
       </FilterChip>
       <FilterChip actif={filtres.bienNotes} onClick={() => basculer('bienNotes', true, false)}>
-        <Star className="size-3.5 fill-amber-400 text-amber-400" aria-hidden="true" />
+        <Star className="size-3.5 fill-primary text-primary" aria-hidden="true" />
         {NOTE_MIN} et plus
       </FilterChip>
       <FilterChip actif={filtres.rapides} onClick={() => basculer('rapides', true, false)}>
@@ -41,12 +41,6 @@ export function CatalogueFilters({
           onClick={() => basculer('prix', tranche, null)}
         >
           {TRANCHES_PRIX[tranche].label}
-        </FilterChip>
-      ))}
-      <span className="my-1.5 w-px shrink-0 bg-border" aria-hidden="true" />
-      {TYPES_CUISINE.map((cuisine) => (
-        <FilterChip key={cuisine} actif={filtres.cuisine === cuisine} onClick={() => basculer('cuisine', cuisine, null)}>
-          {cuisine}
         </FilterChip>
       ))}
     </div>

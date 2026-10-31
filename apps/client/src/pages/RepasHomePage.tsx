@@ -7,23 +7,23 @@ import { Button } from '@/components/ui/button';
 import { useRestaurants } from '@/api/restaurants';
 import { RestaurantCard } from '@/components/restaurants/RestaurantCard';
 import { RestaurantCardSkeleton } from '@/components/restaurants/RestaurantCardSkeleton';
-import { getRestaurantImage } from '@/data/images';
-import { MediaFrame } from '@/components/restaurants/MediaFrame';
+import { RestaurantRail } from '@/components/restaurants/RestaurantRail';
 import { CatalogueFilters } from '@/components/restaurants/CatalogueFilters';
+import { CategoryCarousel } from '@/components/restaurants/CategoryCarousel';
 import {
   FILTRES_VIDES,
   filtrerRestaurants,
   filtresActifs,
   type FiltresCatalogue,
 } from '@/lib/filtres-catalogue';
+import type { TypeCuisine } from '@delivero/config/types-cuisine';
 
 export function RepasHomePage() {
   const [search, setSearch] = useState('');
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [filtres, setFiltres] = useState<FiltresCatalogue>(FILTRES_VIDES);
 
-  // Source de suggestions : le catalogue complet, chargé une fois, filtré côté
-  // client — pas d'aller-retour réseau à chaque frappe pour la liste déroulante.
+  // Source de suggestions : le catalogue complet chargé une fois
   const { data: allRestaurants } = useRestaurants();
   const { data: restaurants, isPending, isError } = useRestaurants(search || undefined);
 
@@ -43,30 +43,28 @@ export function RepasHomePage() {
     [allRestaurants],
   );
 
-  return (
-    <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-navy via-[#0c2f66] to-brand-blue p-6 text-white shadow-lg md:p-8">
-        <div className="absolute -right-12 -top-12 size-48 rounded-full bg-brand-light/20 blur-2xl pointer-events-none" />
-        <div className="relative z-10 max-w-xl">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/95 backdrop-blur-md mb-2">
-            🍔 Livraison de plats chauds à Natitingou
-          </span>
-          <h1 className="font-heading text-2xl font-bold tracking-tight text-white lg:text-3xl">
-            Natitingou a faim ? On s'en occupe.
-          </h1>
-          <p className="mt-2 text-sm text-white/80 leading-relaxed">
-            Vos restaurants préférés livrés en un éclair — payez{' '}
-            {ESPECES_ACTIF ? 'en espèces ou en Mobile Money' : 'par Mobile Money'}.
-          </p>
-        </div>
-      </div>
+  const handleSelectCuisine = (cuisine: TypeCuisine | null) => {
+    setFiltres((prev) => ({ ...prev, cuisine }));
+  };
 
-      <div className="sticky top-14 z-10 md:top-16 -mx-4 bg-background/85 px-4 py-3 backdrop-blur-xl border-b border-border/40 shadow-xs">
+  return (
+    <div className="space-y-6 sm:space-y-8">
+      <header className="space-y-1">
+        <h1 className="font-heading text-[1.7rem] leading-tight font-extrabold tracking-tight text-brand-navy sm:text-4xl dark:text-foreground">
+          Envie de <span className="text-primary">bien manger</span> ?
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Restaurants de Natitingou livrés en ~30 min · paiement{' '}
+          {ESPECES_ACTIF ? 'en espèces ou Mobile Money' : 'par Mobile Money'}.
+        </p>
+      </header>
+
+      <div className="sticky top-14 z-10 -mx-4 space-y-2.5 border-b border-border bg-background/95 px-4 py-3 backdrop-blur-md md:top-16 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8">
         <div className="relative">
-          <Search className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-primary" aria-hidden="true" />
           <Input
-            placeholder="Un restaurant, un plat..."
-            className="h-11 rounded-2xl border-border/60 bg-card pl-10 pr-9 text-sm shadow-xs transition-all focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+            placeholder="Restaurant ou plat : amiwo, poisson, alloco…"
+            className="h-12 rounded-full border-transparent bg-muted pl-11 pr-10 text-sm transition-colors focus-visible:border-primary focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-primary/20"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             onFocus={() => setSuggestionsOpen(true)}
@@ -76,12 +74,13 @@ export function RepasHomePage() {
             <button
               type="button"
               onClick={() => setSearch('')}
-              className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+              className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
               aria-label="Effacer la recherche"
             >
               <X className="size-4" />
             </button>
           )}
+
           {suggestionsOpen && suggestions.length > 0 && (
             <ul className="fade-in-0 slide-in-from-top-1 animate-in absolute inset-x-0 top-full z-20 mt-1.5 overflow-hidden rounded-2xl bg-card py-1.5 shadow-xl border border-border/80 duration-(--duration-fast)">
               {suggestions.map((r) => (
@@ -91,8 +90,8 @@ export function RepasHomePage() {
                     className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-secondary/70 transition-colors"
                     onMouseDown={(e) => e.preventDefault()}
                   >
-                    <span className="font-medium">{r.nom}</span>
-                    <span className="text-xs text-muted-foreground">Voir le menu →</span>
+                    <span className="font-semibold text-foreground">{r.nom}</span>
+                    <span className="text-xs text-primary font-medium">Voir le menu →</span>
                   </Link>
                 </li>
               ))}
@@ -100,98 +99,75 @@ export function RepasHomePage() {
           )}
         </div>
 
+        <CategoryCarousel activeCuisine={filtres.cuisine} onSelectCuisine={handleSelectCuisine} />
+
         <CatalogueFilters filtres={filtres} onChange={setFiltres} />
       </div>
 
-      {!search && !filtresActifs(filtres) && ouvertsMaintenant.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-heading text-sm font-bold tracking-wider text-foreground uppercase flex items-center gap-2">
-              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-              Ouverts maintenant
-            </h2>
-            <span className="text-xs text-muted-foreground">{ouvertsMaintenant.length} disponibles</span>
-          </div>
-          <div className="-mx-4 flex snap-x snap-mandatory gap-3.5 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
-            {ouvertsMaintenant.map((r) => (
-              <Link
-                key={r.id}
-                to={`/restaurants/${r.id}`}
-                className="group w-44 shrink-0 snap-start overflow-hidden rounded-2xl bg-card border border-border/70 shadow-xs transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-primary/30"
-              >
-                <div className="relative overflow-hidden">
-                  <MediaFrame
-                    nom={r.nom}
-                    image={r.imageUrl ?? getRestaurantImage(r.nom)}
-                    ratio="square"
-                    className="transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <div className="absolute top-2 right-2">
-                    <span className="inline-flex size-2 rounded-full bg-emerald-500 ring-2 ring-white" />
-                  </div>
-                </div>
-                <div className="p-2.5">
-                  <p className="line-clamp-1 text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
-                    {r.nom}
-                  </p>
-                  {(r.delaiPreparationMin ?? r.delaiMoyenMinutes) != null && (
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      ~{r.delaiPreparationMin ?? r.delaiMoyenMinutes} min
-                    </p>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
+      {!search && !filtresActifs(filtres) && (
+        <RestaurantRail titre="Ouverts maintenant" restaurants={ouvertsMaintenant} />
       )}
 
-      <section className="space-y-3">
-        <h2 className="font-heading text-sm font-semibold tracking-wide text-foreground uppercase">
-          {search ? `Résultats pour « ${search} »` : filtresActifs(filtres) ? 'Résultats filtrés' : 'Tous les restaurants'}
-        </h2>
+      {/* Grille principale : Restaurants */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-heading text-lg font-bold text-foreground">
+            {search
+              ? `Résultats pour « ${search} »`
+              : filtresActifs(filtres)
+                ? 'Restaurants filtrés'
+                : 'Tous les restaurants à Natitingou'}
+          </h2>
+          <span className="text-xs text-muted-foreground font-medium">
+            {visibleRestaurants.length} restaurant{visibleRestaurants.length > 1 ? 's' : ''}
+          </span>
+        </div>
 
         {isPending && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: 6 }).map((_, i) => (
               <RestaurantCardSkeleton key={i} />
             ))}
           </div>
         )}
 
         {isError && (
-          <p className="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <p className="rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive font-medium">
             Impossible de charger les restaurants. Vérifiez votre connexion et réessayez.
           </p>
         )}
 
         {!isPending && !isError && visibleRestaurants.length === 0 && (
-          <div className="flex flex-col items-center gap-3 rounded-2xl bg-secondary/60 px-6 py-10 text-center">
-            <p className="text-sm font-medium text-foreground">
+          <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border px-6 py-12 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-secondary text-primary">
+              <Search className="size-5" aria-hidden="true" />
+            </div>
+            <p className="text-base font-bold text-foreground">
               {search
                 ? `Aucun restaurant ne correspond à « ${search} ».`
                 : filtresActifs(filtres)
                   ? 'Aucun restaurant ne correspond à ces filtres.'
                   : 'Aucun restaurant ouvert pour le moment.'}
             </p>
-            <p className="text-sm text-muted-foreground">
-              Essayez un autre nom, ou explorez tout le catalogue.
+            <p className="text-xs text-muted-foreground max-w-sm">
+              Essayez une autre recherche, retirez des filtres ou explorez l'ensemble du catalogue.
             </p>
             {(search || filtresActifs(filtres)) && (
               <Button
                 variant="outline"
+                className="rounded-full mt-2"
                 onClick={() => {
                   setSearch('');
                   setFiltres(FILTRES_VIDES);
                 }}
               >
-                <X /> Réinitialiser
+                <X className="size-4 mr-1.5" /> Réinitialiser les filtres
               </Button>
             )}
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
           {visibleRestaurants.map((restaurant, index) => (
             <RestaurantCard key={restaurant.id} restaurant={restaurant} index={index} priority={index < 2} />
           ))}

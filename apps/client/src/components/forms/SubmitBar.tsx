@@ -44,7 +44,7 @@ export function SubmitBar({
         </div>
 
         {pret ? (
-          <div className="flex items-center gap-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+          <div className="flex items-center gap-2.5 rounded-2xl bg-secondary border border-primary/20 p-3 text-sm font-semibold text-primary">
             <CheckCircle2 className="size-4.5 shrink-0" aria-hidden="true" />
             <span>Tout est prêt, vous pouvez confirmer.</span>
           </div>
@@ -54,7 +54,7 @@ export function SubmitBar({
             <ul className="space-y-1.5 text-xs text-muted-foreground">
               {manquant.map((item) => (
                 <li key={item} className="flex items-start gap-2">
-                  <Circle className="mt-0.5 size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
+                  <Circle className="mt-0.5 size-3.5 shrink-0 text-brand-red" aria-hidden="true" />
                   <span className="first-letter:uppercase text-foreground/80 font-medium">{item}</span>
                 </li>
               ))}

@@ -36,14 +36,14 @@ export function SuiviEtapes({
                 aria-hidden="true"
                 className={cn(
                   'absolute top-8 left-[15px] h-[calc(100%-1.75rem)] w-0.5 transition-colors duration-300',
-                  faite ? 'bg-emerald-500' : 'bg-border/80',
+                  faite ? 'bg-primary' : 'bg-border/80',
                 )}
               />
             )}
             <span
               className={cn(
                 'relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold transition-all duration-300 shadow-2xs',
-                faite && 'border-emerald-500 bg-emerald-500 text-white shadow-xs shadow-emerald-500/20',
+                faite && 'border-primary bg-primary text-primary-foreground',
                 courante && 'border-primary bg-card text-primary ring-4 ring-primary/20 scale-105',
                 !faite && !courante && 'border-border/80 bg-secondary/50 text-muted-foreground',
               )}

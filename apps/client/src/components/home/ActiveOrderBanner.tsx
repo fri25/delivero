@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { TYPE_SERVICE_LABELS, useHistoriqueCommandes } from '@/api/historique';
 
 /**
- * Bandeau de suivi moderne en temps réel (style Live Activity) affiché dès qu'au
- * moins une commande non terminale est en cours.
+ * Bandeau de suivi (style Live Activity) affiché dès qu'au moins une commande
+ * non terminale est en cours : aplat bleu, point rouge « en direct ».
  */
 export function ActiveOrderBanner() {
   const { commandes } = useHistoriqueCommandes();
@@ -18,28 +18,28 @@ export function ActiveOrderBanner() {
   return (
     <Link
       to={plusieurs ? '/commandes' : commandeActive.lien}
-      className="group relative flex items-center justify-between gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-brand-navy via-[#0c2f66] to-brand-blue p-3.5 md:p-4 text-white shadow-md transition-all duration-300 hover:shadow-lg hover:brightness-105 active:scale-[0.99] ring-1 ring-white/10"
+      className="group flex items-center justify-between gap-3 rounded-2xl bg-primary p-3.5 text-primary-foreground transition-[filter,transform] duration-(--duration-fast) hover:brightness-110 active:scale-[0.99] md:p-4"
     >
-      <div className="flex items-center gap-3 min-w-0">
-        <span className="relative flex size-3.5 shrink-0 items-center justify-center">
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex size-2.5 rounded-full bg-emerald-400 shadow-xs" />
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="relative flex size-3.5 shrink-0 items-center justify-center" aria-hidden="true">
+          <span className="absolute inline-flex size-full animate-ping rounded-full bg-brand-red opacity-75" />
+          <span className="relative inline-flex size-2.5 rounded-full bg-brand-red ring-2 ring-white" />
         </span>
         <div className="min-w-0">
-          <p className="line-clamp-1 text-xs font-semibold text-white/80 tracking-wide uppercase">
+          <p className="line-clamp-1 text-[11px] font-semibold tracking-wide text-primary-foreground/80 uppercase">
             {plusieurs
               ? `${actives.length} commandes en cours`
               : `${TYPE_SERVICE_LABELS[commandeActive.typeService]} en cours`}
           </p>
-          <p className="truncate text-sm md:text-base font-bold text-white drop-shadow-xs">
+          <p className="truncate text-sm font-bold md:text-base">
             {plusieurs ? 'Voir le suivi en direct' : `${commandeActive.statutLabel} · ${commandeActive.titre}`}
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-1 shrink-0 rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-xs transition-colors group-hover:bg-white/25">
+      <span className="flex shrink-0 items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-primary">
         <span>Suivre</span>
         <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-      </div>
+      </span>
     </Link>
   );
 }

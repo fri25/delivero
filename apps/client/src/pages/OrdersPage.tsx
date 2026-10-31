@@ -156,7 +156,7 @@ export function OrdersPage() {
       {enCours.length > 0 && (
         <section className="space-y-3" aria-labelledby="titre-en-cours">
           <h2 id="titre-en-cours" className="font-heading text-base font-bold text-foreground flex items-center gap-2">
-            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="size-2 rounded-full bg-brand-red animate-pulse" />
             En cours
           </h2>
           <ul className="space-y-3">

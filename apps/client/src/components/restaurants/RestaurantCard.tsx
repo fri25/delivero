@@ -4,6 +4,7 @@ import { MediaFrame } from '@/components/restaurants/MediaFrame';
 import { getRestaurantImage } from '@/data/images';
 import type { RestaurantSummary } from '@/api/types';
 import { formatPrixFcfa } from '@/lib/format';
+import { cn } from '@/lib/utils';
 
 export function RestaurantCard({
   restaurant,
@@ -16,77 +17,63 @@ export function RestaurantCard({
 }) {
   const image = restaurant.imageUrl ?? getRestaurantImage(restaurant.nom);
   const ouvert = restaurant.statutOuverture;
+  const delai = restaurant.delaiPreparationMin ?? restaurant.delaiMoyenMinutes ?? 25;
+  const cuisine = restaurant.typesCuisine?.length
+    ? restaurant.typesCuisine.slice(0, 2).join(' · ')
+    : restaurant.specialiteCuisine;
 
   return (
     <Link
       to={`/restaurants/${restaurant.id}`}
       className="group fill-mode-both animate-in slide-in-from-bottom-3 fade-in-0 block duration-(--duration-base) ease-(--ease-signature) focus-visible:outline-none"
-      style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
+      style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
     >
-      <article className="overflow-hidden rounded-3xl bg-card border border-border/70 shadow-xs transition-all duration-300 ease-(--ease-signature) group-hover:-translate-y-1 group-hover:shadow-xl group-hover:shadow-primary/5 group-hover:border-primary/25 group-active:translate-y-0 group-active:shadow-none group-focus-visible:ring-2 group-focus-visible:ring-ring">
-        <div className="relative overflow-hidden">
+      <article>
+        <div className="relative overflow-hidden rounded-3xl ring-1 ring-border transition-shadow duration-(--duration-fast) group-hover:shadow-lg group-hover:shadow-primary/10 group-focus-visible:ring-2 group-focus-visible:ring-ring">
           <MediaFrame
             nom={restaurant.nom}
             image={image}
             ratio="wide"
             priority={priority}
-            vignette
-            className={ouvert ? 'transition-transform duration-500 ease-out group-hover:scale-105' : 'grayscale-[55%]'}
+            className={cn(!ouvert && 'opacity-70 grayscale-[60%]')}
           >
-            <div className="absolute top-3 right-3 z-10">
-              {ouvert ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/90 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-md">
-                  <span className="size-1.5 animate-pulse rounded-full bg-white" />
-                  Ouvert
-                </span>
-              ) : (
-                <span className="inline-flex items-center rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white/90 backdrop-blur-md">
-                  Fermé
-                </span>
+            <span
+              className={cn(
+                'absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold',
+                ouvert ? 'bg-white text-foreground' : 'bg-brand-red text-white',
               )}
-            </div>
-
-            {restaurant.noteMoyenne && (
-              <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-0.5 text-xs font-bold text-slate-800 shadow-sm backdrop-blur-md dark:bg-slate-900/90 dark:text-slate-100">
-                <Star className="size-3 fill-amber-400 text-amber-400" />
-                <span>{restaurant.noteMoyenne}</span>
-              </div>
-            )}
+            >
+              {ouvert ? (
+                <>
+                  <Clock className="size-3.5 text-primary" aria-hidden="true" />
+                  {delai} min
+                </>
+              ) : (
+                'Fermé'
+              )}
+            </span>
           </MediaFrame>
         </div>
 
-        <div className="p-4 space-y-2">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="font-heading text-base font-bold text-foreground transition-colors group-hover:text-primary line-clamp-1">
+        <div className="space-y-0.5 px-1 pt-3">
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="line-clamp-1 font-heading text-base font-bold text-foreground group-hover:text-primary">
               {restaurant.nom}
             </h3>
-          </div>
-
-          {restaurant.description && (
-            <p className="line-clamp-1 text-xs text-muted-foreground">{restaurant.description}</p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-            {(restaurant.delaiPreparationMin ?? restaurant.delaiMoyenMinutes) != null && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-secondary/80 px-2 py-0.5 font-medium text-foreground">
-                <Clock className="size-3 text-primary" aria-hidden="true" />
-                {restaurant.delaiPreparationMin ?? restaurant.delaiMoyenMinutes} min
-              </span>
-            )}
-            {(restaurant.typesCuisine?.length ? restaurant.typesCuisine.slice(0, 2).join(' · ') : restaurant.specialiteCuisine) && (
-              <span className="line-clamp-1 font-medium text-muted-foreground">
-                {restaurant.typesCuisine?.length ? restaurant.typesCuisine.slice(0, 2).join(' · ') : restaurant.specialiteCuisine}
-              </span>
-            )}
-            {restaurant.prixMoyen != null && (
-              <span className="text-muted-foreground/80">
-                · Plat ≈ {formatPrixFcfa(Math.round(restaurant.prixMoyen / 50) * 50)}
+            {restaurant.noteMoyenne && (
+              <span className="inline-flex shrink-0 items-center gap-1 text-sm font-bold text-foreground">
+                <Star className="size-3.5 fill-primary text-primary" aria-hidden="true" />
+                {restaurant.noteMoyenne}
               </span>
             )}
           </div>
+          <p className="line-clamp-1 text-sm text-muted-foreground">
+            {[cuisine, restaurant.prixMoyen != null && `Plat dès ${formatPrixFcfa(Math.round(restaurant.prixMoyen / 50) * 50)}`]
+              .filter(Boolean)
+              .join(' · ') || restaurant.description}
+          </p>
         </div>
       </article>
     </Link>
   );
 }
-

@@ -27,7 +27,7 @@ export function FormStep({
           className={cn(
             'flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-all shadow-2xs',
             complete
-              ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20'
+              ? 'bg-primary text-primary-foreground'
               : 'bg-primary/10 text-primary border border-primary/20',
           )}
           aria-hidden="true"

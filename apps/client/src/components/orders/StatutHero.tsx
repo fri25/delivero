@@ -34,25 +34,23 @@ export function StatutHero({
       className={cn(
         'relative overflow-hidden rounded-3xl p-5 sm:p-6 shadow-sm border transition-all duration-300',
         ton === 'actif' &&
-          'bg-gradient-to-r from-brand-navy via-[#0c2f66] to-brand-blue text-white border-white/10 shadow-lg shadow-primary/10',
+          'bg-primary text-primary-foreground border-transparent shadow-md shadow-primary/20',
         ton === 'paiement' &&
-          'bg-gradient-to-r from-brand-navy to-[#002b66] text-white border-white/10 shadow-md',
+          'bg-primary text-primary-foreground border-transparent shadow-md shadow-primary/20',
         ton === 'succes' &&
-          'bg-emerald-500/10 text-emerald-950 dark:text-emerald-50 border-emerald-500/20',
+          'bg-secondary text-foreground border-primary/20',
         ton === 'echec' &&
           'bg-destructive/10 text-destructive border-destructive/20',
       )}
     >
-      {ton === 'actif' && (
-        <div className="absolute -right-10 -top-10 size-40 rounded-full bg-brand-light/15 blur-2xl pointer-events-none" />
-      )}
+
       <div className="relative z-10 flex items-start gap-4">
         <div
           className={cn(
             'flex size-11 shrink-0 items-center justify-center rounded-2xl shadow-xs',
             ton === 'actif' && 'bg-white/15 text-white backdrop-blur-md',
-            ton === 'paiement' && 'bg-brand-light/20 text-brand-light backdrop-blur-md',
-            ton === 'succes' && 'bg-emerald-500 text-white',
+            ton === 'paiement' && 'bg-white text-brand-red',
+            ton === 'succes' && 'bg-primary text-primary-foreground',
             ton === 'echec' && 'bg-destructive text-destructive-foreground',
           )}
         >
@@ -63,7 +61,7 @@ export function StatutHero({
             <h2 className="font-heading text-lg font-bold leading-snug sm:text-xl">{titre}</h2>
             {ton === 'actif' && (
               <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-md">
-                <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" /> En cours
+                <span className="size-1.5 animate-pulse rounded-full bg-brand-red ring-1 ring-white" /> En cours
               </span>
             )}
           </div>

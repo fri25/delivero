@@ -50,7 +50,7 @@ export function Enseigne({ nom, className }: { nom: string; className?: string }
         className,
       )}
       style={{
-        background: `radial-gradient(120% 140% at 25% 20%, color-mix(in oklab, ${bg}, white 12%), ${bg} 70%)`,
+        backgroundColor: bg,
       }}
     >
       <span

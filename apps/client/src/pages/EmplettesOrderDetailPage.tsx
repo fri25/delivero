@@ -82,7 +82,7 @@ export function EmplettesOrderDetailPage() {
       <LivreurCard livreur={commande.commande.livreur} actif={isStatutEmplettesActif(commande.statut)} />
 
       {commande.statut === 'validation_depassement' && (
-        <div className="space-y-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
+        <div className="space-y-3 rounded-lg border border-brand-red/30 bg-brand-red/5 p-4">
           <p className="font-medium">Le budget est dépassé</p>
           <p className="text-sm text-muted-foreground">
             Budget prévu : {formatPrixFcfa(commande.budgetMax)} — montant constaté :{' '}

@@ -169,7 +169,7 @@ export function CartPage() {
       </header>
 
       {!navigator.onLine && (
-        <p role="status" className="rounded-2xl bg-amber-500/10 border border-amber-500/20 px-4 py-2.5 text-xs sm:text-sm text-amber-900 dark:text-amber-200">
+        <p role="status" className="rounded-2xl bg-brand-red/5 border border-brand-red/20 px-4 py-2.5 text-xs sm:text-sm text-foreground">
           Vous êtes hors ligne. Votre panier est conservé sur cet appareil ; vous pourrez commander dès le retour du
           réseau.
         </p>

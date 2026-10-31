@@ -16,10 +16,10 @@ export function ComptePage() {
   return (
     <div className="mx-auto max-w-xl space-y-5">
       {user ? (
-        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-navy via-[#0c2f66] to-brand-blue p-6 text-white shadow-lg">
-          <div className="absolute -right-8 -top-8 size-36 rounded-full bg-brand-light/15 blur-2xl pointer-events-none" />
+        <section className="relative overflow-hidden rounded-3xl bg-primary p-6 text-primary-foreground">
+
           <div className="relative z-10 flex items-center gap-4">
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-white backdrop-blur-md border border-white/20 shadow-inner">
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white text-primary">
               {user.nom ? (
                 <span className="font-heading text-xl font-bold">{user.nom.charAt(0).toUpperCase()}</span>
               ) : (

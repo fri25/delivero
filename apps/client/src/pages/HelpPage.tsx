@@ -23,12 +23,12 @@ const QUESTIONS = [
 export function HelpPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-5">
-      <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-brand-navy to-brand-blue p-6 text-white sm:p-8">
+      <section className="overflow-hidden rounded-3xl bg-primary p-6 text-primary-foreground sm:p-8">
         <div className="flex size-12 items-center justify-center rounded-2xl bg-white/10"><CircleHelp className="size-6" /></div>
         <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-white/65">ChapExpress · Natitingou</p>
         <h1 className="mt-1 font-heading text-3xl font-semibold">Comment pouvons-nous vous aider ?</h1>
         <p className="mt-2 max-w-lg text-sm text-white/75">Consultez les réponses rapides ou écrivez-nous sur WhatsApp pour votre commande.</p>
-        <Button asChild className="mt-5 h-12 bg-white text-brand-navy hover:bg-white/90">
+        <Button asChild className="mt-5 h-12 bg-white text-primary hover:bg-white/90">
           <a href={WHATSAPP_SUPPORT} target="_blank" rel="noreferrer"><MessageCircle className="size-4" /> Contacter ChapExpress sur WhatsApp</a>
         </Button>
       </section>
