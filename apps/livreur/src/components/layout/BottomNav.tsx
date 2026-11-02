@@ -11,15 +11,15 @@ const ONGLETS: { to: string; label: string; icon: LucideIcon; end?: boolean }[] 
 
 /**
  * Tab bar, on every screen size: the livreur app is used on a phone, often
- * one-handed on a moto stop. Replaces the 7 per-service links of the header.
+ * one-handed on a moto stop. Active tab: blue top rule, like the client app.
  */
 export function BottomNav() {
   return (
     <nav
       aria-label="Navigation principale"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-card/90 pb-[max(0.6rem,env(safe-area-inset-bottom))] backdrop-blur-xl shadow-lg"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card pb-[env(safe-area-inset-bottom)]"
     >
-      <ul className="mx-auto grid max-w-md grid-cols-4 px-2 pt-1">
+      <ul className="mx-auto grid max-w-md grid-cols-4">
         {ONGLETS.map(({ to, label, icon: Icon, end }) => (
           <li key={to}>
             <NavLink
@@ -27,16 +27,14 @@ export function BottomNav() {
               end={end}
               className={({ isActive }) =>
                 cn(
-                  'flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl py-1 text-[11px] font-semibold transition-all duration-200 active:scale-95',
-                  isActive
-                    ? 'text-primary bg-primary/10 font-bold'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40',
+                  '-mt-px flex min-h-16 flex-col items-center justify-center gap-1 border-t-2 text-xs',
+                  isActive ? 'border-primary font-bold text-primary' : 'border-transparent font-medium text-muted-foreground',
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon className={cn('size-5 transition-transform duration-200', isActive && 'stroke-[2.5] scale-110')} aria-hidden="true" />
+                  <Icon className="size-6" strokeWidth={isActive ? 2.25 : 1.75} aria-hidden="true" />
                   <span>{label}</span>
                 </>
               )}

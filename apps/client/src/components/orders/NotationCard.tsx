@@ -38,7 +38,7 @@ export function NotationCard({
 
   if (restantes.length === 0) {
     return (
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-2xl bg-card px-4 py-3 text-sm ring-1 ring-foreground/10">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border px-4 py-3 text-sm">
         <span className="text-muted-foreground">Merci pour votre avis</span>
         {notations.map((n) => (
           <span key={n.cible} className="inline-flex items-center gap-1 font-medium">
@@ -54,7 +54,7 @@ export function NotationCard({
 
   return (
     <form
-      className="space-y-4 rounded-2xl bg-card p-4 ring-2 ring-primary sm:p-5"
+      className="space-y-4 rounded-lg border-[1.5px] border-primary p-4 sm:p-5"
       onSubmit={(event) => {
         event.preventDefault();
         onNoter(

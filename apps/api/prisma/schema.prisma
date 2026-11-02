@@ -233,6 +233,8 @@ model Partenaire {
   specialiteCuisine   String?        @map("specialite_cuisine")
   delaiMoyenMinutes   Int?           @map("delai_moyen_minutes")
   horaires            String?
+  // Logo shown to clients; Cloudinary URL in the chapexpress/logos folder.
+  logoUrl             String?        @map("logo_url")
   // Point de repère textuel obligatoire, coordonnées en complément (même
   // contrainte d'adressage approximatif que pour l'Adresse client) — requis
   // pour que le livreur sache où récupérer la commande.

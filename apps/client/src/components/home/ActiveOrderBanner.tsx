@@ -1,10 +1,10 @@
-import { ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { TYPE_SERVICE_LABELS, useHistoriqueCommandes } from '@/api/historique';
 
 /**
- * Bandeau de suivi (style Live Activity) affiché dès qu'au moins une commande
- * non terminale est en cours : aplat bleu, point rouge « en direct ».
+ * Bandeau de suivi affiché dès qu'au moins une commande non terminale est en
+ * cours : aplat marine, point rouge « en direct ». Seul élément de l'accueil
+ * qui attire l'œil : rien d'autre n'utilise le marine en aplat.
  */
 export function ActiveOrderBanner() {
   const { commandes } = useHistoriqueCommandes();
@@ -18,28 +18,20 @@ export function ActiveOrderBanner() {
   return (
     <Link
       to={plusieurs ? '/commandes' : commandeActive.lien}
-      className="group flex items-center justify-between gap-3 rounded-2xl bg-primary p-3.5 text-primary-foreground transition-[filter,transform] duration-(--duration-fast) hover:brightness-110 active:scale-[0.99] md:p-4"
+      className="flex items-center gap-3 rounded-2xl bg-brand-navy px-4 py-3.5 text-white md:px-5"
     >
-      <div className="flex min-w-0 items-center gap-3">
-        <span className="relative flex size-3.5 shrink-0 items-center justify-center" aria-hidden="true">
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-brand-red opacity-75" />
-          <span className="relative inline-flex size-2.5 rounded-full bg-brand-red ring-2 ring-white" />
+      <span className="size-2 shrink-0 rounded-full bg-[#ff5a61]" aria-hidden="true" />
+      <span className="flex min-w-0 flex-1 flex-col md:flex-row md:items-baseline md:gap-3">
+        <span className="truncate text-xs text-[#c4d0e8] md:order-2 md:text-[15px]">
+          {plusieurs
+            ? `${actives.length} commandes en cours`
+            : `${TYPE_SERVICE_LABELS[commandeActive.typeService]} · ${commandeActive.titre}`}
         </span>
-        <div className="min-w-0">
-          <p className="line-clamp-1 text-[11px] font-semibold tracking-wide text-primary-foreground/80 uppercase">
-            {plusieurs
-              ? `${actives.length} commandes en cours`
-              : `${TYPE_SERVICE_LABELS[commandeActive.typeService]} en cours`}
-          </p>
-          <p className="truncate text-sm font-bold md:text-base">
-            {plusieurs ? 'Voir le suivi en direct' : `${commandeActive.statutLabel} · ${commandeActive.titre}`}
-          </p>
-        </div>
-      </div>
-      <span className="flex shrink-0 items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-primary">
-        <span>Suivre</span>
-        <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+        <span className="truncate text-[15px] font-bold">
+          {plusieurs ? 'Voir le suivi en direct' : commandeActive.statutLabel}
+        </span>
       </span>
+      <span className="shrink-0 text-sm font-semibold underline-offset-4 hover:underline">Suivre</span>
     </Link>
   );
 }

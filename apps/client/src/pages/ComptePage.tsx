@@ -1,4 +1,4 @@
-import { CircleHelp, History, LogOut, MapPin, MessageCircle, UserRound } from 'lucide-react';
+import { CircleHelp, History, LogOut, MapPin, MessageCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LigneCompte } from '@/components/compte/LigneCompte';
 import { Button } from '@/components/ui/button';
@@ -14,49 +14,34 @@ export function ComptePage() {
   const logout = useAuthStore((state) => state.logout);
 
   return (
-    <div className="mx-auto max-w-xl space-y-5">
+    <div className="mx-auto max-w-xl space-y-6">
       {user ? (
-        <section className="relative overflow-hidden rounded-3xl bg-primary p-6 text-primary-foreground">
-
-          <div className="relative z-10 flex items-center gap-4">
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white text-primary">
-              {user.nom ? (
-                <span className="font-heading text-xl font-bold">{user.nom.charAt(0).toUpperCase()}</span>
-              ) : (
-                <UserRound className="size-7" aria-hidden="true" />
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="font-heading truncate text-xl font-bold text-white">{user.nom}</h1>
-              <p className="text-xs sm:text-sm text-white/80 font-medium mt-0.5">{user.telephone}</p>
-              {user.email && <p className="text-xs text-white/60 truncate mt-0.5">{user.email}</p>}
-            </div>
-          </div>
-        </section>
+        <header>
+          <h1 className="titre-page truncate">{user.nom}</h1>
+          <p className="mt-2 text-[15px] text-muted-foreground tabular-nums">{user.telephone}</p>
+          {user.email && <p className="truncate text-sm text-muted-foreground">{user.email}</p>}
+        </header>
       ) : (
-        <section className="space-y-4 rounded-3xl bg-card p-6 border border-border/70 shadow-xs">
+        <section className="space-y-4">
           <div>
-            <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary mb-2">
-              👋 Bienvenue sur ChapExpress
-            </span>
-            <h1 className="font-heading text-xl font-bold text-foreground">Votre compte</h1>
-            <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            <h1 className="titre-page">Votre compte</h1>
+            <p className="mt-2 text-[15px] text-muted-foreground">
               Connectez-vous avec votre numéro pour retrouver vos adresses et suivre vos commandes à Natitingou.
-              Pas de mot de passe à retenir : un code sécurisé par SMS ou WhatsApp suffit.
+              Pas de mot de passe à retenir : un code par SMS ou WhatsApp suffit.
             </p>
           </div>
-          <div className="grid gap-2.5 sm:grid-cols-2 pt-1">
-            <Button asChild size="lg" className="rounded-xl font-semibold shadow-md shadow-primary/20">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button asChild className="h-11 text-[15px] font-bold">
               <Link to="/connexion">Se connecter</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="rounded-xl font-semibold">
+            <Button asChild variant="outline" className="h-11 text-[15px] font-bold">
               <Link to="/inscription">Créer un compte</Link>
             </Button>
           </div>
         </section>
       )}
 
-      <ul className="divide-y divide-border/60 overflow-hidden rounded-3xl bg-card border border-border/70 shadow-xs">
+      <ul className="carte divide-y divide-border px-4">
         {user && (
           <>
             <LigneCompte to="/commandes" icon={History} label="Mes commandes" detail="Suivi et historique complet" />
@@ -70,8 +55,7 @@ export function ComptePage() {
       {user && (
         <Button
           variant="outline"
-          size="lg"
-          className="w-full rounded-2xl border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive font-semibold shadow-2xs"
+          className="h-11 w-full border-0 bg-card font-bold text-destructive shadow-(--shadow-carte) hover:bg-destructive/5 hover:text-destructive"
           onClick={() => {
             if (token) void desactiverPush(token);
             logout();

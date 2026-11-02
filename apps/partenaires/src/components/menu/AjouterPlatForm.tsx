@@ -34,7 +34,7 @@ export function AjouterPlatForm({ onTermine }: { onTermine: () => void }) {
 
   return (
     <form
-      className="space-y-4 rounded-3xl border border-primary/30 bg-card p-5 sm:p-6 shadow-md"
+      className="carte space-y-4 p-5 ring-2 ring-primary sm:p-6"
       onSubmit={(event) => {
         event.preventDefault();
         const prixNombre = Number(prix);
@@ -70,7 +70,7 @@ export function AjouterPlatForm({ onTermine }: { onTermine: () => void }) {
       }}
     >
       <div className="flex items-center justify-between border-b border-border/60 pb-3">
-        <p className="font-heading text-lg font-bold text-foreground">Nouveau plat au menu</p>
+        <p className="text-lg font-bold">Nouveau plat au menu</p>
         <span className="text-xs text-muted-foreground">Formulaire d'ajout rapide</span>
       </div>
 
@@ -122,7 +122,7 @@ export function AjouterPlatForm({ onTermine }: { onTermine: () => void }) {
           placeholder="Ex. 3500"
           value={prix}
           onChange={(event) => setPrix(event.target.value)}
-          className="rounded-xl font-mono"
+          className="rounded-xl tabular-nums"
           required
         />
       </div>
@@ -146,7 +146,7 @@ export function AjouterPlatForm({ onTermine }: { onTermine: () => void }) {
               <img
                 src={miniature(photoUrl, 200)}
                 alt="Aperçu du plat"
-                className="size-20 rounded-2xl object-cover ring-1 ring-border shadow-xs"
+                className="size-20 rounded-xl object-cover"
               />
               <button
                 type="button"
@@ -154,7 +154,7 @@ export function AjouterPlatForm({ onTermine }: { onTermine: () => void }) {
                   setPhotoUrl(null);
                   if (inputFichier.current) inputFichier.current.value = '';
                 }}
-                className="absolute -right-2 -top-2 rounded-full bg-destructive p-1 text-white shadow-sm hover:opacity-90 transition-opacity"
+                className="absolute -right-2 -top-2 rounded-full bg-foreground p-1 text-background hover:opacity-90"
                 title="Supprimer la photo"
               >
                 <X className="size-3.5" />
@@ -189,12 +189,12 @@ export function AjouterPlatForm({ onTermine }: { onTermine: () => void }) {
       <div className="flex gap-2 pt-2 border-t border-border/60">
         <Button
           type="submit"
-          className="h-11 flex-1 rounded-2xl font-bold bg-primary hover:bg-primary/90 text-white shadow-sm active:scale-98 transition-all"
+          className="h-11 flex-1 rounded-xl font-bold"
           disabled={createPlat.isPending || envoiPhoto}
         >
           {createPlat.isPending ? 'Ajout en cours...' : 'Ajouter au menu'}
         </Button>
-        <Button type="button" variant="ghost" className="h-11 rounded-2xl" onClick={onTermine}>
+        <Button type="button" variant="ghost" className="h-11 rounded-xl" onClick={onTermine}>
           Annuler
         </Button>
       </div>

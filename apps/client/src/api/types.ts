@@ -14,6 +14,8 @@ export interface AuthResponse {
 export interface RestaurantSummary {
   id: string;
   nom: string;
+  /** Logo uploaded by the restaurant (Cloudinary), null when none. */
+  logoUrl: string | null;
   description: string | null;
   horaires: string | null;
   noteMoyenne: string | null;

@@ -21,7 +21,7 @@ export function ColisOrdersPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Mes colis</h1>
+        <h1 className="titre-page">Mes colis</h1>
         <Button asChild size="sm">
           <Link to="/colis">Nouvelle demande</Link>
         </Button>

@@ -11,7 +11,7 @@ export function CommandesInviteCard() {
   if (token || commandes.length === 0) return null;
 
   return (
-    <section className="space-y-2 rounded-2xl bg-card p-3.5 ring-1 ring-foreground/10">
+    <section className="space-y-2 rounded-lg border border-border p-4">
       <h2 className="text-sm font-semibold">Vos commandes sans compte</h2>
       <ul className="divide-y divide-border">
         {commandes.map((commande) => (

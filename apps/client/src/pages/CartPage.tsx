@@ -1,7 +1,7 @@
 import { ESPECES_ACTIF } from '@delivero/config/perimetre-v1';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, ShoppingCart } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ChoiceCards } from '@/components/forms/ChoiceCards';
@@ -64,15 +64,12 @@ export function CartPage() {
 
   if (cart.items.length === 0) {
     return (
-      <div className="mx-auto max-w-md rounded-3xl bg-card px-6 py-12 text-center border border-border/70 shadow-sm">
-        <div className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-primary/10 text-primary shadow-xs">
-          <ShoppingCart className="size-8" aria-hidden="true" />
-        </div>
-        <h1 className="font-heading mt-5 text-xl font-bold text-foreground">Votre panier est vide</h1>
-        <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+      <div className="mx-auto max-w-md pt-4">
+        <h1 className="titre-page">Votre panier est vide</h1>
+        <p className="mt-2 text-[15px] text-muted-foreground">
           Choisissez un restaurant à Natitingou et ajoutez vos plats avec le bouton +.
         </p>
-        <Button asChild size="lg" className="mt-6 rounded-xl font-semibold shadow-md shadow-primary/20">
+        <Button asChild className="mt-6 h-11 px-5 text-[15px] font-bold">
           <Link to="/repas">Voir les restaurants</Link>
         </Button>
       </div>
@@ -156,7 +153,7 @@ export function CartPage() {
     <div className="mx-auto max-w-2xl space-y-4 lg:max-w-6xl lg:space-y-6">
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="font-heading text-2xl font-bold lg:text-3xl text-foreground">Votre panier</h1>
+          <h1 className="titre-page">Votre panier</h1>
           {cart.restaurantId && (
             <p className="mt-1 text-sm text-muted-foreground">
               Commande préparée par{' '}
@@ -169,7 +166,7 @@ export function CartPage() {
       </header>
 
       {!navigator.onLine && (
-        <p role="status" className="rounded-2xl bg-brand-red/5 border border-brand-red/20 px-4 py-2.5 text-xs sm:text-sm text-foreground">
+        <p role="status" className="rounded-lg border border-border bg-muted px-4 py-3 text-sm">
           Vous êtes hors ligne. Votre panier est conservé sur cet appareil ; vous pourrez commander dès le retour du
           réseau.
         </p>
@@ -177,9 +174,9 @@ export function CartPage() {
 
       {/* Desktop: steps on the left, sticky summary on the right. */}
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
-        <div className="space-y-4">
+        <div className="space-y-8">
           <FormStep numero={1} titre="Vos plats" complete>
-            <div className="divide-y divide-border/60">
+            <div className="divide-y divide-border">
               {cart.items.map((item) => (
                 <CartItemRow
                   key={item.platId}
@@ -193,7 +190,7 @@ export function CartPage() {
               <div className="pt-2">
                 <Link
                   to={`/restaurants/${cart.restaurantId}`}
-                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-primary hover:underline"
+                  className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
                 >
                   <Plus className="size-4" aria-hidden="true" /> Ajouter d’autres plats
                 </Link>
@@ -201,7 +198,7 @@ export function CartPage() {
             )}
 
             {/* Décompte transparent (RG-08). */}
-            <dl className="space-y-2 rounded-2xl bg-secondary/50 p-4 text-xs sm:text-sm border border-border/60">
+            <dl className="space-y-2 rounded-xl bg-muted p-4 text-sm">
               <div className="flex justify-between text-muted-foreground">
                 <dt>Plats</dt>
                 <dd className="font-medium text-foreground">{formatPrixFcfa(sousTotal)}</dd>
@@ -222,9 +219,9 @@ export function CartPage() {
                 </dt>
                 <dd className="shrink-0 font-medium text-foreground">{fraisService !== undefined ? formatPrixFcfa(fraisService) : '—'}</dd>
               </div>
-              <div className="flex items-baseline justify-between border-t border-border/70 pt-2.5 text-foreground">
+              <div className="flex items-baseline justify-between border-t border-border pt-2.5 text-foreground">
                 <dt className="font-bold">Total à payer</dt>
-                <dd className="font-heading text-xl font-bold text-primary">
+                <dd className="text-xl font-bold tabular-nums">
                   {fraisLivraison !== undefined ? formatPrixFcfa(total) : '—'}
                 </dd>
               </div>

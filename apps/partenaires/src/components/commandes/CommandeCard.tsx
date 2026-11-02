@@ -41,8 +41,8 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
     <li
       data-commande={commande.id}
       className={cn(
-        'flex flex-col overflow-hidden rounded-3xl bg-card border border-border/70 shadow-xs transition-all hover:shadow-md',
-        aAccepter && 'border-destructive/60 ring-2 ring-destructive/40 shadow-destructive/10',
+        'carte flex flex-col overflow-hidden',
+        aAccepter && 'ring-2 ring-brand-red',
       )}
     >
       <div
@@ -52,16 +52,16 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
         )}
       >
         <span className="flex min-w-0 items-baseline gap-2">
-          <span className="font-mono text-base font-bold tracking-tight">N° {reference(commande)}</span>
+          <span className="tabular-nums text-base font-bold tracking-tight">N° {reference(commande)}</span>
           <span className={cn('truncate text-xs font-medium', aAccepter ? 'text-white/80' : 'text-muted-foreground')}>
             {anciennete(commande.createdAt, maintenant)}
           </span>
         </span>
         <span
           className={cn(
-            'shrink-0 rounded-full px-3 py-1 text-xs font-bold shadow-2xs',
-            aAccepter && 'bg-white text-destructive animate-pulse',
-            !aAccepter && commande.statut === 'prete' && 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30',
+            'shrink-0 rounded-full px-3 py-1 text-xs font-bold',
+            aAccepter && 'bg-white text-brand-red',
+            !aAccepter && commande.statut === 'prete' && 'bg-accent text-primary',
             !aAccepter && commande.statut === 'en_preparation' && 'bg-amber-500/15 text-amber-700 border border-amber-500/30',
             !aAccepter && commande.statut === 'confirmee' && 'bg-brand-blue/15 text-brand-blue border border-brand-blue/30',
             !aAccepter && commande.statut === 'livree' && 'bg-muted text-muted-foreground',
@@ -76,7 +76,7 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
           {commande.lignes.map((ligne) => (
             <li key={ligne.id} className="text-base">
               <div className="flex items-start gap-2">
-                <span className="inline-flex items-center justify-center rounded-lg bg-primary/10 px-2 py-0.5 font-mono text-sm font-bold text-primary tabular-nums shrink-0">
+                <span className="inline-flex items-center justify-center rounded-lg bg-muted px-2 py-0.5 text-sm font-bold tabular-nums shrink-0">
                   {ligne.quantite}×
                 </span>
                 <span className="font-semibold text-foreground leading-snug">{ligne.plat.nom}</span>
@@ -94,13 +94,13 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
           <span className="text-xs text-muted-foreground font-medium">
             {nbPlats} plat{nbPlats > 1 ? 's' : ''} · Sous-total restaurant
           </span>
-          <span className="font-mono text-base font-bold tabular-nums text-foreground">
+          <span className="tabular-nums text-base font-bold  text-foreground">
             {commande.commande.sousTotal ? formatPrixFcfa(commande.commande.sousTotal) : '—'}
           </span>
         </div>
 
         {livreur && (
-          <div className="flex items-center justify-between gap-2 rounded-2xl bg-muted/60 border border-border/50 px-3.5 py-2.5 text-sm">
+          <div className="flex items-center justify-between gap-2 rounded-xl bg-muted px-3.5 py-2.5 text-sm">
             <span className="flex min-w-0 items-center gap-2">
               <div className="flex size-7 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
                 <Bike className="size-4" aria-hidden="true" />
@@ -130,7 +130,7 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
             <div className="flex gap-2">
               <Button
                 size="lg"
-                className="h-12 flex-1 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base shadow-sm active:scale-98 transition-all"
+                className="h-12 flex-1 rounded-xl text-base font-bold"
                 disabled={pending}
                 onClick={() => {
                   accepter.mutate(commande.id, {
@@ -144,7 +144,7 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
               <Button
                 size="lg"
                 variant="outline"
-                className="h-12 px-5 rounded-2xl text-base font-semibold border-border hover:bg-destructive/10 hover:text-destructive active:scale-98 transition-all"
+                className="h-12 rounded-xl px-5 text-base font-bold text-destructive hover:bg-destructive/5 hover:text-destructive"
                 disabled={pending}
                 onClick={() => setRefusOuvert(true)}
               >
@@ -154,7 +154,7 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
           )}
 
           {aAccepter && refusOuvert && (
-            <div className="space-y-2.5 rounded-2xl bg-muted/40 border border-border/60 p-3">
+            <div className="space-y-2.5 rounded-xl bg-muted p-3">
               <p className="text-xs font-semibold text-foreground">Pourquoi refuser ? Le client verra ce motif.</p>
               <div className="flex flex-wrap gap-1.5">
                 {MOTIFS_RAPIDES.map((rapide) => (
@@ -165,7 +165,7 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
                     className={cn(
                       'rounded-full border border-border/80 px-3 py-1 text-xs font-medium transition-all',
                       motif === rapide
-                        ? 'border-primary bg-primary text-primary-foreground shadow-2xs font-semibold'
+                        ? 'border-foreground bg-foreground text-background font-semibold'
                         : 'bg-card text-muted-foreground hover:bg-muted',
                     )}
                   >
@@ -204,7 +204,7 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
           {commande.statut === 'confirmee' && (
             <Button
               size="lg"
-              className="h-12 w-full rounded-2xl bg-brand-blue hover:bg-brand-blue/90 text-white font-bold text-base shadow-sm active:scale-98 transition-all"
+              className="h-12 w-full rounded-xl text-base font-bold"
               disabled={pending}
               onClick={() => marquerEnPreparation.mutate(commande.id, { onError: erreur })}
             >
@@ -215,7 +215,7 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
           {commande.statut === 'en_preparation' && (
             <Button
               size="lg"
-              className="h-12 w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base shadow-sm active:scale-98 transition-all"
+              className="h-12 w-full rounded-xl text-base font-bold"
               disabled={pending}
               onClick={() =>
                 marquerPrete.mutate(commande.id, {
@@ -229,8 +229,8 @@ export function CommandeCard({ commande, maintenant }: { commande: CommandeRepas
           )}
 
           {commande.statut === 'prete' && (
-            <div className="flex items-center gap-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs sm:text-sm text-emerald-800 font-medium">
-              <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <div className="flex items-center gap-2 rounded-xl bg-accent p-3 text-sm font-medium text-primary">
+              <span className="size-2 shrink-0 rounded-full bg-primary" />
               <span>{livreur ? 'Le livreur arrive : remettez-lui la commande.' : 'En attente d’un livreur.'}</span>
             </div>
           )}

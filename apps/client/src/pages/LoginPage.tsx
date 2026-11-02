@@ -24,17 +24,14 @@ export function LoginPage() {
 
   return (
     <div className="mx-auto max-w-sm space-y-6">
-      <div className="text-center">
-        <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary mb-2">
-          ⚡ ChapExpress Client
-        </span>
-        <h1 className="font-heading text-2xl font-bold text-foreground">Connexion</h1>
-        <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+      <div>
+        <h1 className="titre-page">Connexion</h1>
+        <p className="mt-2 text-[15px] text-muted-foreground">
           Entrez votre numéro : recevez un code rapide par WhatsApp ou SMS.
         </p>
       </div>
 
-      <div className="rounded-3xl bg-card border border-border/70 p-6 shadow-xs space-y-5">
+      <div className="carte space-y-5 p-5 sm:p-6">
         {mode === 'code' ? (
           <OtpLoginForm
             onConnecte={(data) => {
@@ -83,7 +80,7 @@ export function LoginPage() {
               />
             </div>
 
-            <Button type="submit" size="lg" className="w-full rounded-xl font-bold shadow-md shadow-primary/20" disabled={loginMutation.isPending}>
+            <Button type="submit" className="h-11 w-full text-[15px] font-bold" disabled={loginMutation.isPending}>
               {loginMutation.isPending ? 'Connexion...' : 'Se connecter'}
             </Button>
           </form>

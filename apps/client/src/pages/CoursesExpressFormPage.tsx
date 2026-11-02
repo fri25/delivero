@@ -163,7 +163,7 @@ export function CoursesExpressFormPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-4 lg:max-w-6xl lg:space-y-6">
       <div>
-        <h1 className="font-heading text-2xl leading-tight font-semibold text-foreground lg:text-3xl">Faire une course</h1>
+        <h1 className="titre-page">Faire une course</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Retirer un document, déposer un paquet, une démarche en ville : décrivez la tâche, un livreur y va pour
           vous.

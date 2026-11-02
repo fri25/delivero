@@ -15,7 +15,7 @@ export function PhotosCommande({ urls }: { urls: string[] }) {
             src={miniature(url)}
             alt="Photo jointe par le client"
             loading="lazy"
-            className="size-20 rounded-2xl object-cover border border-border/70 shadow-2xs transition-transform duration-200 group-hover:scale-105"
+            className="size-20 rounded-xl object-cover"
           />
         </a>
       ))}

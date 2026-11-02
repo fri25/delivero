@@ -47,8 +47,8 @@ function Evolution({
     <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-white/80">
       <span
         className={cn(
-          'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold shadow-2xs',
-          hausse ? 'bg-emerald-500/25 text-emerald-300 ring-1 ring-emerald-400/30' : 'bg-rose-500/25 text-rose-200 ring-1 ring-rose-400/30',
+          'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold',
+          hausse ? 'bg-white/15 text-white' : 'bg-rose-500/25 text-rose-200 ring-1 ring-rose-400/30',
         )}
       >
         <Icone className="size-3.5" aria-hidden="true" />
@@ -72,7 +72,7 @@ function Tuile({
   icone: typeof Receipt;
 }) {
   return (
-    <div className="flex flex-col justify-between rounded-3xl bg-card p-4 sm:p-5 border border-border/70 shadow-xs transition-all hover:shadow-sm">
+    <div className="carte flex flex-col justify-between p-4 sm:p-5">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-semibold text-muted-foreground">{label}</span>
         <div className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -80,7 +80,7 @@ function Tuile({
         </div>
       </div>
       <div className="mt-3">
-        <p className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{valeur}</p>
+        <p className="text-2xl font-extrabold tracking-tight tabular-nums sm:text-3xl">{valeur}</p>
         {detail && <p className="mt-1 text-xs text-muted-foreground">{detail}</p>}
       </div>
     </div>
@@ -92,9 +92,9 @@ function VentesParJour({ parJour }: { parJour: Bilan['parJour'] }) {
   const max = Math.max(...parJour.map((jour) => jour.montant), 1);
   const etiquetteTous = parJour.length <= 7;
   return (
-    <section className="space-y-4 rounded-3xl bg-card p-5 border border-border/70 shadow-xs">
+    <section className="carte space-y-4 p-5">
       <div className="flex items-center justify-between">
-        <h2 className="font-heading font-bold text-base text-foreground">Évolution des ventes par jour</h2>
+        <h2 className="text-base font-bold text-foreground">Évolution des ventes par jour</h2>
         <span className="text-xs text-muted-foreground">En FCFA</span>
       </div>
       <div className="flex h-44 items-end gap-1 sm:gap-2 pt-4 px-1" aria-hidden="true">
@@ -102,14 +102,14 @@ function VentesParJour({ parJour }: { parJour: Bilan['parJour'] }) {
           <div key={jour.jour} className="group relative flex h-full flex-1 items-end justify-center" tabIndex={-1}>
             <div
               className={cn(
-                'w-full max-w-10 rounded-t-lg bg-gradient-to-t from-brand-blue to-cyan-400 transition-all group-hover:brightness-110 shadow-2xs',
+                'w-full max-w-10 rounded-t-md bg-primary transition-colors group-hover:bg-brand-navy',
                 jour.montant === 0 && 'bg-muted opacity-40',
               )}
               style={{ height: jour.montant === 0 ? 3 : `${Math.max((jour.montant / max) * 100, 4)}%` }}
             />
-            <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden -translate-x-1/2 rounded-xl bg-brand-navy border border-white/10 px-3 py-2 text-xs whitespace-nowrap text-white shadow-xl group-hover:block">
-              <p className="font-bold text-cyan-300">{jourLisible(jour.jour, formatJourSemaine)}</p>
-              <p className="font-mono font-semibold text-white">{formatPrixFcfa(jour.montant)}</p>
+            <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden -translate-x-1/2 rounded-lg bg-foreground px-3 py-2 text-xs whitespace-nowrap text-background shadow-md group-hover:block">
+              <p className="font-bold">{jourLisible(jour.jour, formatJourSemaine)}</p>
+              <p className="tabular-nums font-semibold text-white">{formatPrixFcfa(jour.montant)}</p>
               <p className="text-[11px] text-white/70">
                 {jour.commandes} commande{jour.commandes > 1 ? 's' : ''}
               </p>
@@ -152,12 +152,12 @@ function VentesParJour({ parJour }: { parJour: Bilan['parJour'] }) {
 function TopPlats({ plats }: { plats: Bilan['topPlats'] }) {
   const max = Math.max(...plats.map((plat) => plat.quantite), 1);
   return (
-    <section className="space-y-4 rounded-3xl bg-card p-5 border border-border/70 shadow-xs">
+    <section className="carte space-y-4 p-5">
       <div className="flex items-center gap-2">
         <div className="flex size-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
           <Flame className="size-4" />
         </div>
-        <h2 className="font-heading font-bold text-base text-foreground">Plats les plus vendus</h2>
+        <h2 className="text-base font-bold text-foreground">Plats les plus vendus</h2>
       </div>
       {plats.length === 0 ? (
         <div className="py-8 text-center text-sm text-muted-foreground">Aucun plat vendu sur cette période.</div>
@@ -173,12 +173,12 @@ function TopPlats({ plats }: { plats: Bilan['topPlats'] }) {
                   <span className="truncate">{plat.nom}</span>
                 </span>
                 <span className="shrink-0 text-xs font-medium text-muted-foreground">
-                  <span className="font-mono font-bold text-foreground">{plat.quantite}</span> vendu{plat.quantite > 1 ? 's' : ''} · <span className="font-mono font-semibold text-primary">{formatPrixFcfa(plat.montant)}</span>
+                  <span className="tabular-nums font-bold text-foreground">{plat.quantite}</span> vendu{plat.quantite > 1 ? 's' : ''} · <span className="tabular-nums font-semibold text-primary">{formatPrixFcfa(plat.montant)}</span>
                 </span>
               </div>
               <div className="h-2 rounded-full bg-secondary overflow-hidden" aria-hidden="true">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-brand-blue to-cyan-400 transition-all duration-500"
+                  className="h-full rounded-full bg-primary transition-all duration-500"
                   style={{ width: `${(plat.quantite / max) * 100}%` }}
                 />
               </div>
@@ -224,7 +224,7 @@ export function VentesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Tableau des ventes</h1>
+        <h1 className="titre-page">Tableau des ventes</h1>
         <div role="radiogroup" aria-label="Période" className="flex rounded-full bg-muted/80 p-1 border border-border/60 self-start sm:self-auto">
           {PERIODES.map((option) => (
             <button
@@ -236,7 +236,7 @@ export function VentesPage() {
               className={cn(
                 'h-8.5 rounded-full px-3.5 text-xs font-semibold transition-all',
                 periode === option.valeur
-                  ? 'bg-card text-foreground shadow-2xs font-bold'
+                  ? 'bg-card text-foreground shadow-(--shadow-carte) font-bold'
                   : 'text-muted-foreground hover:text-foreground',
               )}
             >
@@ -246,12 +246,12 @@ export function VentesPage() {
         </div>
       </div>
 
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-navy via-brand-navy to-brand-blue/90 p-6 text-white shadow-md">
+      <section className="rounded-2xl bg-brand-navy p-6 text-white">
         <div className="relative z-10">
-          <span className="text-xs font-semibold uppercase tracking-wider text-cyan-300">
+          <span className="text-sm font-medium text-[#c4d0e8]">
             Chiffre d'affaires plats
           </span>
-          <p className="mt-1.5 font-heading text-4xl sm:text-5xl font-bold tracking-tight">
+          <p className="mt-1 text-4xl font-extrabold tracking-tight tabular-nums sm:text-5xl">
             {formatPrixFcfa(actuel.chiffreAffaires)}
           </p>
           <div className="mt-3">
@@ -263,7 +263,6 @@ export function VentesPage() {
             />
           </div>
         </div>
-        <div className="pointer-events-none absolute -right-6 -bottom-10 size-44 rounded-full bg-cyan-400/10 blur-2xl" />
       </section>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
@@ -292,7 +291,7 @@ export function VentesPage() {
         <TopPlats plats={actuel.topPlats} />
       </div>
 
-      <div className="rounded-2xl border border-border/60 bg-muted/30 p-3.5 text-xs text-muted-foreground">
+      <div className="rounded-xl bg-muted p-3.5 text-sm text-muted-foreground">
         Montant brut de vos plats pour les commandes remises au livreur. Les frais de livraison et de service sont payés
         par le client en sus. Les relevés de reversement bancaire ou mobile money sont administrés par ChapExpress.
       </div>

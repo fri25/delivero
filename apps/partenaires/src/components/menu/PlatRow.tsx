@@ -52,7 +52,7 @@ export function PlatRow({ plat }: { plat: Plat }) {
     return (
       <li className="list-none">
         <form
-          className="space-y-4 rounded-3xl bg-card p-4 sm:p-5 border-2 border-primary shadow-md"
+          className="carte space-y-4 p-4 ring-2 ring-primary sm:p-5"
           onSubmit={(event) => {
             event.preventDefault();
             const prixNombre = Number(prix);
@@ -85,7 +85,7 @@ export function PlatRow({ plat }: { plat: Plat }) {
             );
           }}
         >
-          <p className="font-heading font-bold text-sm text-primary">Modifier le plat</p>
+          <p className="text-sm font-bold text-primary">Modifier le plat</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor={`nom-${plat.id}`} className="text-xs font-semibold">Nom du plat</Label>
@@ -128,7 +128,7 @@ export function PlatRow({ plat }: { plat: Plat }) {
               value={prix}
               onChange={(event) => setPrix(event.target.value)}
               required
-              className="rounded-xl font-mono"
+              className="rounded-xl tabular-nums"
             />
           </div>
 
@@ -151,7 +151,7 @@ export function PlatRow({ plat }: { plat: Plat }) {
                   <img
                     src={miniature(photoUrl, 200)}
                     alt="Aperçu du plat"
-                    className="size-16 rounded-2xl object-cover ring-1 ring-border shadow-xs"
+                    className="size-16 rounded-xl object-cover"
                   />
                   <button
                     type="button"
@@ -159,7 +159,7 @@ export function PlatRow({ plat }: { plat: Plat }) {
                       setPhotoUrl(null);
                       if (inputFichier.current) inputFichier.current.value = '';
                     }}
-                    className="absolute -right-2 -top-2 rounded-full bg-destructive p-1 text-white shadow-sm hover:opacity-90 transition-opacity"
+                    className="absolute -right-2 -top-2 rounded-full bg-foreground p-1 text-background hover:opacity-90"
                     title="Supprimer la photo"
                   >
                     <X className="size-3" />
@@ -228,7 +228,7 @@ export function PlatRow({ plat }: { plat: Plat }) {
   return (
     <li
       className={cn(
-        'flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-3xl bg-card p-3.5 border border-border/70 shadow-xs transition-all hover:shadow-sm',
+        'carte flex flex-wrap items-center justify-between gap-x-4 gap-y-3 p-3.5',
         !plat.disponible && 'bg-muted/40 opacity-80',
       )}
     >
@@ -237,11 +237,11 @@ export function PlatRow({ plat }: { plat: Plat }) {
           <img
             src={miniature(plat.photoUrl, 160)}
             alt={plat.nom}
-            className="size-16 shrink-0 rounded-2xl object-cover ring-1 ring-border/80 shadow-2xs"
+            className="size-16 shrink-0 rounded-xl object-cover"
             loading="lazy"
           />
         ) : (
-          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground ring-1 ring-border/50">
+          <div className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
             <Utensils className="size-6 opacity-40" aria-hidden="true" />
           </div>
         )}
@@ -250,12 +250,12 @@ export function PlatRow({ plat }: { plat: Plat }) {
             {plat.nom}
           </p>
           {plat.description && <p className="truncate text-xs text-muted-foreground mt-0.5">{plat.description}</p>}
-          <p className="mt-1 font-mono text-sm font-bold text-foreground tabular-nums">{formatPrixFcfa(plat.prix)}</p>
+          <p className="mt-1 tabular-nums text-sm font-bold text-foreground ">{formatPrixFcfa(plat.prix)}</p>
         </div>
       </div>
 
       {confirmSuppression ? (
-        <div className="flex shrink-0 items-center gap-1.5 rounded-2xl bg-destructive/10 border border-destructive/20 p-1.5">
+        <div className="flex shrink-0 items-center gap-1.5 rounded-xl border border-destructive/40 p-1.5">
           <span className="text-xs font-semibold text-destructive px-1">Supprimer ?</span>
           <Button
             size="sm"
@@ -295,22 +295,22 @@ export function PlatRow({ plat }: { plat: Plat }) {
               );
             }}
             className={cn(
-              'flex h-8.5 items-center gap-2 rounded-full px-3 text-xs font-semibold transition-all active:scale-95 disabled:opacity-60 shadow-2xs',
+              'flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-semibold disabled:opacity-60',
               plat.disponible
-                ? 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30 hover:bg-emerald-500/25'
+                ? 'bg-accent text-primary'
                 : 'bg-amber-500/15 text-amber-700 border border-amber-500/30 hover:bg-amber-500/25',
             )}
           >
             <span
               className={cn(
                 'relative h-4.5 w-8 rounded-full transition-colors',
-                plat.disponible ? 'bg-emerald-600' : 'bg-muted-foreground/40',
+                plat.disponible ? 'bg-primary' : 'bg-muted-foreground/40',
               )}
               aria-hidden="true"
             >
               <span
                 className={cn(
-                  'absolute top-0.5 size-3.5 rounded-full bg-white shadow-xs transition-all',
+                  'absolute top-0.5 size-3.5 rounded-full bg-white transition-all',
                   plat.disponible ? 'left-4' : 'left-0.5',
                 )}
               />

@@ -13,7 +13,7 @@ export function ColisDisponibleCard({ commande }: { commande: CommandeColis }) {
       <ColisInfo commande={commande} />
       <Button
         size="lg"
-        className="w-full rounded-xl font-bold shadow-md shadow-primary/20 transition-all active:scale-[0.99]"
+        className="h-12 w-full rounded-xl text-base font-bold"
         disabled={prendreEnCharge.isPending}
         onClick={() => {
           prendreEnCharge.mutate(commande.id, {

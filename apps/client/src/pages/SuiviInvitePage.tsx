@@ -94,7 +94,7 @@ export function SuiviInvitePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="line-clamp-2 text-xl font-semibold">{r.titre}</h1>
+        <h1 className="titre-page line-clamp-2">{r.titre}</h1>
         <p className="text-sm text-muted-foreground">
           Commande sans compte du {new Date(suivi.commande.createdAt).toLocaleString('fr-FR')}
         </p>

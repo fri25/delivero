@@ -43,6 +43,7 @@ export class RestaurantsService {
       select: {
         id: true,
         nom: true,
+        logoUrl: true,
         description: true,
         horaires: true,
         noteMoyenne: true,
@@ -75,6 +76,7 @@ export class RestaurantsService {
       select: {
         id: true,
         nom: true,
+        logoUrl: true,
         description: true,
         horaires: true,
         adresse: true,
@@ -110,9 +112,16 @@ export class RestaurantsService {
 
   async updateOwn(userId: string, dto: UpdateRestaurantDto) {
     const partenaire = await this.getOwn(userId);
+    const logoUrl = dto.logoUrl?.trim();
+    if (logoUrl) {
+      this.medias.assertUrlsAutorisees([logoUrl], 'logos');
+    }
     return this.prisma.partenaire.update({
       where: { id: partenaire.id },
-      data: dto,
+      data: {
+        ...dto,
+        ...(dto.logoUrl !== undefined ? { logoUrl: logoUrl || null } : {}),
+      },
     });
   }
 

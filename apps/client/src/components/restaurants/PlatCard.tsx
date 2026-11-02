@@ -1,5 +1,4 @@
-import { Minus, Plus, ShoppingBag } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MediaFrame } from '@/components/restaurants/MediaFrame';
 import { getPlatImage } from '@/data/images';
@@ -7,8 +6,9 @@ import { formatPrixFcfa } from '@/lib/format';
 import type { Plat } from '@/api/types';
 
 /**
- * Dish card: text on the left, photo on the right with the add button or
- * stepper pinned under it. Blue frame once the dish is in the cart.
+ * Dish row of the menu: text on the left, photo on the right with the add
+ * button or quantity stepper pinned under it. Rows are separated by the
+ * parent's rules, not boxed.
  */
 export function PlatCard({
   plat,
@@ -25,86 +25,63 @@ export function PlatCard({
   onRetirer: (plat: Plat) => void;
 }) {
   return (
-    <article
-      className={cn(
-        'group relative flex items-start justify-between gap-3 rounded-3xl border bg-card p-3.5 transition-[border-color,box-shadow] duration-200 hover:shadow-md hover:shadow-primary/5 sm:gap-4 sm:p-4',
-        quantite > 0 ? 'border-primary' : 'border-border hover:border-primary/30',
-        !plat.disponible && 'bg-muted/40 opacity-60',
-      )}
-    >
-      <div className="min-w-0 flex-1 space-y-1 sm:space-y-1.5 pr-2">
-        <div className="flex items-start gap-2">
-          <h3 className="font-heading text-sm sm:text-base font-bold text-foreground leading-snug group-hover:text-primary transition-colors">
-            {plat.nom}
-          </h3>
-        </div>
-
+    <article className={cn('flex items-start justify-between gap-4 py-4', !plat.disponible && 'opacity-60')}>
+      <div className="min-w-0 flex-1 space-y-1">
+        <h3 className="text-base leading-snug font-bold">{plat.nom}</h3>
         {plat.description && (
-          <p className="line-clamp-2 text-xs sm:text-[13px] text-muted-foreground leading-relaxed">
-            {plat.description}
-          </p>
+          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">{plat.description}</p>
         )}
-
-        <div className="pt-1 flex items-center gap-2">
-          <span className="font-heading text-sm font-extrabold text-foreground tabular-nums sm:text-base">
-            {formatPrixFcfa(plat.prix)}
-          </span>
-          {quantite > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
-              <ShoppingBag className="size-3" />
-              <span>{quantite} au panier</span>
-            </span>
-          )}
-        </div>
+        <p className="flex items-center gap-2 pt-1 text-[15px] font-bold tabular-nums">
+          {formatPrixFcfa(plat.prix)}
+          {quantite > 0 && <span className="text-sm font-semibold text-primary">· {quantite} au panier</span>}
+        </p>
       </div>
 
-      <div className="relative shrink-0 pb-3">
-        <div className="size-24 overflow-hidden rounded-2xl bg-muted sm:size-28">
-          <MediaFrame
-            nom={plat.nom}
-            image={plat.photoUrl ?? getPlatImage(plat.nom)}
-            ratio="square"
-            className="transition-transform duration-300 group-hover:scale-105"
-          />
-        </div>
+      <div className="relative shrink-0 pb-4">
+        <MediaFrame
+          nom={plat.nom}
+          image={plat.photoUrl ?? getPlatImage(plat.nom)}
+          ratio="square"
+          className="size-24 rounded-xl sm:size-28"
+        />
 
         <div className="absolute inset-x-0 bottom-0 flex justify-center">
           {!commandable ? null : !plat.disponible ? (
-            <span className="shrink-0 rounded-full bg-card px-2.5 py-0.5 text-[11px] font-semibold text-brand-red ring-1 ring-border">
+            <span className="rounded-full bg-card px-2.5 py-1 text-xs font-bold text-muted-foreground shadow-md">
               Épuisé
             </span>
           ) : quantite > 0 ? (
-            <div className="flex items-center gap-1.5 rounded-full bg-primary p-0.5 text-primary-foreground shadow-md shadow-primary/30 ring-2 ring-card animate-in zoom-in-90 duration-150">
+            <div className="flex h-9 items-center rounded-full bg-primary text-primary-foreground shadow-md">
               <button
                 type="button"
-                className="flex size-7 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors active:scale-90 cursor-pointer"
+                className="flex h-9 w-9 cursor-pointer items-center justify-center"
                 aria-label={quantite === 1 ? `Retirer ${plat.nom} du panier` : `Un ${plat.nom} de moins`}
                 onClick={() => onRetirer(plat)}
               >
-                <Minus className="size-3.5 stroke-[2.5]" aria-hidden="true" />
+                <Minus className="size-4" strokeWidth={2.5} aria-hidden="true" />
               </button>
-              <span className="w-5 text-center text-xs font-extrabold tabular-nums text-white" aria-live="polite">
+              <span className="w-5 text-center text-sm font-bold tabular-nums" aria-live="polite">
                 {quantite}
               </span>
               <button
                 type="button"
-                className="flex size-7 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors active:scale-90 cursor-pointer"
+                className="flex h-9 w-9 cursor-pointer items-center justify-center"
                 aria-label={`Un ${plat.nom} de plus`}
                 onClick={() => onAjouter(plat)}
               >
-                <Plus className="size-3.5 stroke-[2.5]" aria-hidden="true" />
+                <Plus className="size-4" strokeWidth={2.5} aria-hidden="true" />
               </button>
             </div>
           ) : (
-            <Button
-              size="sm"
-              className="h-8 gap-1 rounded-full px-3 text-xs font-bold shadow-md shadow-primary/30 ring-2 ring-card transition-transform duration-150 active:scale-95"
+            <button
+              type="button"
+              className="flex h-9 cursor-pointer items-center gap-1 rounded-full bg-card px-3.5 text-sm font-bold text-primary shadow-md hover:bg-accent"
               aria-label={`Ajouter ${plat.nom} au panier`}
               onClick={() => onAjouter(plat)}
             >
-              <Plus className="size-3.5 stroke-[2.5]" aria-hidden="true" />
-              <span>Ajouter</span>
-            </Button>
+              <Plus className="size-4" strokeWidth={2.5} aria-hidden="true" />
+              Ajouter
+            </button>
           )}
         </div>
       </div>

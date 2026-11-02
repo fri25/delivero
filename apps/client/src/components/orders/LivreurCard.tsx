@@ -1,5 +1,5 @@
 import { lienWhatsApp } from '@delivero/config/whatsapp';
-import { Bike, MessageCircle, Phone } from 'lucide-react';
+import { Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { LivreurContact } from '@/api/types';
 
@@ -14,45 +14,28 @@ export function LivreurCard({ livreur, actif }: { livreur: LivreurContact | null
     : null;
 
   return (
-    <div className="space-y-4 rounded-3xl bg-card p-5 border border-border/70 shadow-xs">
-      <div className="flex min-w-0 items-center gap-3.5">
-        <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-2xs">
-          <Bike className="size-6" aria-hidden="true" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-xs font-medium text-muted-foreground">{actif ? 'Votre livreur' : 'Livré par'}</p>
-            {actif && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-primary">
-                <span className="size-1.5 rounded-full bg-brand-red animate-pulse" /> Actif
-              </span>
-            )}
-          </div>
-          <p className="truncate font-heading text-base font-bold text-foreground mt-0.5">{livreur.user.nom}</p>
-        </div>
+    <section className="carte space-y-3 p-4 sm:p-5">
+      <div>
+        <p className="text-sm text-muted-foreground">{actif ? 'Votre livreur' : 'Livré par'}</p>
+        <p className="truncate text-lg font-bold">{livreur.user.nom}</p>
       </div>
       {actif && (
-        <div className="grid grid-cols-2 gap-2.5 pt-1">
-          <Button asChild className="rounded-xl font-semibold shadow-xs">
+        <div className="grid grid-cols-2 gap-2">
+          <Button asChild className="h-11 font-bold">
             <a href={`tel:${livreur.user.telephone}`}>
               <Phone className="size-4" aria-hidden="true" />
               Appeler
             </a>
           </Button>
           {whatsapp && (
-            <Button
-              asChild
-              variant="outline"
-              className="rounded-xl font-semibold bg-[#25D366]/10 text-[#128C7E] hover:bg-[#25D366]/20 border-[#25D366]/30 dark:text-[#25D366]"
-            >
+            <Button asChild variant="outline" className="h-11 border-[#1f9d55] font-bold text-[#1f9d55] hover:bg-[#1f9d55]/5 hover:text-[#1f9d55]">
               <a href={whatsapp} target="_blank" rel="noreferrer">
-                <MessageCircle className="size-4" aria-hidden="true" />
                 WhatsApp
               </a>
             </Button>
           )}
         </div>
       )}
-    </div>
+    </section>
   );
 }

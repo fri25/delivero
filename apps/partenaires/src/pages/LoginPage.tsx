@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,17 +20,15 @@ export function LoginPage() {
 
   return (
     <div className="mx-auto max-w-md py-6 sm:py-12">
-      <div className="rounded-3xl border border-border/70 bg-card p-6 sm:p-8 shadow-sm space-y-6">
-        <div className="flex flex-col items-center text-center space-y-2">
-          <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-navy via-brand-blue to-cyan-400 text-white shadow-md">
-            <Store className="size-7" />
-          </div>
-          <div>
-            <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Espace Partenaire</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              Connectez-vous avec le compte de votre restaurant pour gérer vos commandes.
-            </p>
-          </div>
+      <div className="carte space-y-6 p-6 sm:p-8">
+        <div>
+          <p className="font-heading text-2xl leading-none font-extrabold tracking-[-0.03em]">
+            Chap<span className="text-primary">Express</span>
+          </p>
+          <h1 className="titre-page mt-6">Espace partenaire</h1>
+          <p className="mt-2 text-[15px] text-muted-foreground">
+            Connectez-vous avec le compte de votre restaurant pour gérer vos commandes.
+          </p>
         </div>
 
         <form
@@ -62,7 +59,7 @@ export function LoginPage() {
               value={telephone}
               onChange={(event) => setTelephone(event.target.value)}
               placeholder="+229 01 00 00 00"
-              className="rounded-xl font-mono"
+              className="rounded-xl tabular-nums"
               required
             />
           </div>
@@ -81,14 +78,14 @@ export function LoginPage() {
 
           <Button
             type="submit"
-            className="w-full h-11 rounded-2xl font-bold bg-primary hover:bg-primary/90 text-white shadow-sm active:scale-98 transition-all"
+            className="h-12 w-full rounded-xl text-base font-bold"
             disabled={loginMutation.isPending}
           >
             {loginMutation.isPending ? 'Connexion en cours...' : 'Se connecter'}
           </Button>
         </form>
 
-        <div className="rounded-2xl border border-border/60 bg-muted/30 p-3 text-center text-xs text-muted-foreground">
+        <div className="rounded-xl bg-muted p-3 text-center text-sm text-muted-foreground">
           Pas encore de compte partenaire ? Contactez ChapExpress pour l'ouverture et la validation de votre fiche établissement.
         </div>
       </div>

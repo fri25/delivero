@@ -58,7 +58,7 @@ export function PaiementRetourPage() {
         <XCircle className="mx-auto size-10 text-destructive" aria-hidden="true" />
       )}
       <div className="space-y-1">
-        <h1 className="text-xl font-semibold">
+        <h1 className="titre-page">
           {reussi
             ? 'Paiement reçu'
             : enAttente

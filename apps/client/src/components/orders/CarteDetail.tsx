@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
-/** Titled white card used to group each block of an order detail page. */
+/** Titled block of an order detail page, opened by a thick rule. */
 export function CarteDetail({
   titre,
   action,
@@ -14,10 +14,10 @@ export function CarteDetail({
   children: ReactNode;
 }) {
   return (
-    <section className={cn('rounded-3xl bg-card p-5 sm:p-6 border border-border/70 shadow-xs', className)}>
+    <section className={cn('carte p-4 sm:p-5', className)}>
       {(titre || action) && (
-        <header className="mb-3.5 flex items-center justify-between gap-3 border-b border-border/50 pb-2.5">
-          {titre && <h2 className="font-heading text-base sm:text-lg font-bold text-foreground">{titre}</h2>}
+        <header className="mb-3 flex items-baseline justify-between gap-3">
+          {titre && <h2 className="text-[17px] font-bold">{titre}</h2>}
           {action}
         </header>
       )}

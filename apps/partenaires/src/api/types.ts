@@ -14,6 +14,7 @@ export interface Restaurant {
   id: string;
   nom: string;
   type: 'restaurant' | 'commerce';
+  logoUrl: string | null;
   description: string | null;
   specialiteCuisine?: string | null;
   delaiMoyenMinutes?: number | null;

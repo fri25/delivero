@@ -6,7 +6,7 @@ export function NotFoundPage() {
     <div className="mx-auto max-w-sm space-y-4 py-10 text-center">
       <p className="font-heading text-4xl font-semibold text-muted-foreground">404</p>
       <div className="space-y-1">
-        <h1 className="text-xl font-semibold">Page introuvable</h1>
+        <h1 className="titre-page">Page introuvable</h1>
         <p className="text-sm text-muted-foreground">
           Ce lien ne mène nulle part. Il a peut-être été mal copié.
         </p>

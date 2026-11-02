@@ -21,7 +21,7 @@ export function CoursesExpressOrdersPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Mes courses</h1>
+        <h1 className="titre-page">Mes courses</h1>
         <Button asChild size="sm">
           <Link to="/courses-express">Nouvelle demande</Link>
         </Button>

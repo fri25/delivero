@@ -6,6 +6,8 @@ import type { Plat, Restaurant } from './types';
 interface UpdateRestaurantInput {
   nom?: string;
   description?: string;
+  /** Empty string removes the logo. */
+  logoUrl?: string;
   horaires?: string;
   specialiteCuisine?: string;
   delaiMoyenMinutes?: number;

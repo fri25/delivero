@@ -1,137 +1,140 @@
 import { EMPLETTES_ACTIF, ESPECES_ACTIF } from '@delivero/config/perimetre-v1';
-import { Bike, Clock, MessageCircle, Wallet } from 'lucide-react';
+import { Search, ShoppingBasket } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ActiveOrderBanner } from '@/components/home/ActiveOrderBanner';
 import { ActiverNotificationsCard } from '@/components/home/ActiverNotificationsCard';
 import { CommandesInviteCard } from '@/components/home/CommandesInviteCard';
-import { CommentCaMarche } from '@/components/home/CommentCaMarche';
-import { ServiceTile, type TileSlide } from '@/components/home/ServiceTile';
-import { EmplettesIllustration } from '@/components/home/illustrations/EmplettesIllustration';
+import { ServiceTuile } from '@/components/home/ServiceTuile';
 import { RestaurantRail } from '@/components/restaurants/RestaurantRail';
-import { Button } from '@/components/ui/button';
-import { getPlatImage, getServiceImage } from '@/data/images';
 import { InstallAppPrompt } from '@/components/layout/InstallAppPrompt';
+import { QuartierSelectorDialog } from '@/components/layout/QuartierSelectorDialog';
+import { getPlatImage, getServiceImage } from '@/data/images';
 import { WHATSAPP_SUPPORT } from '@/lib/support';
 import { cn } from '@/lib/utils';
-import { useAuthStore } from '@/stores/auth-store';
 import { useRestaurants } from '@/api/restaurants';
 
+const PHOTO_REPAS = getServiceImage('repas');
 const PHOTO_COLIS = getServiceImage('colis');
 const PHOTO_COURSES_EXPRESS = getServiceImage('courses-express');
 
-const SERVICES: { to: string; label: string; description: string; slide: TileSlide; badge?: string }[] = [
-  {
-    to: '/repas',
-    label: 'Repas',
-    description: 'Vos restaurants préférés, livrés chauds.',
-    slide: { image: getPlatImage('Poisson tilapia braisé') },
-    badge: 'Populaire',
-  },
-  {
-    to: '/colis',
-    label: 'Colis',
-    description: 'Récupéré et remis en main propre.',
-    slide: { image: PHOTO_COLIS.square, imageLarge: PHOTO_COLIS.wide },
-  },
+const SERVICES = [
+  // The hero already shows the grilled fish: the Repas tile takes another dish.
+  { to: '/repas', label: 'Repas', description: 'Les restaurants de la ville', image: getPlatImage('Riz gras') },
+  { to: '/colis', label: 'Colis', description: 'Remis en main propre', image: PHOTO_COLIS.square },
   {
     to: '/courses-express',
     label: 'Courses express',
-    description: 'Pharmacie, document, dépôt en ville.',
-    slide: { image: PHOTO_COURSES_EXPRESS.square, imageLarge: PHOTO_COURSES_EXPRESS.wide },
+    description: 'Pharmacie, document, dépôt',
+    image: PHOTO_COURSES_EXPRESS.square,
   },
   ...(EMPLETTES_ACTIF
     ? [
         {
           to: '/emplettes',
           label: 'Emplettes',
-          description: 'Votre liste, on fait le marché.',
-          slide: { illustration: <EmplettesIllustration variant={1} /> },
+          description: 'On fait le marché pour vous',
+          illustration: <ShoppingBasket className="size-10" strokeWidth={1.5} aria-hidden="true" />,
         },
       ]
     : []),
 ];
 
-const PROMESSES = [
-  { icon: Clock, titre: '~30 min', texte: 'en moyenne en ville' },
-  { icon: Wallet, titre: ESPECES_ACTIF ? 'Cash ou MoMo' : 'Mobile Money', texte: 'MTN, Moov, Celtiis' },
-  { icon: Bike, titre: 'Suivi en direct', texte: 'du livreur jusqu’à vous' },
-];
+const REPERES = ['~30 min en ville', ESPECES_ACTIF ? 'Espèces ou Mobile Money' : 'Mobile Money', 'Prix fixe par quartier'];
 
 export function ServicesHubPage() {
-  const user = useAuthStore((state) => state.user);
-  const prenom = user?.nom.trim().split(/\s+/)[0];
+  const navigate = useNavigate();
+  const [recherche, setRecherche] = useState('');
   const { data: restaurants } = useRestaurants();
-
   const ouverts = (restaurants ?? []).filter((r) => r.statutOuverture).slice(0, 8);
-  // Odd count (Emplettes off): Repas takes the full mobile row.
-  const repasLarge = SERVICES.length % 2 === 1;
+
+  const chercher = (event: FormEvent) => {
+    event.preventDefault();
+    const q = recherche.trim();
+    navigate(q ? `/repas?q=${encodeURIComponent(q)}` : '/repas');
+  };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 lg:max-w-6xl lg:space-y-10">
-      <ActiveOrderBanner />
-
-      <section aria-labelledby="titre-accueil" className="space-y-4 lg:space-y-5">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">
-            {prenom ? `Bonjour ${prenom}` : 'Bienvenue'} · Natitingou
-          </p>
-          <h1
-            id="titre-accueil"
-            className="mt-1 font-heading text-[1.7rem] leading-tight font-extrabold tracking-tight text-brand-navy sm:text-4xl dark:text-foreground"
-          >
-            On vous livre <span className="text-primary">quoi</span> aujourd’hui ?
+    <div className="mx-auto max-w-2xl space-y-7 lg:max-w-6xl lg:space-y-10">
+      <section
+        aria-labelledby="titre-accueil"
+        className="-mx-4 -mt-5 overflow-hidden bg-primary text-primary-foreground md:mx-0 md:mt-0 md:rounded-3xl lg:grid lg:grid-cols-[1fr_420px]"
+      >
+        <div className="px-4 pt-4 pb-6 md:p-8 lg:p-10">
+          <QuartierSelectorDialog variante="hero" className="-ml-1" />
+          <h1 id="titre-accueil" className="mt-4 font-heading text-[28px] leading-[1.1] font-extrabold tracking-tight lg:text-[44px]">
+            Livré chez vous,
+            <br />
+            partout à Natitingou
           </h1>
+
+          <form role="search" onSubmit={chercher} className="mt-5 flex h-13 items-center gap-2 rounded-2xl bg-white pr-1.5 pl-4 text-foreground lg:max-w-lg">
+            <Search className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <label htmlFor="recherche-accueil" className="sr-only">
+              Rechercher un restaurant ou un plat
+            </label>
+            <input
+              id="recherche-accueil"
+              value={recherche}
+              onChange={(event) => setRecherche(event.target.value)}
+              placeholder="Un plat, un restaurant…"
+              className="h-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
+            />
+            <button type="submit" className="h-10 shrink-0 cursor-pointer rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground">
+              Chercher
+            </button>
+          </form>
+
+          <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm text-white/85">
+            {REPERES.map((repere) => (
+              <li key={repere} className="flex items-center gap-1.5">
+                <span className="size-1 rounded-full bg-white/70" aria-hidden="true" />
+                {repere}
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <div className={cn('grid grid-cols-2 gap-3 sm:gap-4', SERVICES.length === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3')}>
+        {PHOTO_REPAS.wide && (
+          <img
+            src={PHOTO_REPAS.wide.src}
+            srcSet={PHOTO_REPAS.wide.srcSet}
+            sizes="420px"
+            alt=""
+            fetchPriority="high"
+            className="hidden h-full w-full object-cover lg:block"
+          />
+        )}
+      </section>
+
+      <ActiveOrderBanner />
+
+      <section aria-label="Nos services">
+        <div className={cn('grid gap-3 lg:gap-4', SERVICES.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3')}>
           {SERVICES.map((service, index) => (
-            <ServiceTile
-              key={service.to}
-              {...service}
-              priority={index === 0}
-              large={repasLarge && index === 0}
-              className={repasLarge && index === 0 ? 'col-span-2 lg:col-span-1' : undefined}
-            />
+            <ServiceTuile key={service.to} {...service} priority={index === 0} />
           ))}
         </div>
       </section>
-
-      <ul
-        aria-label="Nos engagements"
-        className="grid grid-cols-3 divide-x divide-white/20 rounded-3xl bg-primary px-1 py-4 text-primary-foreground sm:py-5"
-      >
-        {PROMESSES.map(({ icon: Icon, titre, texte }) => (
-          <li key={titre} className="flex flex-col items-center gap-1 px-2 text-center sm:flex-row sm:justify-center sm:gap-3 sm:text-left">
-            <Icon className="size-5 shrink-0" aria-hidden="true" />
-            <span>
-              <span className="block text-xs font-bold sm:text-sm">{titre}</span>
-              <span className="block text-[11px] text-primary-foreground/80 sm:text-xs">{texte}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
 
       <RestaurantRail titre="Ouverts maintenant" restaurants={ouverts} lienTout="/repas" />
 
       <ActiverNotificationsCard />
       <CommandesInviteCard />
 
-      <CommentCaMarche />
-
-      <section className="flex flex-col gap-4 rounded-3xl border border-border p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-brand-red/10 text-brand-red">
-            <MessageCircle className="size-5" aria-hidden="true" />
-          </span>
-          <div>
-            <h2 className="font-heading text-base font-bold text-foreground">Besoin d’aide ou commande par téléphone ?</h2>
-            <p className="text-sm text-muted-foreground">Notre équipe vous répond sur WhatsApp, 7j/7.</p>
-          </div>
+      <section className="carte flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div>
+          <h2 className="font-bold">Commander par téléphone ou poser une question</h2>
+          <p className="text-sm text-muted-foreground">L’équipe ChapExpress répond sur WhatsApp, 7 jours sur 7.</p>
         </div>
-        <Button asChild className="h-11 shrink-0 rounded-full px-5 font-semibold">
-          <a href={WHATSAPP_SUPPORT} target="_blank" rel="noreferrer">
-            Écrire sur WhatsApp
-          </a>
-        </Button>
+        <a
+          href={WHATSAPP_SUPPORT}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-[#1f9d55] px-5 text-sm font-bold text-white hover:bg-[#1a8a4a]"
+        >
+          Écrire sur WhatsApp
+        </a>
       </section>
 
       <InstallAppPrompt />

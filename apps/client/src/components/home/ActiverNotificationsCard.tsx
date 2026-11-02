@@ -46,7 +46,7 @@ export function ActiverNotificationsCard() {
   };
 
   return (
-    <section className="flex items-start gap-3 rounded-2xl bg-card p-3.5 ring-1 ring-foreground/10">
+    <section className="flex items-start gap-3 rounded-lg border border-border p-4">
       <Bell className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
       <div className="min-w-0 flex-1 space-y-2">
         <div>

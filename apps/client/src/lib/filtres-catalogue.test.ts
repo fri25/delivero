@@ -4,6 +4,7 @@ import { FILTRES_VIDES, filtrerRestaurants, filtresActifs } from './filtres-cata
 
 const resto = (r: Partial<RestaurantSummary> & { id: string }): RestaurantSummary => ({
   nom: r.id,
+  logoUrl: null,
   description: null,
   horaires: null,
   noteMoyenne: null,

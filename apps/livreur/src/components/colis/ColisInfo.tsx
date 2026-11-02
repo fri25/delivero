@@ -10,25 +10,23 @@ export function ColisInfo({ commande }: { commande: CommandeColis }) {
 
   return (
     <div className="space-y-3 text-sm">
-      <div className="flex flex-wrap items-center gap-2">
-        {commande.fragile && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-300 border border-amber-500/30">
-            ⚠️ Fragile
-          </span>
-        )}
-        {commande.nature && (
-          <span className="rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-bold text-primary">
-            📦 {commande.nature}
-          </span>
-        )}
-      </div>
+      {(commande.fragile || commande.nature) && (
+        <div className="flex flex-wrap items-center gap-2">
+          {commande.fragile && (
+            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-900 dark:bg-amber-500/15 dark:text-amber-200">
+              Fragile
+            </span>
+          )}
+          {commande.nature && <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold">{commande.nature}</span>}
+        </div>
+      )}
 
       <PhotosCommande urls={commande.photoUrl ? [commande.photoUrl] : []} />
 
       <div className="grid gap-2.5 sm:grid-cols-2">
-        <div className="rounded-2xl bg-secondary/35 border border-border/50 p-3">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">1. Enlèvement</p>
-          <p className="font-heading font-bold text-foreground text-sm mt-0.5">{adresseEnlevement.libelle}</p>
+        <div className="rounded-xl bg-muted p-3">
+          <p className="text-xs font-semibold text-muted-foreground">1. Enlèvement</p>
+          <p className="mt-0.5 text-base font-bold">{adresseEnlevement.libelle}</p>
           {adresseEnlevement.pointDeRepere && (
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{adresseEnlevement.pointDeRepere}</p>
           )}
@@ -43,9 +41,9 @@ export function ColisInfo({ commande }: { commande: CommandeColis }) {
           </a>
         </div>
 
-        <div className="rounded-2xl bg-secondary/35 border border-border/50 p-3">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">2. Livraison</p>
-          <p className="font-heading font-bold text-foreground text-sm mt-0.5 line-clamp-1">{pointDeRepereLivraison}</p>
+        <div className="rounded-xl bg-muted p-3">
+          <p className="text-xs font-semibold text-muted-foreground">2. Livraison</p>
+          <p className="mt-0.5 line-clamp-1 text-base font-bold">{pointDeRepereLivraison}</p>
           <a
             href={googleMapsRouteUrl(adresseLivraison)}
             target="_blank"
@@ -59,14 +57,14 @@ export function ColisInfo({ commande }: { commande: CommandeColis }) {
       </div>
 
       {destinataireNom && destinataireTelephone && (
-        <div className="rounded-2xl bg-card border border-border/60 px-3.5 py-2">
+        <div className="rounded-xl border border-border px-3.5 py-2">
           <ContactLigne nom={destinataireNom} telephone={destinataireTelephone} />
         </div>
       )}
 
       {(commande.etatEnlevement || commande.photoEnlevementUrl) && (
-        <div className="rounded-2xl border border-border/70 bg-secondary/40 p-3 space-y-2">
-          <p className="text-xs font-bold text-foreground uppercase tracking-wider">Constat à l’enlèvement</p>
+        <div className="space-y-2 rounded-xl bg-muted p-3">
+          <p className="text-sm font-bold">Constat à l’enlèvement</p>
           {commande.etatEnlevement && (
             <p className="text-xs font-medium text-foreground/90">{commande.etatEnlevement}</p>
           )}
@@ -77,9 +75,9 @@ export function ColisInfo({ commande }: { commande: CommandeColis }) {
       )}
 
       {commande.montantContreRemboursement && (
-        <div className="flex items-center justify-between rounded-2xl bg-amber-500/10 border border-amber-500/25 p-3 text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-200">
-          <span>💵 Contre-remboursement à encaisser :</span>
-          <span className="font-heading text-base font-extrabold text-amber-950 dark:text-amber-100">
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-amber-100 p-3 text-sm font-bold text-amber-950 dark:bg-amber-500/15 dark:text-amber-100">
+          <span>Contre-remboursement à encaisser :</span>
+          <span className="text-lg font-extrabold tabular-nums">
             {formatPrixFcfa(commande.montantContreRemboursement)}
           </span>
         </div>

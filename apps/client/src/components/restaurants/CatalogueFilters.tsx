@@ -22,16 +22,16 @@ export function CatalogueFilters({
     onChange({ ...filtres, [cle]: filtres[cle] === valeur ? vide : valeur });
 
   return (
-    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none]">
+    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] md:mx-0 md:px-0">
       <FilterChip actif={filtres.ouvertsSeulement} onClick={() => basculer('ouvertsSeulement', true, false)}>
         Ouverts maintenant
       </FilterChip>
       <FilterChip actif={filtres.bienNotes} onClick={() => basculer('bienNotes', true, false)}>
-        <Star className="size-3.5 fill-primary text-primary" aria-hidden="true" />
+        <Star className="size-3.5 fill-current" aria-hidden="true" />
         {NOTE_MIN} et plus
       </FilterChip>
       <FilterChip actif={filtres.rapides} onClick={() => basculer('rapides', true, false)}>
-        <Clock className="size-3.5 text-primary" aria-hidden="true" />
+        <Clock className="size-3.5" aria-hidden="true" />
         {DELAI_MAX_MIN} min max
       </FilterChip>
       {(Object.keys(TRANCHES_PRIX) as TranchePrix[]).map((tranche) => (

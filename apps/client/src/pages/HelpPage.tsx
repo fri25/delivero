@@ -1,20 +1,16 @@
-import { CircleHelp, Clock3, MapPin, MessageCircle, PackageCheck, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WHATSAPP_SUPPORT } from '@/lib/support';
 
 const QUESTIONS = [
   {
-    icon: PackageCheck,
     title: 'Où suivre ma commande ?',
     body: 'Ouvrez « Mes commandes », puis sélectionnez la commande pour consulter son statut et ses détails.',
   },
   {
-    icon: MapPin,
     title: 'Comment aider le livreur à me trouver ?',
     body: 'Ajoutez un point de repère précis, comme une boutique, une école ou un carrefour proche. Il complète votre adresse.',
   },
   {
-    icon: ShieldCheck,
     title: 'Comment confirmer la remise d’un colis ?',
     body: 'Transmettez au destinataire le code de remise affiché sur le détail du colis. Le livreur le vérifie lors de la remise.',
   },
@@ -22,28 +18,31 @@ const QUESTIONS = [
 
 export function HelpPage() {
   return (
-    <div className="mx-auto max-w-2xl space-y-5">
-      <section className="overflow-hidden rounded-3xl bg-primary p-6 text-primary-foreground sm:p-8">
-        <div className="flex size-12 items-center justify-center rounded-2xl bg-white/10"><CircleHelp className="size-6" /></div>
-        <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-white/65">ChapExpress · Natitingou</p>
-        <h1 className="mt-1 font-heading text-3xl font-semibold">Comment pouvons-nous vous aider ?</h1>
-        <p className="mt-2 max-w-lg text-sm text-white/75">Consultez les réponses rapides ou écrivez-nous sur WhatsApp pour votre commande.</p>
-        <Button asChild className="mt-5 h-12 bg-white text-primary hover:bg-white/90">
-          <a href={WHATSAPP_SUPPORT} target="_blank" rel="noreferrer"><MessageCircle className="size-4" /> Contacter ChapExpress sur WhatsApp</a>
+    <div className="mx-auto max-w-2xl space-y-8">
+      <header>
+        <h1 className="titre-page">Aide</h1>
+        <p className="mt-2 text-[15px] text-muted-foreground">
+          Les réponses rapides sont ci-dessous. Pour une commande en particulier, écrivez-nous sur WhatsApp en indiquant
+          son numéro.
+        </p>
+        <Button asChild className="mt-4 h-11 px-5 text-[15px] font-bold">
+          <a href={WHATSAPP_SUPPORT} target="_blank" rel="noreferrer">
+            Écrire sur WhatsApp
+          </a>
         </Button>
-      </section>
+      </header>
 
-      <section className="space-y-3">
-        <h2 className="font-heading text-lg font-semibold">Questions fréquentes</h2>
-        {QUESTIONS.map(({ icon: Icon, title, body }) => (
-          <article key={title} className="flex gap-3 rounded-2xl border border-border bg-card p-4">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary"><Icon className="size-5" /></div>
-            <div><h3 className="font-semibold">{title}</h3><p className="mt-1 text-sm leading-relaxed text-muted-foreground">{body}</p></div>
-          </article>
-        ))}
+      <section>
+        <h2 className="mb-3 font-heading text-xl font-extrabold">Questions fréquentes</h2>
+        <div className="carte divide-y divide-border px-4">
+          {QUESTIONS.map(({ title, body }) => (
+            <article key={title} className="py-4">
+              <h3 className="text-base font-bold">{title}</h3>
+              <p className="mt-1 text-[15px] text-muted-foreground">{body}</p>
+            </article>
+          ))}
+        </div>
       </section>
-
-      <div className="flex items-start gap-3 rounded-2xl bg-secondary/70 p-4 text-sm text-muted-foreground"><Clock3 className="mt-0.5 size-4 shrink-0 text-primary" /><p>Pour nous aider à répondre plus vite, indiquez votre numéro de commande dans votre message.</p></div>
     </div>
   );
 }

@@ -25,7 +25,7 @@ export function MonColisCard({ commande }: { commande: CommandeColis }) {
       {commande.statut === 'colis_recupere' && (
         <Button
           size="lg"
-          className="w-full rounded-xl font-bold shadow-md shadow-primary/20 transition-all active:scale-[0.99]"
+          className="h-12 w-full rounded-xl text-base font-bold"
           disabled={marquerEnRoute.isPending}
           onClick={() => {
             marquerEnRoute.mutate(commande.id, {
@@ -40,8 +40,8 @@ export function MonColisCard({ commande }: { commande: CommandeColis }) {
       {commande.statut === 'en_route' && <LivraisonColisForm commande={commande} />}
 
       {commande.statut === 'litige' && commande.motif && (
-        <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-xs sm:text-sm font-semibold text-destructive">
-          ⚠️ Motif du litige : {commande.motif}
+        <div className="rounded-xl border border-destructive/40 p-3 text-sm font-semibold text-destructive">
+          Motif du litige : {commande.motif}
         </div>
       )}
 

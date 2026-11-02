@@ -42,16 +42,16 @@ export function SuiviEtapes({
             )}
             <span
               className={cn(
-                'relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold transition-all duration-300 shadow-2xs',
+                'relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold',
                 faite && 'border-primary bg-primary text-primary-foreground',
-                courante && 'border-primary bg-card text-primary ring-4 ring-primary/20 scale-105',
-                !faite && !courante && 'border-border/80 bg-secondary/50 text-muted-foreground',
+                courante && 'border-primary bg-background text-primary',
+                !faite && !courante && 'border-border bg-background text-muted-foreground',
               )}
             >
               {faite ? (
                 <Check className="size-4 stroke-[3]" aria-hidden="true" />
               ) : courante ? (
-                <span className="size-2.5 animate-pulse rounded-full bg-primary" />
+                <span className="size-2.5 rounded-full bg-primary" />
               ) : (
                 index + 1
               )}

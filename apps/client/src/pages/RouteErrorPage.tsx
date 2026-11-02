@@ -29,7 +29,7 @@ export function RouteErrorPage() {
 
   return (
     <main className="mx-auto max-w-sm space-y-4 px-4 py-16 text-center">
-      <h1 className="text-xl font-semibold">
+      <h1 className="titre-page">
         {chargement ? 'La page n’a pas pu se charger' : 'Une erreur est survenue'}
       </h1>
       <p className="text-sm text-muted-foreground">

@@ -31,7 +31,7 @@ export function ColisSuiviPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold">Suivi de votre colis</h1>
+          <h1 className="titre-page">Suivi de votre colis</h1>
           <p className="text-sm text-muted-foreground">{STATUT_COLIS_LABELS[colis.statut]}</p>
           {colis.nature && (
             <p className="mt-1 text-xs text-muted-foreground">

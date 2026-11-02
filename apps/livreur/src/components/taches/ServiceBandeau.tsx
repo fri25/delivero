@@ -33,25 +33,28 @@ export function ServiceBandeau({
 }) {
   const Icone = ICONES[service];
   return (
-    <li data-commande={commandeId} className="overflow-hidden rounded-3xl bg-card border border-border/70 shadow-xs transition-all duration-200 hover:shadow-md hover:border-primary/25">
-      <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-secondary/35 px-4 py-3">
-        <span className="flex min-w-0 items-center gap-2.5 text-sm">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-navy to-brand-blue text-white shadow-2xs">
-            <Icone className="size-4.5" aria-hidden="true" />
-          </span>
-          <span className="font-heading font-bold text-foreground text-sm">{SERVICE_LABELS[service]}</span>
-          <span className="truncate text-xs text-muted-foreground font-medium">· {anciennete(date)}</span>
+    <li data-commande={commandeId} className="carte overflow-hidden">
+      <div className="flex items-center justify-between gap-3 px-4 pt-4">
+        <span className="flex min-w-0 items-center gap-2">
+          <Icone className="size-5 shrink-0 text-primary" strokeWidth={2} aria-hidden="true" />
+          <span className="text-base font-bold">{SERVICE_LABELS[service]}</span>
+          <span className="truncate text-sm text-muted-foreground">· {anciennete(date)}</span>
         </span>
         {statut && (
           <span
             className={cn(
-              'shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold',
-              statutTon === 'actif' && 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 inline-flex items-center gap-1.5',
-              statutTon === 'neutre' && 'bg-secondary text-foreground/80 font-medium',
-              statutTon === 'alerte' && 'bg-destructive/10 text-destructive border border-destructive/20 font-bold',
+              'inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold',
+              statutTon === 'actif' && 'text-primary',
+              statutTon === 'neutre' && 'text-muted-foreground',
+              statutTon === 'alerte' && 'text-destructive',
             )}
           >
-            {statutTon === 'actif' && <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+            {statutTon !== 'neutre' && (
+              <span
+                className={cn('size-2 rounded-full', statutTon === 'actif' ? 'bg-primary' : 'bg-destructive')}
+                aria-hidden="true"
+              />
+            )}
             {statut}
           </span>
         )}

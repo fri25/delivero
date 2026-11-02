@@ -30,7 +30,7 @@ export function MenuPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Menu du restaurant</h1>
+          <h1 className="titre-page">Menu du restaurant</h1>
           {plats && plats.length > 0 && (
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
@@ -46,7 +46,7 @@ export function MenuPage() {
         </div>
         {!ajoutOuvert && (
           <Button
-            className="h-10 shrink-0 gap-2 rounded-full bg-primary px-4 font-bold text-white shadow-sm hover:bg-primary/90 active:scale-95 transition-all"
+            className="h-11 shrink-0 gap-2 rounded-xl px-4 font-bold"
             onClick={() => setAjoutOuvert(true)}
           >
             <Plus className="size-4.5" aria-hidden="true" />
@@ -74,8 +74,8 @@ export function MenuPage() {
           <Skeleton className="h-20 w-full rounded-3xl" />
         </div>
       ) : groupes.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border/80 bg-card/60 p-8 sm:p-12 text-center shadow-xs">
-          <p className="font-heading text-lg font-bold text-foreground">Votre carte est encore vide</p>
+        <div className="carte flex flex-col items-start p-6">
+          <p className="text-lg font-bold">Votre carte est encore vide</p>
           <p className="mt-1 text-sm text-muted-foreground max-w-sm">
             Ajoutez vos spécialités et boissons pour que les clients puissent les commander en livraison.
           </p>
@@ -93,7 +93,7 @@ export function MenuPage() {
         groupes.map(([categorie, platsDuGroupe]) => (
           <section key={categorie} className="space-y-3">
             <div className="flex items-center gap-2 border-b border-border/60 pb-2">
-              <h2 className="font-heading text-sm font-bold tracking-wider text-muted-foreground uppercase">
+              <h2 className="text-sm font-semibold text-muted-foreground">
                 {categorie}
               </h2>
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground tabular-nums">

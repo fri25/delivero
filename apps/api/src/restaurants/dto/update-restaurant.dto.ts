@@ -36,6 +36,11 @@ export class UpdateRestaurantDto {
   @IsString()
   horaires?: string;
 
+  /** Cloudinary URL of the logo; empty string removes it. */
+  @IsOptional()
+  @IsString()
+  logoUrl?: string;
+
   @IsOptional()
   @IsString()
   adresse?: string;

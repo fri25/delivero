@@ -16,7 +16,7 @@ export function MaCourseCard({ commande }: { commande: CommandeRepas }) {
       {commande.statut === 'recuperee_par_livreur' && (
         <Button
           size="lg"
-          className="w-full rounded-xl font-bold shadow-md shadow-primary/20 transition-all active:scale-[0.99]"
+          className="h-12 w-full rounded-xl text-base font-bold"
           disabled={marquerEnRoute.isPending}
           onClick={() => {
             marquerEnRoute.mutate(commande.id, {
@@ -31,7 +31,7 @@ export function MaCourseCard({ commande }: { commande: CommandeRepas }) {
       {commande.statut === 'en_route' && (
         <Button
           size="lg"
-          className="w-full rounded-xl font-bold shadow-md shadow-primary/20 transition-all active:scale-[0.99]"
+          className="h-12 w-full rounded-xl text-base font-bold"
           disabled={marquerLivree.isPending}
           onClick={() => {
             marquerLivree.mutate(commande.id, {

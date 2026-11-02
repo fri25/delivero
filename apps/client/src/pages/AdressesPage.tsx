@@ -30,7 +30,7 @@ export function AdressesPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Mes adresses</h1>
+        <h1 className="titre-page">Mes adresses</h1>
         <Button size="sm" onClick={() => setEnEdition(null)}>
           <Plus className="size-4" aria-hidden="true" />
           Ajouter

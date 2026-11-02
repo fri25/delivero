@@ -17,13 +17,13 @@ const OUT_DIR = join(SRC_DIR, 'optimized');
 // Les photos des services Colis / Courses express (Pexels, licence libre,
 // en attendant de vraies photos ChapExpress) servent aux cartes de l'accueil.
 const HERO_SOURCES = [
-  'cake',
+  'gateau',
   'agouti',
-  'sandwich',
-  'piron',
+  'cafe-moringa',
+  'pizza',
   'poisson-braise',
-  'attassi',
-  'panini',
+  'atcheke-alloco',
+  'schawarma',
   'colis',
   'courses-express',
 ];

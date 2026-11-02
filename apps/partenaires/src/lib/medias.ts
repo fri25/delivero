@@ -1,7 +1,7 @@
 import { apiFetch } from '@/api/client';
 import { useAuthStore } from '@/stores/auth-store';
 
-export type UsageMedia = 'plats';
+export type UsageMedia = 'plats' | 'logos';
 
 export interface MediasConfig {
   actif: boolean;
@@ -32,7 +32,11 @@ export async function compresserImage(fichier: File, tailleMax = 300 * 1024): Pr
       const canvas = document.createElement('canvas');
       canvas.width = Math.round(image.width * echelle);
       canvas.height = Math.round(image.height * echelle);
-      canvas.getContext('2d')!.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const contexte = canvas.getContext('2d')!;
+      // JPEG has no alpha: a transparent PNG logo would turn black.
+      contexte.fillStyle = '#ffffff';
+      contexte.fillRect(0, 0, canvas.width, canvas.height);
+      contexte.drawImage(image, 0, 0, canvas.width, canvas.height);
       for (const qualite of [0.82, 0.7, 0.55]) {
         const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', qualite));
         if (blob && blob.size <= tailleMax) return blob;
@@ -60,7 +64,7 @@ export async function envoyerPhoto(
   });
 
   const formulaire = new FormData();
-  formulaire.append('file', image, 'plat.jpg');
+  formulaire.append('file', image, `${usage}.jpg`);
   formulaire.append('api_key', signature.apiKey);
   formulaire.append('timestamp', signature.timestamp);
   formulaire.append('folder', signature.folder);

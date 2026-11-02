@@ -19,17 +19,14 @@ export function RegisterPage() {
 
   return (
     <div className="mx-auto max-w-sm space-y-6">
-      <div className="text-center">
-        <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary mb-2">
-          ✨ Nouveau compte
-        </span>
-        <h1 className="font-heading text-2xl font-bold text-foreground">Créer un compte</h1>
-        <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-          Rejoignez ChapExpress pour commander vos repas et expédier vos colis en toute simplicité.
+      <div>
+        <h1 className="titre-page">Créer un compte</h1>
+        <p className="mt-2 text-[15px] text-muted-foreground">
+          Un compte garde vos adresses et l’historique de vos commandes.
         </p>
       </div>
 
-      <div className="rounded-3xl bg-card border border-border/70 p-6 shadow-xs">
+      <div className="carte p-5 sm:p-6">
         <form
           className="space-y-4"
           onSubmit={(event) => {
@@ -97,7 +94,7 @@ export function RegisterPage() {
             />
           </div>
 
-          <Button type="submit" size="lg" className="w-full rounded-xl font-bold shadow-md shadow-primary/20" disabled={registerMutation.isPending}>
+          <Button type="submit" className="h-11 w-full text-[15px] font-bold" disabled={registerMutation.isPending}>
             {registerMutation.isPending ? 'Création...' : 'Créer mon compte'}
           </Button>
         </form>

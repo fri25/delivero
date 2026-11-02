@@ -5,8 +5,7 @@ import type { ImageVariant } from '@/data/images';
 
 /**
  * Cadre image partagé restaurants/plats : ratio fixé (jamais de saut de mise
- * en page), chargement progressif (aplat → fondu vers l'image nette), zoom
- * léger au survol, et repli sur l'enseigne générée si aucune photo.
+ * en page), chargement progressif (aplat → fondu vers l'image nette) et repli sur l'enseigne générée si aucune photo.
  */
 export function MediaFrame({
   nom,
@@ -49,7 +48,7 @@ export function MediaFrame({
           fetchPriority={priority ? 'high' : undefined}
           onLoad={() => setLoaded(true)}
           className={cn(
-            'h-full w-full object-cover transition-[opacity,transform] duration-(--duration-slow) ease-(--ease-signature) group-hover:scale-[1.04]',
+            'h-full w-full object-cover transition-opacity duration-(--duration-slow)',
             loaded ? 'opacity-100' : 'opacity-0',
           )}
         />

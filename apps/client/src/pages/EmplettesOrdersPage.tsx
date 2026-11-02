@@ -21,7 +21,7 @@ export function EmplettesOrdersPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Mes emplettes</h1>
+        <h1 className="titre-page">Mes emplettes</h1>
         <Button asChild size="sm">
           <Link to="/emplettes">Nouvelle demande</Link>
         </Button>

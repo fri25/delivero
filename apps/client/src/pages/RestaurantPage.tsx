@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { BadgeCheck, Bike, Clock, Info, Star } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
@@ -18,6 +17,7 @@ import { MediaFrame } from '@/components/restaurants/MediaFrame';
 import { BarrePanier } from '@/components/restaurants/BarrePanier';
 import { getRestaurantImage } from '@/data/images';
 import { formatPrixFcfa } from '@/lib/format';
+import { miniature } from '@/lib/medias';
 import { fourchetteFrais } from '@/lib/quartiers';
 import { useQuartiers } from '@/api/quartiers';
 import { useSectionActive } from '@/lib/section-active';
@@ -48,7 +48,7 @@ export function RestaurantPage() {
   const categories = [...platsParCategorie.keys()];
   const sectionActive = useSectionActive(categories.map(ancre));
 
-  // Garde la puce active visible dans la barre horizontale
+  // Garde l'onglet actif visible dans la barre horizontale
   useEffect(() => {
     const nav = navRef.current;
     const chip = nav?.querySelector<HTMLElement>('[aria-current="true"]');
@@ -78,22 +78,19 @@ export function RestaurantPage() {
 
   if (isPending) {
     return (
-      <div className="mx-auto max-w-2xl lg:max-w-6xl space-y-4" aria-busy="true" aria-label="Chargement du menu">
-        <Skeleton className="-mx-4 -mt-5 h-64 rounded-none md:mx-0 md:mt-0 md:rounded-3xl" />
-        <div className="flex gap-2">
-          <Skeleton className="h-9 w-24 rounded-full" />
-          <Skeleton className="h-9 w-36 rounded-full" />
-          <Skeleton className="h-9 w-32 rounded-full" />
-        </div>
-        <div className="space-y-3 rounded-3xl border border-border/70 bg-card p-4">
+      <div className="mx-auto max-w-2xl space-y-4 lg:max-w-6xl" aria-busy="true" aria-label="Chargement du menu">
+        <Skeleton className="-mx-4 -mt-5 h-56 rounded-none md:mx-0 md:mt-0 md:h-72 md:rounded-xl" />
+        <Skeleton className="h-8 w-1/2" />
+        <Skeleton className="h-4 w-1/3" />
+        <div className="divide-y divide-border">
           {[0, 1, 2, 3].map((index) => (
-            <div key={index} className="flex items-center gap-3.5 p-3">
+            <div key={index} className="flex items-center gap-4 py-4">
               <div className="flex-1 space-y-2">
                 <Skeleton className="h-5 w-1/3" />
                 <Skeleton className="h-3 w-3/4" />
                 <Skeleton className="h-4 w-20" />
               </div>
-              <Skeleton className="size-20 shrink-0 rounded-2xl" />
+              <Skeleton className="size-24 shrink-0 rounded-lg" />
             </div>
           ))}
         </div>
@@ -103,9 +100,10 @@ export function RestaurantPage() {
 
   if (isError) {
     return (
-      <div className="rounded-3xl bg-destructive/10 p-6 text-center border border-destructive/20 max-w-md mx-auto">
-        <p className="text-sm font-semibold text-destructive">Impossible de charger ce restaurant.</p>
-        <Button variant="outline" className="mt-4 rounded-full" onClick={() => void refetch()}>
+      <div className="carte mx-auto max-w-md p-6">
+        <p className="font-bold">Impossible de charger ce restaurant.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Vérifiez votre connexion, puis réessayez.</p>
+        <Button variant="outline" className="mt-4 h-11 font-bold" onClick={() => void refetch()}>
           Réessayer
         </Button>
       </div>
@@ -120,91 +118,79 @@ export function RestaurantPage() {
   const quantiteDe = (platId: string) => itemsIci.find((item) => item.platId === platId)?.quantite ?? 0;
   const delai = restaurant.delaiPreparationMin ?? restaurant.delaiMoyenMinutes ?? 20;
   const fourchette = fourchetteFrais(quartiers);
+  const ouvert = restaurant.statutOuverture;
+
+  const reperes = [
+    { terme: 'Préparation', valeur: `~${delai} min` },
+    {
+      terme: 'Livraison',
+      valeur: fourchette
+        ? fourchette.min === fourchette.max
+          ? formatPrixFcfa(fourchette.min)
+          : `dès ${formatPrixFcfa(fourchette.min)}`
+        : 'selon quartier',
+    },
+    ...(restaurant.noteMoyenne ? [{ terme: 'Note', valeur: `${restaurant.noteMoyenne} / 5` }] : []),
+  ];
 
   return (
-    <div className="mx-auto max-w-2xl lg:max-w-6xl space-y-6">
-      <header>
-        <div className="-mx-4 -mt-5 overflow-hidden md:mx-0 md:mt-0 md:rounded-3xl">
-          <MediaFrame
-            nom={restaurant.nom}
-            image={restaurant.imageUrl ?? getRestaurantImage(restaurant.nom)}
-            ratio="wide"
-            priority
-            className="max-h-64 w-full md:max-h-80"
-          />
-        </div>
+    <div className="mx-auto max-w-2xl space-y-6 lg:max-w-6xl">
+      <header className="space-y-4">
+        <MediaFrame
+          nom={restaurant.nom}
+          image={restaurant.imageUrl ?? getRestaurantImage(restaurant.nom)}
+          ratio="wide"
+          priority
+          className={cn('-mx-4 -mt-5 aspect-auto h-52 md:mx-0 md:mt-0 md:h-72 md:rounded-3xl', !ouvert && 'grayscale-[70%]')}
+        />
 
-        <div className="relative z-10 mx-auto -mt-10 max-w-3xl space-y-3 rounded-3xl bg-card p-4 shadow-lg shadow-primary/10 ring-1 ring-border sm:p-6 md:-mt-14">
-          <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold',
-                restaurant.statutOuverture ? 'bg-secondary text-primary' : 'bg-brand-red text-white',
-              )}
-            >
-              {restaurant.statutOuverture && <span className="size-1.5 animate-pulse rounded-full bg-primary" />}
-              {restaurant.statutOuverture ? 'Ouvert maintenant' : 'Fermé actuellement'}
-            </span>
-            {restaurant.typesCuisine?.length ? (
-              <span className="text-xs font-medium text-muted-foreground">{restaurant.typesCuisine.join(' · ')}</span>
-            ) : null}
-          </div>
-
-          <h1 className="flex items-center gap-2 font-heading text-2xl font-extrabold tracking-tight text-brand-navy sm:text-3xl dark:text-foreground">
-            <span>{restaurant.nom}</span>
-            <BadgeCheck className="size-5 shrink-0 text-primary sm:size-6" aria-label="Partenaire vérifié" />
-          </h1>
-
-          {restaurant.description && (
-            <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{restaurant.description}</p>
+        <div className="flex items-center gap-3">
+          {restaurant.logoUrl && (
+            <img
+              src={miniature(restaurant.logoUrl, 160)}
+              alt=""
+              className="size-14 shrink-0 rounded-lg bg-white object-contain ring-1 ring-border"
+            />
           )}
-
-          <dl className="grid grid-cols-3 divide-x divide-border border-t border-border pt-3 text-center">
-            <div className="px-1">
-              <dt className="text-[11px] text-muted-foreground">Note</dt>
-              <dd className="mt-0.5 inline-flex items-center gap-1 text-sm font-bold text-foreground">
-                <Star className="size-3.5 fill-primary text-primary" aria-hidden="true" />
-                {restaurant.noteMoyenne ?? '—'}
-              </dd>
-            </div>
-            <div className="px-1">
-              <dt className="text-[11px] text-muted-foreground">Préparation</dt>
-              <dd className="mt-0.5 inline-flex items-center gap-1 text-sm font-bold text-foreground">
-                <Clock className="size-3.5 text-primary" aria-hidden="true" />~{delai} min
-              </dd>
-            </div>
-            <div className="px-1">
-              <dt className="text-[11px] text-muted-foreground">Livraison</dt>
-              <dd className="mt-0.5 inline-flex items-center gap-1 text-sm font-bold text-foreground tabular-nums">
-                <Bike className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
-                {fourchette
-                  ? fourchette.min === fourchette.max
-                    ? formatPrixFcfa(fourchette.min)
-                    : `dès ${formatPrixFcfa(fourchette.min)}`
-                  : 'selon quartier'}
-              </dd>
-            </div>
-          </dl>
+          <div className="min-w-0">
+            <h1 className="titre-page">
+              {restaurant.nom}
+            </h1>
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+              <span className={cn('inline-flex items-center gap-1.5 font-semibold', ouvert ? 'text-foreground' : 'text-muted-foreground')}>
+                <span className={cn('size-2 rounded-full', ouvert ? 'bg-primary' : 'bg-[#8a93a3]')} aria-hidden="true" />
+                {ouvert ? 'Ouvert' : 'Fermé'}
+              </span>
+              {restaurant.typesCuisine?.length ? <span>· {restaurant.typesCuisine.join(', ')}</span> : null}
+            </p>
+          </div>
         </div>
+
+        {restaurant.description && (
+          <p className="line-clamp-3 max-w-2xl text-[15px] text-muted-foreground">{restaurant.description}</p>
+        )}
+
+        <dl className="flex flex-wrap gap-2">
+          {reperes.map(({ terme, valeur }) => (
+            <div key={terme} className="carte min-w-28 px-3.5 py-2.5">
+              <dt className="text-xs text-muted-foreground">{terme}</dt>
+              <dd className="text-[15px] font-bold tabular-nums">{valeur}</dd>
+            </div>
+          ))}
+        </dl>
       </header>
 
-      {!restaurant.statutOuverture && (
-        <div
-          role="status"
-          className="flex items-start gap-3 rounded-2xl border border-brand-red/25 bg-brand-red/5 p-4 text-sm text-foreground"
-        >
-          <Info className="mt-0.5 size-5 shrink-0 text-brand-red" aria-hidden="true" />
-          <span>
-            Ce restaurant est fermé pour le moment : vous pouvez consulter le menu, mais les commandes sont temporairement suspendues.
-          </span>
-        </div>
+      {!ouvert && (
+        <p role="status" className="rounded-lg border border-border bg-muted px-4 py-3 text-sm">
+          <strong>Fermé pour le moment.</strong> Vous pouvez consulter le menu, mais les commandes sont suspendues.
+        </p>
       )}
 
       {categories.length > 1 && (
         <nav
           ref={navRef}
           aria-label="Catégories du menu"
-          className="sticky top-14 z-20 -mx-4 flex gap-2 overflow-x-auto border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur-xl [scrollbar-width:none] md:top-16"
+          className="sticky top-14 z-20 -mx-4 flex gap-2 overflow-x-auto bg-background px-4 py-2.5 [scrollbar-width:none] md:top-17 md:mx-0 md:px-0"
         >
           {categories.map((categorie) => {
             const active = sectionActive === ancre(categorie);
@@ -214,10 +200,8 @@ export function RestaurantPage() {
                 href={`#${ancre(categorie)}`}
                 aria-current={active ? 'true' : undefined}
                 className={cn(
-                  'inline-flex min-h-9 shrink-0 cursor-pointer items-center rounded-full border px-4 text-xs font-bold whitespace-nowrap transition-colors duration-200 active:scale-95 sm:text-sm',
-                  active
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-border bg-card text-foreground/80 hover:border-primary/40',
+                  'flex h-10 shrink-0 items-center rounded-full px-4 text-sm font-semibold whitespace-nowrap',
+                  active ? 'bg-foreground text-background' : 'bg-card text-foreground shadow-(--shadow-carte) hover:bg-accent',
                 )}
               >
                 {categorie}
@@ -227,26 +211,22 @@ export function RestaurantPage() {
         </nav>
       )}
 
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
-        <div className="space-y-6 sm:space-y-8">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-12">
+        <div className="space-y-8">
           {[...platsParCategorie.entries()].map(([categorie, plats]) => (
-            <section
-              key={categorie}
-              id={ancre(categorie)}
-              className="scroll-mt-36 space-y-3"
-            >
-              <div className="flex items-baseline justify-between">
-                <h2 className="font-heading text-lg font-bold text-foreground">{categorie}</h2>
-                <span className="text-xs font-medium text-muted-foreground">{plats.length} choix</span>
-              </div>
+            <section key={categorie} id={ancre(categorie)} className="scroll-mt-32">
+              <h2 className="font-heading text-xl font-extrabold tracking-tight md:text-2xl">
+                {categorie}{' '}
+                <span className="font-sans text-sm font-medium text-muted-foreground">{plats.length}</span>
+              </h2>
 
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              <div className="carte mt-3 divide-y divide-border px-4">
                 {plats.map((plat) => (
                   <PlatCard
                     key={plat.id}
                     plat={plat}
                     quantite={quantiteDe(plat.id)}
-                    commandable={restaurant.statutOuverture}
+                    commandable={ouvert}
                     onAjouter={ajouterAuPanier}
                     onRetirer={(p) => updateQuantity(p.id, quantiteDe(p.id) - 1)}
                   />
@@ -256,25 +236,25 @@ export function RestaurantPage() {
           ))}
         </div>
 
-        <div className="lg:sticky lg:top-24">
+        <div className="lg:sticky lg:top-32">
           <BarrePanier items={itemsIci} />
         </div>
       </div>
 
       <Dialog open={conflictPlat !== null} onOpenChange={(open) => !open && setConflictPlat(null)}>
-        <DialogContent className="rounded-3xl max-w-md p-6">
+        <DialogContent className="max-w-md p-6">
           <DialogHeader>
-            <DialogTitle className="font-heading text-lg font-bold">Vider le panier actuel ?</DialogTitle>
+            <DialogTitle className="font-heading text-2xl font-extrabold">Vider le panier actuel ?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Votre panier contient des plats d'un autre restaurant. Chez ChapExpress, une commande ne concerne qu'un seul restaurant à la fois.
+          <p className="text-[15px] text-muted-foreground">
+            Votre panier contient des plats d'un autre restaurant. Une commande ChapExpress ne concerne qu'un seul restaurant à la fois.
           </p>
-          <DialogFooter className="gap-2 sm:gap-0 mt-3">
-            <Button variant="outline" className="rounded-full" onClick={() => setConflictPlat(null)}>
-              Conserver l'ancien panier
+          <DialogFooter className="mt-3 gap-2 sm:gap-2">
+            <Button variant="outline" className="h-11 font-bold" onClick={() => setConflictPlat(null)}>
+              Garder l'ancien panier
             </Button>
             <Button
-              className="rounded-full bg-primary font-bold"
+              className="h-11 font-bold"
               onClick={() => {
                 if (!conflictPlat) return;
                 ajouter(conflictPlat);

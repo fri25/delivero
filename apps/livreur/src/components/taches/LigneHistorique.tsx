@@ -20,9 +20,9 @@ export function LigneHistorique({ tache }: { tache: Tache }) {
   const montant = tache.commande.commande.montantTotal;
   const reussie = estReussie(tache.statut);
   return (
-    <li className="flex items-center justify-between gap-3.5 rounded-3xl bg-card px-4 py-3.5 border border-border/70 shadow-xs transition-all hover:border-primary/30">
+    <li className="carte flex items-center justify-between gap-3.5 px-4 py-3.5">
       <div className="min-w-0 flex-1">
-        <p className="truncate font-heading font-bold text-foreground text-sm">{titre(tache)}</p>
+        <p className="truncate text-base font-bold">{titre(tache)}</p>
         <p className="truncate text-xs text-muted-foreground mt-0.5">
           {SERVICE_LABELS[tache.service]} · {anciennete(tache.createdAt)}
           {montant ? ` · ${formatPrixFcfa(montant)}` : ''}
@@ -32,7 +32,7 @@ export function LigneHistorique({ tache }: { tache: Tache }) {
         className={cn(
           'shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold',
           reussie
-            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+            ? 'bg-accent text-primary'
             : 'bg-destructive/10 text-destructive border border-destructive/20',
         )}
       >

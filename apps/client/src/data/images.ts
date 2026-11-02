@@ -63,13 +63,13 @@ const IMAGES: Record<string, DemoImage> = Object.fromEntries(
 
 /** Restaurant (nom exact) → photo héros (carte liste + en-tête fiche, 3:2). */
 const RESTAURANT_IMAGE_BY_NOM: Record<string, string> = {
-  'Chez Guillaume': 'cake',
+  'Chez Guillaume': 'gateau',
   'Okoti Saveurs': 'agouti',
-  'John Café': 'sandwich',
-  'Le Bélier': 'piron',
+  'John Café': 'cafe-moringa',
+  'Le Bélier': 'pizza',
   'Mini Kota': 'poisson-braise',
-  "Jardin de l'Atacora": 'attassi',
-  "Les Délices d'Angèle": 'panini',
+  "Jardin de l'Atacora": 'atcheke-alloco',
+  "Les Délices d'Angèle": 'schawarma',
 };
 
 /** Plat (nom exact) → photo carrée. */
@@ -165,6 +165,6 @@ export function getPlatImage(nom: string): ImageVariant | undefined {
  * - colis.jpg : Kindel Media, https://www.pexels.com/photo/6867941/
  * - courses-express.jpg : MC G'Zay, https://www.pexels.com/photo/30661401/
  */
-export function getServiceImage(service: 'colis' | 'courses-express'): DemoImage {
-  return IMAGES[service] ?? {};
+export function getServiceImage(service: 'repas' | 'colis' | 'courses-express'): DemoImage {
+  return IMAGES[service === 'repas' ? 'poisson-braise' : service] ?? {};
 }

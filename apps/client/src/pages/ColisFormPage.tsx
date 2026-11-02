@@ -209,7 +209,7 @@ export function ColisFormPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-4 lg:max-w-6xl lg:space-y-6">
       <div>
-        <h1 className="font-heading text-2xl leading-tight font-semibold text-foreground lg:text-3xl">Envoyer un colis</h1>
+        <h1 className="titre-page">Envoyer un colis</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Un livreur vient chercher votre colis et le remet à votre destinataire. Vous suivez chaque étape.
         </p>
@@ -330,7 +330,7 @@ export function ColisFormPage() {
             <PhotoPicker
               usage="colis"
               max={1}
-              label="Photo du colis (facultatif)"
+              label="Photo du colis"
               value={photos}
               onChange={setPhotos}
               onEnvoiChange={setPhotoEnCours}

@@ -34,7 +34,7 @@ export function QuartierField({
         onChange={(event) => onChange({ ...value, quartierId: event.target.value })}
         required
         disabled={isPending}
-        className="h-11 w-full rounded-full border border-input bg-transparent px-3 text-base focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none md:text-sm"
+        className="h-11 w-full rounded-lg border-[1.5px] border-input bg-transparent px-3 text-base focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none md:text-sm"
       >
         <option value="" disabled>
           {isPending ? 'Chargement des quartiers…' : 'Choisir le quartier'}

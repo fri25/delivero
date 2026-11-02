@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CalendarDays, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -66,11 +66,11 @@ export function OrdersPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="mx-auto max-w-3xl space-y-6">
       <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <h1 className="font-heading text-2xl font-bold whitespace-nowrap lg:text-3xl text-foreground">Mes commandes</h1>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+          <h1 className="titre-page whitespace-nowrap">Mes commandes</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             {commandes.length} commande{commandes.length > 1 ? 's' : ''}
             {nbEnCours > 0 ? ` · ${nbEnCours} en cours` : ''}
           </p>
@@ -80,7 +80,7 @@ export function OrdersPage() {
           <select
             value={periode}
             onChange={(event) => setPeriode(event.target.value as Periode)}
-            className="h-9.5 rounded-full border border-border/80 bg-card px-3.5 text-xs font-semibold shadow-2xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none cursor-pointer"
+            className="h-10 cursor-pointer rounded-xl border border-border bg-card px-3 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >
             <option value="tout">Depuis le début</option>
             <option value="30">30 derniers jours</option>
@@ -89,7 +89,7 @@ export function OrdersPage() {
         </label>
       </header>
 
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none]" aria-label="Filtres">
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] md:mx-0 md:px-0" aria-label="Filtres">
         {ISSUES.map((option) => (
           <FilterChip key={option.value} actif={issue === option.value} onClick={() => setIssue(option.value)}>
             {option.label}
@@ -104,9 +104,9 @@ export function OrdersPage() {
       </div>
 
       {isError && (
-        <div role="alert" className="flex items-center justify-between gap-3 rounded-2xl bg-destructive/10 p-4 border border-destructive/20 text-destructive">
-          <p className="text-xs sm:text-sm font-medium">Une partie de votre historique n’a pas pu être chargée.</p>
-          <Button variant="outline" size="sm" onClick={refetch} className="rounded-xl">
+        <div role="alert" className="flex items-center justify-between gap-3 rounded-lg border-[1.5px] border-destructive p-4 text-destructive">
+          <p className="text-sm font-medium">Une partie de votre historique n’a pas pu être chargée.</p>
+          <Button variant="outline" size="sm" onClick={refetch} className="h-9 font-bold text-foreground">
             <RefreshCw className="size-3.5" /> Réessayer
           </Button>
         </div>
@@ -114,21 +114,18 @@ export function OrdersPage() {
 
       {isPending && commandes.length === 0 && (
         <div className="space-y-3" aria-label="Chargement des commandes">
-          <Skeleton className="h-22 w-full rounded-3xl" />
-          <Skeleton className="h-22 w-full rounded-3xl" />
-          <Skeleton className="h-22 w-full rounded-3xl" />
+          <Skeleton className="h-18 w-full" />
+          <Skeleton className="h-18 w-full" />
+          <Skeleton className="h-18 w-full" />
         </div>
       )}
 
       {!isPending && filtrees.length === 0 && (
-        <div className="rounded-3xl bg-card px-6 py-12 text-center border border-border/70 shadow-xs">
-          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-2xs">
-            <CalendarDays className="size-7" aria-hidden="true" />
-          </div>
-          <h2 className="font-heading mt-4 text-lg font-bold text-foreground">
+        <div className="carte p-5">
+          <h2 className="text-lg font-bold">
             {commandes.length ? 'Aucune commande pour ces filtres' : 'Pas encore de commande'}
           </h2>
-          <p className="mx-auto mt-1 max-w-sm text-xs sm:text-sm text-muted-foreground leading-relaxed">
+          <p className="mt-1 max-w-sm text-[15px] text-muted-foreground">
             {commandes.length
               ? 'Modifiez les filtres pour retrouver une commande.'
               : 'Vos repas, colis et courses apparaîtront ici, avec leur suivi en direct.'}
@@ -136,7 +133,7 @@ export function OrdersPage() {
           {filtresActifs ? (
             <Button
               variant="outline"
-              className="mt-5 rounded-xl font-semibold shadow-xs"
+              className="mt-4 h-11 font-bold"
               onClick={() => {
                 setIssue('tout');
                 setService('tous');
@@ -146,7 +143,7 @@ export function OrdersPage() {
               Effacer les filtres
             </Button>
           ) : (
-            <Button asChild size="lg" className="mt-5 rounded-xl font-semibold shadow-md shadow-primary/20">
+            <Button asChild className="mt-4 h-11 px-5 font-bold">
               <Link to="/">Passer une commande</Link>
             </Button>
           )}
@@ -154,12 +151,11 @@ export function OrdersPage() {
       )}
 
       {enCours.length > 0 && (
-        <section className="space-y-3" aria-labelledby="titre-en-cours">
-          <h2 id="titre-en-cours" className="font-heading text-base font-bold text-foreground flex items-center gap-2">
-            <span className="size-2 rounded-full bg-brand-red animate-pulse" />
+        <section className="space-y-2" aria-labelledby="titre-en-cours">
+          <h2 id="titre-en-cours" className="font-heading text-[22px] font-extrabold">
             En cours
           </h2>
-          <ul className="space-y-3">
+          <ul className="carte divide-y divide-border px-4">
             {enCours.map((c) => (
               <LigneCommande key={`${c.typeService}:${c.id}`} commande={c} />
             ))}
@@ -168,11 +164,11 @@ export function OrdersPage() {
       )}
 
       {passees.length > 0 && (
-        <section className="space-y-2.5" aria-labelledby="titre-passees">
-          <h2 id="titre-passees" className="font-heading text-base font-semibold">
+        <section className="space-y-2" aria-labelledby="titre-passees">
+          <h2 id="titre-passees" className="font-heading text-[22px] font-extrabold">
             {enCours.length > 0 ? 'Historique' : 'Vos commandes'}
           </h2>
-          <ul className="space-y-2.5">
+          <ul className="carte divide-y divide-border px-4">
             {passees.map((c) => (
               <LigneCommande key={`${c.typeService}:${c.id}`} commande={c} refaire={refaire(c)} />
             ))}

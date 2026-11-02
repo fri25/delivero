@@ -44,6 +44,9 @@ describe('MediasService', () => {
     expect(signature.signature).toMatch(/^[0-9a-f]{40}$/);
 
     const signaturePlats = service(ENV).signer('plats');
+    expect(service(ENV).signer('logos')).toMatchObject({
+      folder: 'chapexpress/logos',
+    });
     expect(signaturePlats).toMatchObject({
       cloudName: 'chapx',
       apiKey: '123',

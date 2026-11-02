@@ -13,7 +13,7 @@ import type { CommandeRepas } from '@/api/types';
 const SECTIONS: { etape: Exclude<Etape, 'terminees'>; titre: string; accentClass: string }[] = [
   { etape: 'a_accepter', titre: 'À accepter en priorité', accentClass: 'text-destructive bg-destructive/10 border-destructive/30' },
   { etape: 'en_cuisine', titre: 'En cuisine', accentClass: 'text-amber-600 bg-amber-50 border-amber-200' },
-  { etape: 'pretes', titre: 'Prêtes, en attente du livreur', accentClass: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+  { etape: 'pretes', titre: 'Prêtes, en attente du livreur', accentClass: 'text-primary bg-accent border-transparent' },
   { etape: 'parties', titre: 'Parties avec le livreur', accentClass: 'text-brand-blue bg-blue-50 border-blue-200' },
 ];
 
@@ -35,7 +35,7 @@ function Section({
           <span
             className={cn(
               'size-2.5 rounded-full',
-              urgent ? 'bg-destructive animate-ping' : 'bg-primary/80',
+              urgent ? 'bg-brand-red' : 'bg-primary/80',
             )}
             aria-hidden="true"
           />
@@ -43,8 +43,8 @@ function Section({
         </h2>
         <span
           className={cn(
-            'inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums shadow-2xs',
-            urgent ? 'bg-destructive text-white shadow-destructive/20' : 'bg-muted text-muted-foreground border border-border/60',
+            'inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums',
+            urgent ? 'bg-brand-red text-white' : 'bg-muted text-muted-foreground border border-border/60',
           )}
         >
           {commandes.length}
@@ -88,8 +88,8 @@ export function OrdersPage() {
 
   if (isError) {
     return (
-      <div className="rounded-3xl border border-destructive/30 bg-destructive/5 p-6 text-center text-destructive">
-        <p className="font-heading font-semibold text-base">Impossible de charger les commandes</p>
+      <div className="carte border border-destructive/40 p-6 text-destructive">
+        <p className="text-base font-semibold">Impossible de charger les commandes</p>
         <p className="mt-1 text-xs text-muted-foreground">Une tentative de reconnexion est en cours automatiquement…</p>
       </div>
     );
@@ -106,10 +106,10 @@ export function OrdersPage() {
       <ActiverAlertesCard />
 
       {restaurant?.suspendu && (
-        <div className="flex items-start gap-3 rounded-3xl border border-destructive/30 bg-destructive/10 p-4 sm:p-5 text-sm text-destructive shadow-sm">
+        <div className="carte flex items-start gap-3 border border-destructive/40 p-4 text-sm text-destructive sm:p-5">
           <Ban className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
           <div>
-            <p className="font-heading font-bold text-base">Établissement suspendu</p>
+            <p className="text-base font-bold">Établissement suspendu</p>
             <p className="mt-1 text-xs sm:text-sm text-destructive/90 leading-relaxed">
               Votre restaurant est suspendu par ChapExpress : il n’apparaît plus aux clients et ne reçoit plus de
               commandes. Contactez le service support ChapExpress.
@@ -119,10 +119,10 @@ export function OrdersPage() {
       )}
 
       {restaurant && !restaurant.suspendu && !restaurant.statutOuverture && (
-        <div className="flex items-start gap-3 rounded-3xl border border-amber-300/40 bg-amber-50/80 p-4 sm:p-5 text-sm text-amber-900 shadow-sm">
+        <div className="flex items-start gap-3 rounded-2xl bg-amber-100 p-4 text-sm text-amber-950 sm:p-5">
           <Moon className="mt-0.5 size-5 shrink-0 text-amber-600" aria-hidden="true" />
           <div>
-            <p className="font-heading font-bold text-base text-amber-900">Restaurant actuellement fermé</p>
+            <p className="text-base font-bold">Restaurant actuellement fermé</p>
             <p className="mt-1 text-xs sm:text-sm text-amber-800/90 leading-relaxed">
               Les clients ne peuvent pas passer commande pour le moment. Cliquez sur le bouton « Fermé » dans l'en-tête
               pour réouvrir immédiatement.
@@ -132,12 +132,8 @@ export function OrdersPage() {
       )}
 
       {actives.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border/80 bg-card/60 p-8 sm:p-12 text-center shadow-xs">
-          <div className="relative flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-3">
-            <span className="absolute inline-flex size-full animate-ping rounded-2xl bg-primary/20 opacity-75" />
-            <span className="relative size-3 rounded-full bg-primary" />
-          </div>
-          <p className="font-heading text-lg font-bold text-foreground">Écran de cuisine actif</p>
+        <div className="carte flex flex-col items-start p-6">
+          <p className="text-lg font-bold">Écran de cuisine actif</p>
           <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
             Aucune commande en attente. Une alarme sonore retentit dès qu’un client commande. Laissez cet écran ouvert.
           </p>
@@ -160,7 +156,7 @@ export function OrdersPage() {
             type="button"
             aria-expanded={termineesOuvertes}
             onClick={() => setTermineesOuvertes((ouvert) => !ouvert)}
-            className="flex w-full items-center justify-between rounded-2xl border border-border/70 bg-card px-4 py-3.5 text-sm font-semibold text-foreground shadow-2xs hover:bg-muted/40 transition-colors"
+            className="carte flex w-full items-center justify-between px-4 py-3.5 text-sm font-semibold"
           >
             <span className="flex items-center gap-2">
               <span>Commandes terminées aujourd’hui</span>

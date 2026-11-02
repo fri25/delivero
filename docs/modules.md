@@ -238,6 +238,8 @@ hors périmètre. 3ᵉ dans l'ordre de phasage, livré comme les 3 autres servic
       faites)*
 - [x] F-RES-05 — Activation/désactivation d'un plat en un clic (rupture)
 - [x] F-RES-06 — Gestion des horaires d'ouverture, statut « temporairement fermé »
+  *(02/11 : logo du restaurant dans les réglages — upload Cloudinary dossier
+  `logos`, affiché sur la carte et la fiche restaurant côté client.)*
 - [x] F-RES-07 — Tableau de bord des ventes (commandes du jour, CA, plats les plus
       vendus) — *(13/10, onglet Ventes : aujourd'hui / 7 j / 30 j, évolution vs
       période précédente, commandes servies, panier moyen, refusées/annulées,

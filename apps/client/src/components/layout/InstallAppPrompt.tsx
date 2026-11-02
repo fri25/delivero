@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Download, Smartphone } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface InstallPromptEvent extends Event {
@@ -30,8 +30,8 @@ export function InstallAppPrompt() {
 
   if (!promptEvent || installed) return null;
   return (
-    <aside className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4">
-      <div className="flex items-center gap-3"><div className="flex size-10 items-center justify-center rounded-xl bg-secondary text-primary"><Smartphone className="size-5" /></div><div><p className="font-semibold">ChapExpress sur votre téléphone</p><p className="text-xs text-muted-foreground">Installez l’application pour la retrouver rapidement.</p></div></div>
+    <aside className="flex items-center justify-between gap-3 rounded-lg border border-border p-4">
+      <div className="flex items-center gap-3"><div><p className="font-semibold">ChapExpress sur votre téléphone</p><p className="text-xs text-muted-foreground">Installez l’application pour la retrouver rapidement.</p></div></div>
       <Button size="sm" onClick={async () => {
         await promptEvent.prompt();
         const result = await promptEvent.userChoice;

@@ -9,19 +9,18 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
 import { useCartStore } from '@/stores/cart-store';
 
+// Active link: ink + underline, no filled pill.
 const lienDesktop = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-200',
-    isActive
-      ? 'bg-secondary text-primary font-semibold'
-      : 'text-foreground/70 hover:bg-secondary hover:text-foreground',
+    'flex min-h-11 items-center text-[15px] font-semibold underline-offset-[6px] decoration-2 transition-colors',
+    isActive ? 'text-foreground underline decoration-primary' : 'text-foreground/75 hover:text-foreground',
   );
 
 // Desktop has room for direct links to each service: one click from any page.
 const SERVICES = [
   { to: '/repas', label: 'Repas' },
   { to: '/colis', label: 'Colis' },
-  { to: '/courses-express', label: 'Courses' },
+  { to: '/courses-express', label: 'Courses express' },
   ...(EMPLETTES_ACTIF ? [{ to: '/emplettes', label: 'Emplettes' }] : []),
 ];
 
@@ -45,76 +44,62 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-card/95 text-foreground backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-3 md:h-16 md:px-6 lg:px-8">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+    <header className="sticky top-0 z-20 border-b border-border bg-card text-foreground">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 md:h-17 md:gap-8 md:px-6 lg:px-8">
+        <div className="flex min-w-0 items-center gap-1 md:gap-8">
           {/* Mobile only: on desktop the browser's back button does the job. */}
-          {avecRetour ? (
+          {avecRetour && (
             <Button
               variant="ghost"
               size="icon"
               aria-label="Retour"
-              className="size-9 rounded-full text-foreground hover:bg-secondary md:hidden"
+              className="-ml-2 size-11 text-foreground hover:bg-secondary md:hidden"
               onClick={retour}
             >
               <ArrowLeft className="size-5" />
             </Button>
-          ) : (
-            <span className="w-0.5 md:hidden" aria-hidden="true" />
           )}
 
-          <Link to="/" className="group flex items-center gap-2.5 transition-transform active:scale-98 shrink-0">
-            <span className="relative flex size-8 items-center justify-center rounded-xl bg-primary text-primary-foreground md:size-9">
-              <svg viewBox="0 0 24 24" fill="none" className="size-4.5 md:size-5" aria-hidden="true">
-                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="currentColor" />
-              </svg>
-              <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-brand-red ring-2 ring-card" aria-hidden="true" />
-            </span>
-            <span className="hidden font-heading text-lg font-extrabold leading-none tracking-tight text-brand-navy min-[380px]:inline md:text-xl dark:text-foreground">
-              Chap<span className="text-primary">Express</span>
-            </span>
+          <Link
+            to="/"
+            className="shrink-0 font-heading text-xl leading-none font-extrabold tracking-[-0.03em] md:text-[22px]"
+          >
+            Chap<span className="text-primary">Express</span>
           </Link>
 
-          <QuartierSelectorDialog />
+          {/* The home hero carries its own zone picker. */}
+          {pathname !== '/' && <QuartierSelectorDialog className="hidden md:flex" />}
         </div>
 
-        <nav aria-label="Navigation principale" className="hidden items-center gap-1.5 md:flex">
+        <nav aria-label="Navigation principale" className="hidden flex-1 items-center gap-6 md:flex">
           {SERVICES.map((service) => (
             <NavLink key={service.to} to={service.to} className={lienDesktop}>
               {service.label}
             </NavLink>
           ))}
-          <span className="mx-2 h-6 w-px bg-border" aria-hidden="true" />
+          <span className="flex-1" aria-hidden="true" />
           <NavLink to="/commandes" className={lienDesktop}>
             Mes commandes
           </NavLink>
           <PanierLien itemCount={itemCount} />
           {user ? (
             <NavLink to="/compte" className={lienDesktop}>
-              <span className="inline-flex items-center gap-2">
-                <span className="flex size-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                  {user.nom.charAt(0).toUpperCase()}
-                </span>
-                <span className="max-w-[10rem] truncate">{user.nom}</span>
-              </span>
+              <span className="max-w-[10rem] truncate">{user.nom}</span>
             </NavLink>
           ) : (
-            <Button
-              asChild
-              size="sm"
-              className="ml-2 rounded-full px-4 font-semibold transition-transform active:scale-95"
-            >
+            <Button asChild className="h-10 bg-foreground px-4 font-bold text-background hover:bg-foreground/90">
               <Link to="/connexion">Se connecter</Link>
             </Button>
           )}
         </nav>
 
         {panierMobile && (
-          <div className="pr-1 md:hidden">
+          <div className="-mr-2 md:hidden">
             <PanierLien itemCount={itemCount} />
           </div>
         )}
       </div>
+
     </header>
   );
 }

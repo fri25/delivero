@@ -1,5 +1,4 @@
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
 import { useMonRestaurant, useToggleOuverture } from '@/api/restaurant';
 import { cn } from '@/lib/utils';
 
@@ -14,17 +13,15 @@ export function OuvertureToggle() {
 
   const ouvert = restaurant.statutOuverture;
   return (
-    <Button
-      size="sm"
-      variant="outline"
-      aria-pressed={ouvert}
-      className={cn(
-        'relative gap-2 rounded-full px-3.5 font-medium transition-all text-xs sm:text-sm h-8.5 sm:h-9 active:scale-95 shadow-xs',
-        ouvert
-          ? 'border-emerald-500/40 bg-emerald-600/90 hover:bg-emerald-600 text-white ring-1 ring-emerald-400/40'
-          : 'border-white/20 bg-white/10 hover:bg-white/15 text-white/90',
-      )}
+    <button
+      type="button"
+      role="switch"
+      aria-checked={ouvert}
       disabled={toggleOuverture.isPending}
+      className={cn(
+        'flex h-10 cursor-pointer items-center gap-2 rounded-full pr-3.5 pl-1.5 text-sm font-bold disabled:opacity-60',
+        ouvert ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+      )}
       onClick={() => {
         toggleOuverture.mutate(!ouvert, {
           onSuccess: (data) =>
@@ -35,19 +32,14 @@ export function OuvertureToggle() {
         });
       }}
     >
-      <span className="relative flex size-2 items-center justify-center">
-        {ouvert && (
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-        )}
-        <span
-          className={cn(
-            'relative inline-flex size-2 rounded-full',
-            ouvert ? 'bg-white' : 'bg-amber-400',
-          )}
-          aria-hidden="true"
-        />
+      {/* Switch knob: right and white when open. */}
+      <span
+        className={cn('relative h-7 w-11 shrink-0 rounded-full transition-colors', ouvert ? 'bg-white/25' : 'bg-foreground/15')}
+        aria-hidden="true"
+      >
+        <span className={cn('absolute top-1 size-5 rounded-full bg-white shadow-sm transition-[left]', ouvert ? 'left-5' : 'left-1')} />
       </span>
-      <span>{ouvert ? 'Ouvert' : 'Fermé'}</span>
-    </Button>
+      {ouvert ? 'Ouvert' : 'Fermé'}
+    </button>
   );
 }

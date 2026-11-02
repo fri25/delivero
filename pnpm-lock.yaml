@@ -244,10 +244,7 @@ importers:
 
   apps/client:
     dependencies:
-      '@fontsource-variable/bricolage-grotesque':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource-variable/geist':
+      '@fontsource-variable/archivo':
         specifier: ^5.3.0
         version: 5.3.0
       '@tanstack/react-query':
@@ -350,7 +347,7 @@ importers:
 
   apps/livreur:
     dependencies:
-      '@fontsource-variable/geist':
+      '@fontsource-variable/archivo':
         specifier: ^5.3.0
         version: 5.3.0
       '@tanstack/react-query':
@@ -438,7 +435,7 @@ importers:
 
   apps/partenaires:
     dependencies:
-      '@fontsource-variable/geist':
+      '@fontsource-variable/archivo':
         specifier: ^5.3.0
         version: 5.3.0
       '@tanstack/react-query':
@@ -1323,8 +1320,8 @@ packages:
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
 
-  '@fontsource-variable/bricolage-grotesque@5.3.0':
-    resolution: {integrity: sha512-TLi9Q4hJjS2UvoTMRSS2nHu6c4R56lAw60NR9QYtVRCHn0XtsFpiEhNffZ8Glsoxu6wEEwLKBP8lb94J52PNBA==}
+  '@fontsource-variable/archivo@5.3.0':
+    resolution: {integrity: sha512-HogK8FJelrD1o7TlZlkIVtHgc20bO5PZRWE7mUeUTdMN055alznQV6/00J00IBeu8FQAH4s3zW9UJNvKExXf+g==}
 
   '@fontsource-variable/geist@5.3.0':
     resolution: {integrity: sha512-j0m+vLQuG5XAYoHtGCVu0spvlGreR3EzpECUVzkFmI1mTVnAO38l/NEPDCFgZ177JxzYJCLSmTQibIiYPilGrA==}
@@ -8857,7 +8854,7 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
-  '@fontsource-variable/bricolage-grotesque@5.3.0': {}
+  '@fontsource-variable/archivo@5.3.0': {}
 
   '@fontsource-variable/geist@5.3.0': {}
 

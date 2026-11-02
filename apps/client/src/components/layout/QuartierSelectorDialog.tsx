@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, ChevronDown, MapPin, Sparkles } from 'lucide-react';
+import { Check, ChevronDown, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   Dialog,
@@ -17,7 +17,17 @@ import { useAdresses } from '@/api/adresses';
 import { formatPrixFcfa } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
-export function QuartierSelectorDialog({ className }: { className?: string }) {
+/**
+ * Delivery-zone picker. `hero`: white pill on the blue home banner;
+ * `compact`: inline text in the desktop header.
+ */
+export function QuartierSelectorDialog({
+  variante = 'compact',
+  className,
+}: {
+  variante?: 'hero' | 'compact';
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
   const { data: quartiers, isPending } = useQuartiers();
   const token = useAuthStore((state) => state.token);
@@ -30,7 +40,7 @@ export function QuartierSelectorDialog({ className }: { className?: string }) {
     quartierNom ??
     adresseDefaut?.quartierTarifaire?.nom ??
     adresseDefaut?.quartier ??
-    'Choisir mon quartier';
+    null;
 
   const choisirQuartier = (id: string, nom: string, frais: string | number) => {
     setQuartier(id, nom, Number(frais));
@@ -43,26 +53,30 @@ export function QuartierSelectorDialog({ className }: { className?: string }) {
         <button
           type="button"
           className={cn(
-            'group flex min-h-9 items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs text-foreground transition-colors duration-200 hover:bg-primary/10 active:scale-95 cursor-pointer',
+            'flex min-h-11 cursor-pointer items-center gap-2 text-left text-sm',
+            variante === 'compact' && 'text-muted-foreground',
+            variante === 'hero' && 'rounded-full bg-white/15 px-3.5 text-white hover:bg-white/20',
             className,
           )}
-          aria-label={`Zone de livraison actuelle : ${quartierActuel}. Cliquez pour modifier.`}
+          aria-label={quartierActuel ? `Livraison à ${quartierActuel}. Changer de quartier` : 'Choisir mon quartier de livraison'}
         >
-          <MapPin className="size-3.5 text-brand-red shrink-0" aria-hidden="true" />
-          <span className="font-semibold max-w-[120px] sm:max-w-[200px] truncate">
-            {quartierActuel}
+          <MapPin className="size-4 shrink-0" aria-hidden="true" />
+          <span className="min-w-0 truncate">
+            {quartierActuel ? (
+              <>
+                Livrer à <strong className={cn('font-bold', variante === 'compact' && 'text-foreground')}>{quartierActuel}</strong>
+              </>
+            ) : (
+              <strong className={cn('font-bold', variante === 'compact' && 'text-foreground')}>Choisir mon quartier</strong>
+            )}
           </span>
-          <ChevronDown className="size-3 text-muted-foreground transition-transform duration-200 group-hover:translate-y-0.5" aria-hidden="true" />
+          <ChevronDown className="size-4 shrink-0" aria-hidden="true" />
         </button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-md rounded-3xl p-5 sm:p-6">
+      <DialogContent className="max-w-md p-5 sm:p-6">
         <DialogHeader className="space-y-1.5 text-left">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary w-fit">
-            <Sparkles className="size-3" />
-            <span>Livraison à Natitingou</span>
-          </div>
-          <DialogTitle className="font-heading text-lg sm:text-xl font-bold text-foreground">
+          <DialogTitle className="font-heading text-2xl font-extrabold text-foreground">
             Où souhaitez-vous être livré ?
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
@@ -72,7 +86,7 @@ export function QuartierSelectorDialog({ className }: { className?: string }) {
 
         {token && adresses && adresses.length > 0 && (
           <div className="space-y-2 pt-1 border-t border-border/50">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <p className="text-sm font-bold text-foreground">
               Vos adresses enregistrées
             </p>
             <div className="grid gap-1.5">
@@ -95,9 +109,9 @@ export function QuartierSelectorDialog({ className }: { className?: string }) {
                       }
                     }}
                     className={cn(
-                      'flex items-center justify-between rounded-2xl border p-3 text-left transition-all duration-200 cursor-pointer',
+                      'flex items-center justify-between rounded-lg border p-3 text-left transition-colors cursor-pointer',
                       estSelectionne
-                        ? 'border-primary bg-primary/5 shadow-2xs'
+                        ? 'border-primary bg-accent'
                         : 'border-border/70 bg-card hover:bg-secondary/50',
                     )}
                   >
@@ -108,9 +122,7 @@ export function QuartierSelectorDialog({ className }: { className?: string }) {
                       </p>
                     </div>
                     {estSelectionne && (
-                      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                        <Check className="size-3.5 stroke-[3]" />
-                      </span>
+                      <Check className="size-4 shrink-0 stroke-[3] text-primary" aria-hidden="true" />
                     )}
                   </button>
                 );
@@ -120,7 +132,7 @@ export function QuartierSelectorDialog({ className }: { className?: string }) {
         )}
 
         <div className="space-y-2 pt-2">
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <p className="text-sm font-bold text-foreground">
             Tous les quartiers de Natitingou
           </p>
 
@@ -138,15 +150,15 @@ export function QuartierSelectorDialog({ className }: { className?: string }) {
                     type="button"
                     onClick={() => choisirQuartier(q.id, q.nom, q.fraisLivraison)}
                     className={cn(
-                      'flex w-full items-center justify-between rounded-xl p-2.5 text-left text-sm transition-all duration-150 cursor-pointer',
+                      'flex min-h-11 w-full items-center justify-between rounded-lg px-2.5 text-left text-sm transition-colors cursor-pointer',
                       estSelectionne
-                        ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                        ? 'bg-accent font-bold text-primary'
                         : 'hover:bg-secondary text-foreground',
                     )}
                   >
                     <div className="flex items-center gap-2">
                       <MapPin
-                        className={cn('size-4 shrink-0', estSelectionne ? 'text-white' : 'text-primary')}
+                        className="size-4 shrink-0 text-muted-foreground"
                       />
                       <span>{q.nom}</span>
                     </div>
@@ -154,9 +166,7 @@ export function QuartierSelectorDialog({ className }: { className?: string }) {
                       <span
                         className={cn(
                           'rounded-md px-2 py-0.5 text-xs font-bold tabular-nums',
-                          estSelectionne
-                            ? 'bg-white/20 text-white'
-                            : 'bg-secondary text-muted-foreground',
+                          estSelectionne ? 'text-primary' : 'text-muted-foreground',
                         )}
                       >
                         {formatPrixFcfa(Number(q.fraisLivraison))}
