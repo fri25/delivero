@@ -30,6 +30,14 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # pnpm 10 n'exécute pas les scripts postinstall (prisma) par défaut :
+      # le client doit être généré explicitement avant le typecheck.
+      - name: API — génération du client Prisma
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci?schema=public
+        run: pnpm exec prisma generate
+
       - name: API — typecheck
         run: pnpm --filter @delivero/api typecheck
 
