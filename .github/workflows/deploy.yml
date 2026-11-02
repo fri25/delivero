@@ -1,0 +1,77 @@
+# CI (gate sur chaque push/PR) + CD (deploy VPS sur main).
+# Secrets requis (repo GitHub → Settings → Secrets → Actions) :
+#   VPS_HOST     ex. 72.60.46.122
+#   VPS_USER     ex. audest
+#   VPS_SSH_KEY  clé privée dédiée (générée sur le VPS, voir deploy/deploy.sh)
+# Le VPS doit avoir la clé publique dans ~/.ssh/authorized_keys et le dépôt
+# cloné (ex. ~/delivero) avec deploy/.env déjà rempli.
+name: ci-cd
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    name: gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.23.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: API — typecheck
+        run: pnpm --filter @delivero/api typecheck
+
+      - name: API — tests unitaires
+        run: pnpm --filter @delivero/api test
+
+      - name: Fronts — typecheck
+        run: >-
+          pnpm --filter @delivero/client typecheck &&
+          pnpm --filter @delivero/livreur typecheck &&
+          pnpm --filter @delivero/partenaires typecheck &&
+          pnpm --filter @delivero/admin typecheck
+
+      - name: Compose — validation avec .env jetable
+        working-directory: deploy
+        run: |
+          sed -e 's/^POSTGRES_PASSWORD=""/POSTGRES_PASSWORD="ab12cd34ef56ab12cd34ef56ab"/' \
+              -e 's|^DATABASE_URL=""|DATABASE_URL="postgresql://delivero:ab12cd34ef56ab12cd34ef56ab@db:5432/delivero?schema=public"|' \
+              -e 's/^JWT_SECRET=""/JWT_SECRET="0123456789abcdef0123456789abcdef"/' \
+              -e 's|^VITE_API_URL=""|VITE_API_URL="https://api.example.com/api"|' \
+              -e 's|^CLIENT_DOMAIN=""|CLIENT_DOMAIN="https://client.example.com"|' \
+              -e 's|^LIVREUR_DOMAIN=""|LIVREUR_DOMAIN="https://livreur.example.com"|' \
+              -e 's|^PARTENAIRES_DOMAIN=""|PARTENAIRES_DOMAIN="https://partenaires.example.com"|' \
+              -e 's|^ADMIN_DOMAIN=""|ADMIN_DOMAIN="https://admin.example.com"|' \
+              .env.example > .env
+          docker compose config --quiet
+          rm -f .env
+
+  cd:
+    name: deploy-vps
+    needs: ci
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -eu
+            cd ~/delivero
+            git pull --ff-only
+            ./deploy/deploy.sh
