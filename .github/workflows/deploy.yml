@@ -78,8 +78,8 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          # Le VPS compile 5 images : 10 min (défaut) est insuffisant.
-          command_timeout: 30m
+          # Le VPS compile 5 images : 30 min peut être insuffisant à froid.
+          command_timeout: 60m
           script: |
             set -eu
             cd ~/delivero
