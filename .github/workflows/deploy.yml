@@ -78,8 +78,11 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          # Le VPS compile 5 images : 10 min (défaut) est insuffisant.
+          command_timeout: 30m
           script: |
             set -eu
             cd ~/delivero
             git pull --ff-only
-            ./deploy/deploy.sh
+            # VPS limité en RAM : sérialise les builds pour éviter le swap/OOM.
+            COMPOSE_PARALLEL_LIMIT=1 ./deploy/deploy.sh
