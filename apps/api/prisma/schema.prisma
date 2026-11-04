@@ -68,6 +68,8 @@ model User {
   commandesSaisies    Commande[]       @relation("CommandeSaisiePar")
   paiementsRembourses Paiement[]       @relation("PaiementRembourseePar")
   paiementsConfirmes  Paiement[]       @relation("PaiementConfirmePar")
+  platformAdmin       PlatformAdmin?
+  journalActions      AuditLog[]
 
   @@map("users")
 }
@@ -841,4 +843,168 @@ model EtapeCourseExpress {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("etapes_courses_express")
+}
+
+// --- Plateforme multi-entreprises (RapidLiv) --------------------------------
+// Étape 1 du plan (docs/plan-migration-multi-tenant.md) : tables ajoutées,
+// encore lues par aucun code. CHAP EXPRESS est inséré par la migration avec
+// l'identifiant fixe "tnt_chapexpress", valeur par défaut des colonnes
+// tenant_id de l'étape 2. Architecture : docs/architecture-multi-tenant.md.
+
+enum StatutTenant {
+  actif
+  // Refuses every request of the company; data kept, readable by the platform.
+  suspendu
+  resilie
+}
+
+model Tenant {
+  id        String       @id @default(cuid())
+  // Sub-domain label (chapexpress.rapidliv.com) and storage prefix.
+  slug      String       @unique
+  nom       String
+  statut    StatutTenant @default(actif)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  domaines        TenantDomain[]
+  parametres      TenantSettings?
+  fonctionnalites TenantFeature[]
+  abonnement      Subscription?
+  secrets         TenantSecret[]
+  journal         AuditLog[]
+
+  @@map("tenants")
+}
+
+// Host names that resolve to a company: rapidliv.com sub-domains and custom
+// domains (the current CHAP EXPRESS domains stay valid).
+model TenantDomain {
+  id        String    @id @default(cuid())
+  domaine   String    @unique
+  tenantId  String    @map("tenant_id")
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  principal Boolean   @default(false)
+  // Null until the platform has checked the DNS of a custom domain.
+  verifieAt DateTime? @map("verifie_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@map("tenant_domains")
+}
+
+// What used to be hard-coded or global for CHAP EXPRESS (identity, contacts,
+// locale, commission). Read by the apps at start-up from étape 6.
+model TenantSettings {
+  tenantId           String   @id @map("tenant_id")
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  nomCommercial      String   @map("nom_commercial")
+  logoUrl            String?  @map("logo_url")
+  couleurPrimaire    String   @map("couleur_primaire")
+  couleurMarine      String   @map("couleur_marine")
+  couleurSignal      String   @map("couleur_signal")
+  telephoneContact   String?  @map("telephone_contact")
+  whatsappSupport    String?  @map("whatsapp_support")
+  emailContact       String?  @map("email_contact")
+  ville              String
+  // ISO 3166-1 alpha-2, ISO 4217, IANA time zone.
+  pays               String
+  devise             String
+  fuseauHoraire      String   @map("fuseau_horaire")
+  indicatifTelephone String   @map("indicatif_telephone")
+  // Service fee on Repas, in percent. 15 for CHAP EXPRESS: the value already
+  // applied (commandes-repas.service.ts), not a new rule.
+  tauxCommission     Decimal  @map("taux_commission") @db.Decimal(5, 2)
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("tenant_settings")
+}
+
+// What a company has opened (service.repas, paiement.especes...). From
+// étape 5 it replaces SERVICES_ACTIFS / MODES_PAIEMENT_ACTIFS, which stay the
+// platform-wide ceiling.
+model TenantFeature {
+  tenantId String  @map("tenant_id")
+  tenant   Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code     String
+  actif    Boolean @default(true)
+
+  @@id([tenantId, code])
+  @@map("tenant_features")
+}
+
+// Offers and subscriptions, managed by hand: no billing in the application
+// (decision Q-MT-5 of 04/11/2026).
+model Plan {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  nom         String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  abonnements Subscription[]
+
+  @@map("plans")
+}
+
+enum StatutAbonnement {
+  essai
+  actif
+  suspendu
+  termine
+}
+
+model Subscription {
+  id        String           @id @default(cuid())
+  tenantId  String           @unique @map("tenant_id")
+  tenant    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  planId    String           @map("plan_id")
+  plan      Plan             @relation(fields: [planId], references: [id])
+  statut    StatutAbonnement @default(actif)
+  debutAt   DateTime         @default(now()) @map("debut_at")
+  finAt     DateTime?        @map("fin_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  @@map("subscriptions")
+}
+
+// Per-company credentials (FedaPay of each company, decision Q-MT-4).
+// Encrypted by the API (AES-256-GCM, master key in the environment) before
+// storage; never returned to any client.
+model TenantSecret {
+  tenantId       String   @map("tenant_id")
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cle            String
+  valeurChiffree String   @map("valeur_chiffree")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@id([tenantId, cle])
+  @@map("tenant_secrets")
+}
+
+model PlatformAdmin {
+  userId    String   @id @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("platform_admins")
+}
+
+// Append-only activity and security log. tenantId null = platform event.
+model AuditLog {
+  id        String   @id @default(cuid())
+  tenantId  String?  @map("tenant_id")
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  acteurId  String?  @map("acteur_id")
+  acteur    User?    @relation(fields: [acteurId], references: [id], onDelete: SetNull)
+  action    String
+  cibleType String?  @map("cible_type")
+  cibleId   String?  @map("cible_id")
+  details   Json?
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@index([acteurId])
+  @@map("audit_logs")
 }
