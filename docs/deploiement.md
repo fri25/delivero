@@ -109,6 +109,35 @@ Les ~750 h gratuites mensuelles de Render couvrent une API allumée en continu
   `package.json`. Si le build échoue faute de pnpm, préfixer les
   `buildCommand` par `corepack enable &&`.
 
+## 7. Sauvegarde, restauration et répétition d'une migration
+
+À faire avant chaque migration de base sensible, en particulier celles du
+chantier multi-entreprises ([plan](plan-migration-multi-tenant.md)).
+
+1. **Sauvegarde** depuis le PC (la base Neon de production) :
+   `pg_dump -Fc "$PROD_URL" > delivero-$(date +%Y%m%d-%H%M).dump`.
+2. **Comptages de référence** :
+   `DATABASE_URL="$PROD_URL" pnpm --filter @delivero/api comptages > avant.json`
+   (lecture seule).
+3. **Copie de répétition** : créer une branche Neon jetable (ou une base
+   locale), y restaurer le dump avec
+   `pg_restore --no-owner -d "$COPIE_URL" delivero-….dump`, puis
+   l'anonymiser : `psql "$COPIE_URL" -v ON_ERROR_STOP=1 -f apps/api/prisma/anonymiser.sql`.
+   Le script refuse une base dont le nom évoque la production.
+4. **Répétition** sur la copie : comptages, migration
+   (`DATABASE_URL="$COPIE_URL" pnpm --filter @delivero/api prisma:deploy`),
+   puis `comptages -- --comparer` sur la copie. Code de sortie 1 = une ligne
+   ou un montant a disparu : ne pas déployer.
+5. **Production** : déployer, puis
+   `DATABASE_URL="$PROD_URL" pnpm --filter @delivero/api comptages -- --comparer avant.json`.
+6. **Restauration** en cas de problème : restauration à un instant donné de
+   Neon (*Branches > Restore*, à l'heure d'avant le déploiement), ou
+   `pg_restore --clean --no-owner -d "$PROD_URL" delivero-….dump`, puis
+   redéployer la version précédente de l'API.
+
+La restauration doit avoir été **essayée une fois** sur une copie avant la
+première migration du chantier, en notant sa durée.
+
 ## Limites et sortie
 
 - Neon gratuit : 0,5 Go, base suspendue après 5 min d'inactivité (réveil en

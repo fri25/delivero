@@ -20,6 +20,7 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "prisma db seed",
     "prisma:bootstrap-admin": "ts-node prisma/bootstrap-admin.ts",
+    "comptages": "ts-node prisma/comptages.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",

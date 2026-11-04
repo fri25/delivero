@@ -1,0 +1,72 @@
+# Checks run on every push and pull request (docs/plan-migration-multi-tenant.md,
+# étape 0): the multi-tenant migration relies on these staying green.
+name: CI
+
+on:
+  push:
+    branches: [main, multi-tenant]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verifications:
+    name: Lint, types, tests unitaires, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Types of @prisma/client are generated, not installed.
+      - run: pnpm --filter @delivero/api prisma:generate
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm --filter @delivero/api test
+      - run: pnpm --filter @delivero/client test
+      - run: pnpm --filter @delivero/livreur test
+      - run: pnpm --filter @delivero/partenaires test
+      - run: pnpm build
+
+  e2e:
+    name: Tests e2e API (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: delivero
+          POSTGRES_PASSWORD: delivero
+          POSTGRES_DB: delivero
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U delivero"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://delivero:delivero@localhost:5432/delivero
+      JWT_SECRET: ci-only-secret-not-used-anywhere-else-0123456789
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @delivero/api prisma:generate
+      - run: pnpm --filter @delivero/api prisma:deploy
+      - run: pnpm --filter @delivero/api exec prisma db seed
+      # One suite at a time: they share the seeded demo accounts.
+      - run: pnpm --filter @delivero/api test:e2e -- --runInBand
+      # Migrations must lose nothing: a second deploy on the seeded base is a no-op.
+      - run: pnpm --filter @delivero/api comptages > /tmp/avant.json
+      - run: pnpm --filter @delivero/api prisma:deploy
+      - run: pnpm --filter @delivero/api comptages -- --comparer /tmp/avant.json
