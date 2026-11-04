@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import { assurerSocle } from './socle';
+import { assurerAppartenances, assurerSocle } from './socle';
 
 // Production counterpart of seed.ts: creates the roles/permissions and the
 // first back-office account, nothing else (no demo data). Idempotent: an
@@ -46,6 +46,7 @@ async function main() {
       roleId: adminRole.id,
     },
   });
+  await assurerAppartenances(prisma);
   console.log(`Compte admin_dispatcher ${telephone} créé.`);
 }
 

@@ -8,6 +8,7 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
+import { roleEffectif, TENANT_PAR_DEFAUT } from '../appartenance';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import type { JwtPayload } from '../types/auth-user.type';
 
@@ -48,20 +49,30 @@ export class JwtAuthGuard implements CanActivate {
     // V13 : les permissions du rôle sont chargées ici (même requête) pour que
     // RolesGuard puisse les vérifier — jusqu'ici RolePermission était seedé
     // mais jamais lu, seul le nom du rôle comptait.
+    // Étape 3 (docs/plan-migration-multi-tenant.md): the role comes from the
+    // membership in the company, users.role_id only as a fallback.
+    const avecPermissions = {
+      include: { permissions: { include: { permission: true } } },
+    } as const;
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       include: {
-        role: { include: { permissions: { include: { permission: true } } } },
+        role: avecPermissions,
+        memberships: {
+          where: { tenantId: TENANT_PAR_DEFAUT },
+          include: { role: avecPermissions },
+        },
       },
     });
     if (!user) {
       throw new UnauthorizedException('Compte introuvable.');
     }
+    const role = roleEffectif(user);
 
     request.user = {
       id: user.id,
-      role: user.role.name,
-      permissions: user.role.permissions.map((rp) => rp.permission.code),
+      role: role.name,
+      permissions: role.permissions.map((rp) => rp.permission.code),
     };
     return true;
   }

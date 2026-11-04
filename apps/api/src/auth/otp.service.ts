@@ -12,6 +12,7 @@ import * as bcrypt from 'bcryptjs';
 import { Prisma } from '@prisma/client';
 import { Messagerie } from '../notifications/messagerie';
 import { PrismaService } from '../prisma/prisma.service';
+import { appartenanceInitiale, AVEC_ROLE, roleEffectif } from './appartenance';
 import { AuthService } from './auth.service';
 import { DemanderOtpDto, VerifierOtpDto } from './dto/otp.dto';
 import { normaliserTelephoneBenin, variantesTelephone } from './telephone';
@@ -44,7 +45,7 @@ export class OtpService {
   async demander(dto: DemanderOtpDto) {
     const telephone = this.normaliser(dto.telephone);
     const user = await this.trouverUtilisateur(telephone);
-    if (user && user.role.name !== CLIENT_ROLE_NAME) {
+    if (user && roleEffectif(user).name !== CLIENT_ROLE_NAME) {
       throw new BadRequestException(
         'Ce compte se connecte avec son mot de passe.',
       );
@@ -135,7 +136,7 @@ export class OtpService {
     }
 
     let user = await this.trouverUtilisateur(telephone);
-    if (user && user.role.name !== CLIENT_ROLE_NAME) {
+    if (user && roleEffectif(user).name !== CLIENT_ROLE_NAME) {
       throw new BadRequestException(
         'Ce compte se connecte avec son mot de passe.',
       );
@@ -175,7 +176,7 @@ export class OtpService {
   private trouverUtilisateur(telephone: string) {
     return this.prisma.user.findFirst({
       where: { telephone: { in: variantesTelephone(telephone) } },
-      include: { role: true },
+      include: AVEC_ROLE,
     });
   }
 
@@ -185,8 +186,14 @@ export class OtpService {
     });
     try {
       return await this.prisma.user.create({
-        data: { telephone, nom, passwordHash: null, roleId: role.id },
-        include: { role: true },
+        data: {
+          telephone,
+          nom,
+          passwordHash: null,
+          roleId: role.id,
+          memberships: appartenanceInitiale(role.id),
+        },
+        include: AVEC_ROLE,
       });
     } catch (error) {
       // Two verifications racing for the same new number.
@@ -196,7 +203,7 @@ export class OtpService {
       ) {
         return this.prisma.user.findUniqueOrThrow({
           where: { telephone },
-          include: { role: true },
+          include: AVEC_ROLE,
         });
       }
       throw error;

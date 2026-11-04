@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, TypePartenaire } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import { assurerSocle } from './socle';
+import { assurerAppartenances, assurerSocle } from './socle';
 
 const SALT_ROUNDS = 12;
 
@@ -442,6 +442,8 @@ async function main() {
       roleId: adminRoleForUser.id,
     },
   });
+
+  await assurerAppartenances(prisma);
 }
 
 main()

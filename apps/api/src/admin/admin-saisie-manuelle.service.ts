@@ -9,6 +9,7 @@ import { SaisieManuelleColisDto } from './dto/saisie-manuelle-colis.dto';
 import { SaisieManuelleCoursesExpressDto } from './dto/saisie-manuelle-courses-express.dto';
 import { SaisieManuelleEmplettesDto } from './dto/saisie-manuelle-emplettes.dto';
 import { SaisieManuelleRepasDto } from './dto/saisie-manuelle-repas.dto';
+import { appartenanceInitiale } from '../auth/appartenance';
 
 const CLIENT_ROLE_NAME = 'client';
 
@@ -46,7 +47,12 @@ export class AdminSaisieManuelleService {
     const user = await this.prisma.user.upsert({
       where: { telephone },
       update: {},
-      create: { telephone, nom, roleId: clientRole.id },
+      create: {
+        telephone,
+        nom,
+        roleId: clientRole.id,
+        memberships: appartenanceInitiale(clientRole.id),
+      },
     });
     return user.id;
   }

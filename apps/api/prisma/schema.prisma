@@ -22,6 +22,7 @@ model Role {
   createdAt   DateTime         @default(now()) @map("created_at")
   users       User[]
   permissions RolePermission[]
+  memberships Membership[]
 
   @@map("roles")
 }
@@ -69,6 +70,7 @@ model User {
   paiementsRembourses Paiement[]       @relation("PaiementRembourseePar")
   paiementsConfirmes  Paiement[]       @relation("PaiementConfirmePar")
   platformAdmin       PlatformAdmin?
+  memberships         Membership[]
   journalActions      AuditLog[]
 
   @@map("users")
@@ -873,6 +875,7 @@ model Tenant {
   abonnement      Subscription?
   secrets         TenantSecret[]
   journal         AuditLog[]
+  memberships     Membership[]
 
   @@map("tenants")
 }
@@ -1007,4 +1010,30 @@ model AuditLog {
   @@index([tenantId, createdAt])
   @@index([acteurId])
   @@map("audit_logs")
+}
+
+enum StatutMembership {
+  actif
+  // Access to this company refused; the account and its history stay.
+  suspendu
+}
+
+// What a person is in one company (étape 3 of the plan). The role lives here;
+// users.role_id is still written for the previous API version and goes away at
+// étape 7. Decision Q-MT-2: one account per phone number across companies.
+model Membership {
+  id        String           @id @default(cuid())
+  userId    String           @map("user_id")
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenantId  String           @map("tenant_id")
+  tenant    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roleId    String           @map("role_id")
+  role      Role             @relation(fields: [roleId], references: [id])
+  statut    StatutMembership @default(actif)
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  @@unique([userId, tenantId])
+  @@index([tenantId, roleId])
+  @@map("memberships")
 }

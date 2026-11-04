@@ -13,6 +13,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePartenaireDto } from './dto/create-partenaire.dto';
 import { UpdatePartenaireDto } from './dto/update-partenaire.dto';
+import { appartenanceInitiale } from '../auth/appartenance';
 
 const SALT_ROUNDS = 12;
 const RESTAURANT_ROLE_NAME = 'restaurant';
@@ -70,7 +71,13 @@ export class AdminPartenairesService {
 
     return this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
-        data: { telephone, nom: dto.nom, passwordHash, roleId: role.id },
+        data: {
+          telephone,
+          nom: dto.nom,
+          passwordHash,
+          roleId: role.id,
+          memberships: appartenanceInitiale(role.id),
+        },
       });
       // Created closed: the restaurant opens once its menu is in.
       return tx.partenaire.create({

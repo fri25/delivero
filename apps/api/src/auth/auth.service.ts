@@ -5,15 +5,18 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  appartenanceInitiale,
+  AVEC_ROLE,
+  roleEffectif,
+  type UtilisateurAvecRole,
+} from './appartenance';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
 const CLIENT_ROLE_NAME = 'client';
 const SALT_ROUNDS = 12;
-
-type UserWithRole = Prisma.UserGetPayload<{ include: { role: true } }>;
 
 @Injectable()
 export class AuthService {
@@ -52,8 +55,9 @@ export class AuthService {
         nom: dto.nom,
         passwordHash,
         roleId: clientRole.id,
+        memberships: appartenanceInitiale(clientRole.id),
       },
-      include: { role: true },
+      include: AVEC_ROLE,
     });
 
     return this.buildAuthResponse(user);
@@ -62,7 +66,7 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { telephone: dto.telephone },
-      include: { role: true },
+      include: AVEC_ROLE,
     });
 
     if (
@@ -78,27 +82,29 @@ export class AuthService {
   async me(userId: string) {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
-      include: { role: true },
+      include: AVEC_ROLE,
     });
     return this.toProfile(user);
   }
 
-  // Also used by OtpService once a code is verified.
-  buildAuthResponse(user: UserWithRole) {
+  // Also used by OtpService once a code is verified. Throws when the
+  // membership in the company is suspended.
+  buildAuthResponse(user: UtilisateurAvecRole) {
+    const profile = this.toProfile(user);
     const accessToken = this.jwtService.sign({
       sub: user.id,
-      role: user.role.name,
+      role: profile.role,
     });
-    return { accessToken, user: this.toProfile(user) };
+    return { accessToken, user: profile };
   }
 
-  private toProfile(user: UserWithRole) {
+  private toProfile(user: UtilisateurAvecRole) {
     return {
       id: user.id,
       telephone: user.telephone,
       email: user.email ?? null,
       nom: user.nom,
-      role: user.role.name,
+      role: roleEffectif(user).name,
     };
   }
 }

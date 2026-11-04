@@ -8,6 +8,7 @@ import { PortefeuilleService } from '../portefeuille/portefeuille.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLivreurDto } from './dto/create-livreur.dto';
 import { UpdateLivreurDto } from './dto/update-livreur.dto';
+import { appartenanceInitiale } from '../auth/appartenance';
 
 const SALT_ROUNDS = 12;
 const LIVREUR_ROLE_NAME = 'livreur';
@@ -76,6 +77,7 @@ export class AdminLivreursService {
           nom: dto.nom,
           passwordHash,
           roleId: livreurRole.id,
+          memberships: appartenanceInitiale(livreurRole.id),
         },
       });
       return tx.livreur.create({

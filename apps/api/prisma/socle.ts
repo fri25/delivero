@@ -104,3 +104,23 @@ export async function assurerSocle(prisma: PrismaClient): Promise<void> {
     });
   }
 }
+
+// Étape 3 of docs/plan-migration-multi-tenant.md: every account is a member
+// of CHAP EXPRESS (tnt_chapexpress, inserted by migration
+// plateforme_tenants) with the role of users.role_id. Run after the accounts
+// of seed.ts or bootstrap-admin.ts are created; leaves existing memberships
+// untouched.
+export async function assurerAppartenances(prisma: PrismaClient): Promise<void> {
+  const sansAppartenance = await prisma.user.findMany({
+    where: { memberships: { none: { tenantId: 'tnt_chapexpress' } } },
+    select: { id: true, roleId: true },
+  });
+  await prisma.membership.createMany({
+    data: sansAppartenance.map((user) => ({
+      userId: user.id,
+      tenantId: 'tnt_chapexpress',
+      roleId: user.roleId,
+    })),
+    skipDuplicates: true,
+  });
+}

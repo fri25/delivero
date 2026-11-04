@@ -224,6 +224,34 @@ production juste après.
 **Retour arrière.** Revenir au code précédent suffit : `users.role_id` est
 toujours là et à jour.
 
+**État au 05/11/2026** (branche `multi-tenant`, non déployé ; réalisée
+avant l'étape 2, dont elle ne dépend pas) :
+
+- **Écart avec le plan ci-dessus, pour réduire le risque** : aucun rôle n'est
+  renommé ni ajouté à cette étape. `admin_dispatcher` reste
+  `admin_dispatcher`, parce que l'app admin déjà installée (code en cache)
+  n'accepte que ce nom à la connexion. La création d'`admin_entreprise` et de
+  `gestionnaire`, et les constantes de rôles (`src/auth/roles.ts`), passent
+  à l'**étape 8**, avec l'écran qui gère les utilisateurs et les rôles.
+  `super_admin` n'est pas un rôle d'entreprise : c'est la table
+  `platform_admins` de l'étape 1.
+- Migration `20261104233003_appartenances` : table `memberships`, une
+  appartenance CHAP EXPRESS par compte existant, avec le même rôle (78/78 en
+  local, aucun rôle divergent).
+- `src/auth/appartenance.ts` : entreprise par défaut, rôle effectif
+  (appartenance, sinon `users.role_id`), appartenance suspendue = accès
+  refusé, y compris pour un jeton déjà émis.
+- Le rôle est lu dans l'appartenance par `JwtAuthGuard`, la connexion par mot
+  de passe et OTP, et le profil. Les 5 créations de compte (inscription,
+  OTP, livreur, restaurant, client saisi par le dispatcher) créent
+  l'appartenance ; `seed.ts` et `bootstrap-admin.ts` aussi
+  (`assurerAppartenances`).
+- Retour arrière : `prisma/retour-arriere/20261104233003_appartenances.sql`,
+  testé (suppression puis réapplication) ; redéployer d'abord l'API
+  précédente, qui ne lit pas les appartenances.
+- `test/appartenances.e2e-spec.ts` (5 cas). Sur une base neuve (migrations
+  + seed, comme la CI) : 43 tests e2e verts ; 60 tests unitaires verts.
+
 ## Étape 4 — Contexte d'entreprise dans l'API
 
 Le cœur du chantier. Les tests d'isolation (architecture § 4) sont écrits
@@ -343,6 +371,14 @@ Dans l'app `admin` existante :
 - **Réglages** : nom commercial, logo, couleurs (avec aperçu), contacts,
   paramètres de livraison, taux de commission, identifiants FedaPay (saisis,
   jamais réaffichés).
+- **Rôles** (reporté de l'étape 3) : création d'`admin_entreprise`
+  (permissions actuelles d'`admin_dispatcher` + réglages et utilisateurs) et
+  de `gestionnaire` (opérations sans zones, quartiers, restaurants,
+  remboursements ni réglages) ; les appartenances `admin_dispatcher`
+  deviennent `admin_entreprise`. Les contrôleurs passent de
+  `@Roles('admin_dispatcher')` aux permissions, et les codes de rôles en
+  constantes (`src/auth/roles.ts`). L'app admin accepte les deux noms une
+  version avant le renommage.
 - **Utilisateurs et rôles** : inviter, attribuer `admin_entreprise` ou
   `gestionnaire`, suspendre une appartenance.
 - **Journal d'activité** : intercepteur global qui écrit dans `audit_logs`
