@@ -57,6 +57,53 @@ describe('Plateforme : entreprise CHAP EXPRESS (e2e)', () => {
     ]);
   });
 
+  // Étape 2: the 21 business tables (docs/architecture-multi-tenant.md § 1.3).
+  const TABLES_METIER = [
+    'abonnements_push',
+    'adresses',
+    'articles_emplettes',
+    'clotures_caisse',
+    'commandes',
+    'commandes_colis',
+    'commandes_courses_express',
+    'commandes_emplettes',
+    'commandes_repas',
+    'etapes_courses_express',
+    'grilles_tarifaires_colis',
+    'grilles_tarifaires_courses_express',
+    'lignes_commande_repas',
+    'livreurs',
+    'mouvements_portefeuille',
+    'notations',
+    'paiements',
+    'partenaires',
+    'plats',
+    'quartiers',
+    'zones',
+  ];
+
+  it('chaque table métier porte tenant_id, obligatoire', async () => {
+    const colonnes = await prisma.$queryRaw<
+      { table_name: string; is_nullable: string }[]
+    >`
+      SELECT table_name, is_nullable FROM information_schema.columns
+      WHERE table_schema = 'public' AND column_name = 'tenant_id'
+      AND table_name = ANY(${TABLES_METIER})`;
+    expect(colonnes.map((c) => c.table_name).sort()).toEqual(TABLES_METIER);
+    expect(colonnes.every((c) => c.is_nullable === 'NO')).toBe(true);
+  });
+
+  it('toutes les lignes métier, anciennes et nouvelles, sont à CHAP EXPRESS', async () => {
+    // Rows of the seed, and of the other suites when they ran first, were
+    // created through code that does not set tenant_id yet.
+    for (const table of TABLES_METIER) {
+      const [{ n }] = await prisma.$queryRawUnsafe<{ n: bigint }[]>(
+        `SELECT count(*) AS n FROM "${table}" WHERE tenant_id <> 'tnt_chapexpress'`,
+      );
+      expect({ table, autres: Number(n) }).toEqual({ table, autres: 0 });
+    }
+  });
+
   it('a un abonnement actif à l’offre pilote', async () => {
     const abonnement = await prisma.subscription.findUniqueOrThrow({
       where: { tenantId: 'tnt_chapexpress' },

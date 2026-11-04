@@ -186,6 +186,29 @@ copie anonymisée.
 
 **Retour arrière.** `DROP COLUMN tenant_id` (migration inverse livrée avec).
 
+**État au 05/11/2026** (branche `multi-tenant`, non déployé) :
+
+- Migration `20261105090000_tenant_id_metier` : 21 colonnes `tenant_id`
+  `NOT NULL DEFAULT 'tnt_chapexpress'`, 21 clés étrangères en
+  `ON DELETE RESTRICT` (supprimer une entreprise ne peut pas effacer ses
+  données), 24 index dont `commandes(tenant_id, created_at)`,
+  `commandes(tenant_id, livreur_id)`, `livreurs(tenant_id, disponible)`, et
+  `UNIQUE (tenant_id, nom)` sur `zones` et `quartiers` à côté de l'ancienne
+  unicité.
+- Générée avec `prisma migrate diff` : `migrate dev` refuse de tourner sans
+  terminal à cause de l'avertissement sur les nouvelles unicités (sans
+  risque ici, tous les noms étant déjà uniques).
+- Retour arrière : `prisma/retour-arriere/20261105090000_tenant_id_metier.sql`,
+  testé (suppression puis réapplication).
+- Vérifications locales : comptages sans perte sur 36 tables, schéma et base
+  identiques après migration, `test/plateforme.e2e-spec.ts` vérifie les 21
+  colonnes et qu'aucune ligne n'appartient à une autre entreprise ; sur base
+  neuve, 45 tests e2e et 60 unitaires verts.
+- **En production** : l'ajout de colonne est instantané, mais chaque clé
+  étrangère relit sa table pour se valider. Avec les volumes actuels, c'est
+  l'affaire de secondes ; à rejouer d'abord sur la copie anonymisée pour
+  mesurer.
+
 ## Étape 3 — Appartenances et rôles
 
 **Migration.**

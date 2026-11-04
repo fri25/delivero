@@ -98,9 +98,15 @@ model Notation {
   commentaire  String?
   createdAt    DateTime      @default(now()) @map("created_at")
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
   @@unique([commandeId, cible])
   @@index([partenaireId])
   @@index([livreurId])
+  @@index([tenantId])
   @@map("notations")
 }
 
@@ -117,7 +123,13 @@ model AbonnementPush {
   auth      String
   createdAt DateTime @default(now()) @map("created_at")
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
   @@index([userId])
+  @@index([tenantId])
   @@map("abonnements_push")
 }
 
@@ -170,6 +182,12 @@ model Adresse {
   commandes                Commande[]
   commandesColisEnlevement CommandeColis[]
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
   @@map("adresses")
 }
 
@@ -196,6 +214,13 @@ model Zone {
   commandesEmplettes            CommandeEmplettes[]
   commandesCoursesExpress       CommandeCoursesExpress[]
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, nom])
+  @@index([tenantId])
   @@map("zones")
 }
 
@@ -219,6 +244,13 @@ model Quartier {
   commandesColis       CommandeColis[]
   etapesCoursesExpress EtapeCourseExpress[]
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, nom])
+  @@index([tenantId])
   @@map("quartiers")
 }
 
@@ -264,6 +296,12 @@ model Partenaire {
   commandesRepas CommandeRepas[]
   notations      Notation[]
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
   @@map("partenaires")
 }
 
@@ -286,6 +324,13 @@ model Livreur {
   mouvementsPortefeuille MouvementPortefeuille[]
   cloturesCaisse         ClotureCaisse[]
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
+  @@index([tenantId, disponible])
   @@map("livreurs")
 }
 
@@ -317,6 +362,12 @@ model MouvementPortefeuille {
   clotureCaisse   ClotureCaisse?            @relation(fields: [clotureCaisseId], references: [id])
   createdAt       DateTime                  @default(now()) @map("created_at")
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
   @@map("mouvements_portefeuille")
 }
 
@@ -342,6 +393,12 @@ model ClotureCaisse {
 
   mouvements MouvementPortefeuille[]
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
   @@map("clotures_caisse")
 }
 
@@ -411,6 +468,14 @@ model Commande {
   notations              Notation[]
   mouvementsPortefeuille MouvementPortefeuille[]
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, livreurId])
   @@map("commandes")
 }
 
@@ -448,6 +513,12 @@ model Plat {
 
   lignes LigneCommandeRepas[]
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
   @@map("plats")
 }
 
@@ -464,6 +535,12 @@ model CommandeRepas {
 
   lignes LigneCommandeRepas[]
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
   @@map("commandes_repas")
 }
 
@@ -477,6 +554,12 @@ model LigneCommandeRepas {
   prixUnitaire    Decimal       @map("prix_unitaire") @db.Decimal(10, 2)
   instructions    String?
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
   @@map("lignes_commande_repas")
 }
 
@@ -531,6 +614,12 @@ model Paiement {
   confirmeParId     String?   @map("confirme_par_id")
   confirmePar       User?     @relation("PaiementConfirmePar", fields: [confirmeParId], references: [id])
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
   @@map("paiements")
 }
 
@@ -570,6 +659,12 @@ model GrilleTarifaireColis {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
   @@map("grilles_tarifaires_colis")
 }
 
@@ -646,6 +741,12 @@ model CommandeColis {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
   @@map("commandes_colis")
 }
 
@@ -735,6 +836,12 @@ model CommandeEmplettes {
 
   articles ArticleEmplette[]
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
   @@map("commandes_emplettes")
 }
 
@@ -757,6 +864,12 @@ model ArticleEmplette {
 
   createdAt DateTime @default(now()) @map("created_at")
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
   @@map("articles_emplettes")
 }
 
@@ -787,6 +900,12 @@ model GrilleTarifaireCoursesExpress {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
   @@map("grilles_tarifaires_courses_express")
 }
 
@@ -817,6 +936,12 @@ model CommandeCoursesExpress {
 
   etapes EtapeCourseExpress[]
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
   @@map("commandes_courses_express")
 }
 
@@ -844,6 +969,12 @@ model EtapeCourseExpress {
 
   createdAt DateTime @default(now()) @map("created_at")
 
+  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
+  // keeps the previous API version working; removed at étape 4.
+  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
   @@map("etapes_courses_express")
 }
 
@@ -876,6 +1007,29 @@ model Tenant {
   secrets         TenantSecret[]
   journal         AuditLog[]
   memberships     Membership[]
+
+  // Business data of the company (étape 2).
+  zones                           Zone[]
+  quartiers                       Quartier[]
+  partenaires                     Partenaire[]
+  livreurs                        Livreur[]
+  commandes                       Commande[]
+  adresses                        Adresse[]
+  abonnementsPush                 AbonnementPush[]
+  plats                           Plat[]
+  commandesRepas                  CommandeRepas[]
+  lignesCommandeRepas             LigneCommandeRepas[]
+  commandesColis                  CommandeColis[]
+  commandesEmplettes              CommandeEmplettes[]
+  articlesEmplettes               ArticleEmplette[]
+  commandesCoursesExpress         CommandeCoursesExpress[]
+  etapesCoursesExpress            EtapeCourseExpress[]
+  paiements                       Paiement[]
+  notations                       Notation[]
+  mouvementsPortefeuille          MouvementPortefeuille[]
+  cloturesCaisse                  ClotureCaisse[]
+  grillesTarifairesColis          GrilleTarifaireColis[]
+  grillesTarifairesCoursesExpress GrilleTarifaireCoursesExpress[]
 
   @@map("tenants")
 }
