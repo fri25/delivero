@@ -12,6 +12,21 @@ export interface ParametresEntreprise {
   fonctionnalites: ReadonlySet<string>;
   /** Verified main domain, null if none. */
   domainePrincipal: string | null;
+  /** Shown by the apps (étape 6): brand, contacts, locale. */
+  identite: {
+    logoUrl: string | null;
+    couleurPrimaire: string;
+    couleurMarine: string;
+    couleurSignal: string;
+    telephoneContact: string | null;
+    whatsappSupport: string | null;
+    emailContact: string | null;
+    ville: string;
+    pays: string;
+    devise: string;
+    fuseauHoraire: string;
+    indicatifTelephone: string;
+  };
 }
 
 const DUREE_CACHE_MS = 60_000;
@@ -63,6 +78,20 @@ export class ParametresTenantService {
       tauxCommission: Number(tenant.parametres.tauxCommission),
       fonctionnalites: new Set(tenant.fonctionnalites.map((f) => f.code)),
       domainePrincipal: tenant.domaines[0]?.domaine ?? null,
+      identite: {
+        logoUrl: tenant.parametres.logoUrl,
+        couleurPrimaire: tenant.parametres.couleurPrimaire,
+        couleurMarine: tenant.parametres.couleurMarine,
+        couleurSignal: tenant.parametres.couleurSignal,
+        telephoneContact: tenant.parametres.telephoneContact,
+        whatsappSupport: tenant.parametres.whatsappSupport,
+        emailContact: tenant.parametres.emailContact,
+        ville: tenant.parametres.ville,
+        pays: tenant.parametres.pays,
+        devise: tenant.parametres.devise,
+        fuseauHoraire: tenant.parametres.fuseauHoraire,
+        indicatifTelephone: tenant.parametres.indicatifTelephone,
+      },
     };
     this.cache.set(tenantId, { valeur, expire: Date.now() + DUREE_CACHE_MS });
     return valeur;

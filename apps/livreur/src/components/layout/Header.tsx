@@ -5,12 +5,16 @@ import { DisponibiliteToggle } from '@/components/layout/DisponibiliteToggle';
 import { useAuthStore } from '@/stores/auth-store';
 import { desactiverPush } from '@/lib/push';
 import { useFileActionsStore } from '@/stores/file-actions-store';
+import { useEntreprise } from '@/lib/entreprise';
+import { decouperNom } from '@delivero/config/entreprise';
 
 /**
  * Brand, availability switch and sign-out. Navigation lives in the bottom
  * tab bar (BottomNav): one tap from the thumb, on every screen size.
  */
 export function Header() {
+  const entreprise = useEntreprise();
+  const [debutNom, finNom] = decouperNom(entreprise.nomCommercial);
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
@@ -21,7 +25,8 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-3xl items-center justify-between gap-3 px-4">
         <Link to="/" className="min-w-0 focus-visible:outline-none">
           <span className="block font-heading text-xl leading-none font-extrabold tracking-[-0.03em]">
-            Chap<span className="text-primary">Express</span>
+            {debutNom}
+            {finNom && <span className="text-primary">{finNom}</span>}
           </span>
           <span className="mt-1 block truncate text-xs text-muted-foreground">{user ? user.nom : 'Espace livreur'}</span>
         </Link>

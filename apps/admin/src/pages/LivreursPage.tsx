@@ -10,6 +10,7 @@ import { ZoneSelect } from '@/components/zones/ZoneSelect';
 import { formatPrixFcfa } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { Livreur } from '@/api/types';
+import { useEntreprise } from '@/lib/entreprise';
 
 function NouveauLivreurForm({ onFermer }: { onFermer: () => void }) {
   const createLivreur = useCreateLivreur();
@@ -299,6 +300,7 @@ function LivreurRow({ livreur }: { livreur: Livreur }) {
 }
 
 export function LivreursPage() {
+  const entreprise = useEntreprise();
   const { data: livreurs, isPending } = useLivreurs();
   const [creationOuverte, setCreationOuverte] = useState(false);
 
@@ -333,7 +335,7 @@ export function LivreursPage() {
       ) : !livreurs || livreurs.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border/80 bg-card/60 p-8 sm:p-12 text-center shadow-xs">
           <p className="font-heading text-lg font-bold text-foreground">Aucun coursier enregistré</p>
-          <p className="mt-1 text-sm text-muted-foreground">Ajoutez les premiers livreurs de la flotte ChapExpress.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Ajoutez les premiers livreurs de la flotte {entreprise.nomCommercial}.</p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-3xl border border-border/70 bg-card shadow-xs">

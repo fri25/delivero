@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { WHATSAPP_SUPPORT } from '@/lib/support';
+import { useLienSupport } from '@/lib/support';
 
 const QUESTIONS = [
   {
@@ -17,6 +17,7 @@ const QUESTIONS = [
 ];
 
 export function HelpPage() {
+  const lienSupport = useLienSupport();
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <header>
@@ -26,7 +27,7 @@ export function HelpPage() {
           son numéro.
         </p>
         <Button asChild className="mt-4 h-11 px-5 text-[15px] font-bold">
-          <a href={WHATSAPP_SUPPORT} target="_blank" rel="noreferrer">
+          <a href={lienSupport} target="_blank" rel="noreferrer">
             Écrire sur WhatsApp
           </a>
         </Button>

@@ -17,8 +17,10 @@ import {
   type FiltresCatalogue,
 } from '@/lib/filtres-catalogue';
 import type { TypeCuisine } from '@delivero/config/types-cuisine';
+import { useEntreprise } from '@/lib/entreprise';
 
 export function RepasHomePage() {
+  const entreprise = useEntreprise();
   // Prefilled by the home search box (/repas?q=…).
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(() => searchParams.get('q') ?? '');
@@ -56,7 +58,7 @@ export function RepasHomePage() {
           Repas
         </h1>
         <p className="text-sm text-muted-foreground">
-          Restaurants de Natitingou livrés en ~30 min · paiement{' '}
+          Restaurants de {entreprise.ville} livrés en ~30 min · paiement{' '}
           {ESPECES_ACTIF ? 'en espèces ou Mobile Money' : 'par Mobile Money'}.
         </p>
       </header>
@@ -118,7 +120,7 @@ export function RepasHomePage() {
               ? `Résultats pour « ${search} »`
               : filtresActifs(filtres)
                 ? 'Restaurants filtrés'
-                : 'Tous les restaurants à Natitingou'}
+                : `Tous les restaurants à ${entreprise.ville}`}
           </h2>
           <span className="shrink-0 text-sm text-muted-foreground">
             {visibleRestaurants.length} restaurant{visibleRestaurants.length > 1 ? 's' : ''}

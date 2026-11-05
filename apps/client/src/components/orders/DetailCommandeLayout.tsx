@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { WHATSAPP_SUPPORT } from '@/lib/support';
+import { useLienSupport } from '@/lib/support';
 
 /**
  * Shared frame of the order detail pages (Repas, Colis, Courses express).
@@ -26,6 +26,7 @@ export function DetailCommandeLayout({
   actions: ReactNode;
   children: ReactNode;
 }) {
+  const lienSupport = useLienSupport();
   const dateLisible = new Intl.DateTimeFormat('fr-FR', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -48,7 +49,7 @@ export function DetailCommandeLayout({
         <aside className="space-y-3 lg:sticky lg:top-24 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
           {actions}
           <a
-            href={WHATSAPP_SUPPORT}
+            href={lienSupport}
             target="_blank"
             rel="noreferrer"
             className="carte flex min-h-12 items-center justify-center px-4 text-sm font-bold text-[#1f9d55] hover:shadow-md"

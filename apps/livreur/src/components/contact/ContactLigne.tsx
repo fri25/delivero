@@ -1,12 +1,14 @@
 import { lienWhatsApp } from '@delivero/config/whatsapp';
 import { MessageCircle, Phone } from 'lucide-react';
+import { useEntreprise } from '@/lib/entreprise';
 
 /**
  * A person the livreur may need to reach (client, recipient): call or
  * WhatsApp in one tap (F-CLI-26, decision of 13/10).
  */
 export function ContactLigne({ nom, telephone }: { nom: string; telephone: string }) {
-  const whatsapp = lienWhatsApp(telephone, 'Bonjour, ici votre livreur ChapExpress.');
+  const entreprise = useEntreprise();
+  const whatsapp = lienWhatsApp(telephone, `Bonjour, ici votre livreur ${entreprise.nomCommercial}.`);
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-1">
       <span className="font-semibold text-foreground text-sm">{nom}</span>

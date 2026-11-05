@@ -28,8 +28,10 @@ import { ContactInviteFields } from '@/components/invite/ContactInviteFields';
 import { formatPrixFcfa } from '@/lib/format';
 import { choixQuartierComplet, quartierChoisi } from '@/lib/quartiers';
 import type { ModePaiement } from '@/api/types';
+import { useEntreprise } from '@/lib/entreprise';
 
 export function CartPage() {
+  const entreprise = useEntreprise();
   const token = useAuthStore((state) => state.token);
   const cart = useCartStore();
   const createCommande = useCreateCommandeRepas();
@@ -51,7 +53,8 @@ export function CartPage() {
   const submissionLock = useRef(false);
 
   const sousTotal = cart.items.reduce((sum, item) => sum + item.prixUnitaire * item.quantite, 0);
-  // Décompte transparent (RG-08) : frais de livraison + 15 % de service,
+  // Décompte transparent (RG-08) : frais de livraison + commission de service
+  // de l'entreprise (15 % chez CHAP EXPRESS, étape 6),
   // calculés sur (plats + livraison) — même formule que côté API. Les frais
   // de livraison sont ceux du quartier de livraison (Q-28, 13/10).
   const quartierLivraison = token
@@ -59,7 +62,7 @@ export function CartPage() {
     : quartierChoisi({ quartierId: adresseInvite.quartierId, precision: '' }, quartiers);
   const fraisLivraison = quartierLivraison ? Number(quartierLivraison.fraisLivraison) : undefined;
   const fraisService =
-    fraisLivraison !== undefined ? Math.round((sousTotal + fraisLivraison) * 0.15) : undefined;
+    fraisLivraison !== undefined ? Math.round((sousTotal + fraisLivraison) * (entreprise.tauxCommission / 100)) : undefined;
   const total = sousTotal + (fraisLivraison ?? 0) + (fraisService ?? 0);
 
   if (cart.items.length === 0) {
@@ -67,7 +70,7 @@ export function CartPage() {
       <div className="mx-auto max-w-md pt-4">
         <h1 className="titre-page">Votre panier est vide</h1>
         <p className="mt-2 text-[15px] text-muted-foreground">
-          Choisissez un restaurant à Natitingou et ajoutez vos plats avec le bouton +.
+          Choisissez un restaurant à {entreprise.ville} et ajoutez vos plats avec le bouton +.
         </p>
         <Button asChild className="mt-6 h-11 px-5 text-[15px] font-bold">
           <Link to="/repas">Voir les restaurants</Link>
@@ -214,8 +217,8 @@ export function CartPage() {
               </div>
               <div className="flex justify-between gap-3 text-muted-foreground">
                 <dt>
-                  Frais de service ChapExpress
-                  <span className="block text-xs text-muted-foreground/80">15 % des plats + livraison</span>
+                  Frais de service {entreprise.nomCommercial}
+                  <span className="block text-xs text-muted-foreground/80">{entreprise.tauxCommission} % des plats + livraison</span>
                 </dt>
                 <dd className="shrink-0 font-medium text-foreground">{fraisService !== undefined ? formatPrixFcfa(fraisService) : '—'}</dd>
               </div>

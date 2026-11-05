@@ -440,6 +440,38 @@ EXPRESS, identiques.
 configuration CHAP EXPRESS est embarquée en repli dans le build tant que
 CHAP EXPRESS est seul.
 
+**État au 06/11/2026** (branche `multi-tenant`, non déployé) :
+
+- API : `GET /api/tenant` (public) : nom, logo, couleurs, contacts, ville,
+  pays, devise, fuseau, indicatif, commission et fonctionnalités réellement
+  ouvertes (entreprise ∩ plafond de la plateforme). Ni secret ni domaine.
+- `packages/config/entreprise.ts`, partagé par les 4 apps : valeurs CHAP
+  EXPRESS par défaut (premier lancement hors ligne), chargement et cache
+  local de `/api/tenant`, couleurs appliquées aux variables CSS **seulement
+  si elles diffèrent** de celles de CHAP EXPRESS (le thème de `marque.css`
+  reste intact), logotype en deux couleurs (`ChapExpress` → Chap +
+  Express, tout autre nom d'un seul tenant), lien et numéro WhatsApp du
+  support. Paramètre `?entreprise=<slug>` (mémorisé, envoyé en `X-Tenant`)
+  pour ouvrir une entreprise en local ou sur un domaine partagé ; sinon
+  l'API lit l'`Origin`.
+- Apps : nom, ville, support et commission (affichage du panier et du
+  détail de commande) lus dans l'entreprise ; services fermés par
+  l'entreprise masqués dans l'en-tête, l'accueil et le pied de page du
+  client. Les interrupteurs compilés (`perimetre-v1.ts`) restent le
+  plafond ; ailleurs, l'API refuse depuis l'étape 5.
+- Non modifié volontairement : les clés de stockage local
+  (`chapexpress-…`), dont le changement effacerait panier et file hors
+  ligne des téléphones ; la devise affichée (FCFA, toutes les entreprises
+  prévues sont au Bénin).
+- **Reporté à l'étape 10** : le manifeste PWA par entreprise (nom et icône
+  installés). Il est généré au build ; le servir dynamiquement change
+  l'installation des PWA existantes, à ne faire qu'avec la deuxième
+  entreprise et ses domaines.
+- Vérifié : capture de l'accueil CHAP EXPRESS identique à celle d'avant ;
+  entreprise de démonstration locale (`?entreprise=demo`) affichée avec son
+  nom, ses couleurs, sa ville, son support, sans les restaurants des autres
+  et sans Courses express. Tests : e2e 67, client 53, livreur 8,
+  partenaires 7 ; les 4 apps compilent.
 ## Étape 7 — Row-Level Security
 
 **Migration.**

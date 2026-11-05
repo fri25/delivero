@@ -8,6 +8,7 @@ import { ActiverAlertesCard } from '@/components/taches/ActiverAlertesCard';
 import { useMoi } from '@/api/livreur';
 import { useTachesDisponibles } from '@/api/taches';
 import type { ServiceLivreur } from '@/lib/taches';
+import { useEntreprise } from '@/lib/entreprise';
 
 const SERVICES: ServiceLivreur[] = EMPLETTES_ACTIF
   ? ['repas', 'colis', 'courses_express', 'emplettes']
@@ -18,6 +19,7 @@ const SERVICES: ServiceLivreur[] = EMPLETTES_ACTIF
  * (the one waiting longest is the most urgent). Refreshed by polling.
  */
 export function APrendrePage() {
+  const entreprise = useEntreprise();
   const { data: moi } = useMoi();
   const { taches, isPending, isError } = useTachesDisponibles();
   const [filtre, setFiltre] = useState<ServiceLivreur | 'tous'>('tous');
@@ -38,7 +40,7 @@ export function APrendrePage() {
           </span>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          Courses disponibles à Natitingou · Les plus urgentes en premier.
+          Courses disponibles à {entreprise.ville} · Les plus urgentes en premier.
         </p>
       </header>
 

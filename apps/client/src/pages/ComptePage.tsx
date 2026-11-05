@@ -3,11 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LigneCompte } from '@/components/compte/LigneCompte';
 import { Button } from '@/components/ui/button';
 import { desactiverPush } from '@/lib/push';
-import { WHATSAPP_SUPPORT } from '@/lib/support';
 import { useAuthStore } from '@/stores/auth-store';
+import { useEntreprise } from '@/lib/entreprise';
+import { useLienSupport } from '@/lib/support';
+import { numeroLocal } from '@delivero/config/entreprise';
 
 /** Account tab: everything that is not ordering, gathered in one place. */
 export function ComptePage() {
+  const entreprise = useEntreprise();
+  const lienSupport = useLienSupport();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
@@ -26,7 +30,7 @@ export function ComptePage() {
           <div>
             <h1 className="titre-page">Votre compte</h1>
             <p className="mt-2 text-[15px] text-muted-foreground">
-              Connectez-vous avec votre numéro pour retrouver vos adresses et suivre vos commandes à Natitingou.
+              Connectez-vous avec votre numéro pour retrouver vos adresses et suivre vos commandes à {entreprise.ville}.
               Pas de mot de passe à retenir : un code par SMS ou WhatsApp suffit.
             </p>
           </div>
@@ -49,7 +53,7 @@ export function ComptePage() {
           </>
         )}
         <LigneCompte to="/aide" icon={CircleHelp} label="Aide & FAQ" detail="Questions fréquentes" />
-        <LigneCompte href={WHATSAPP_SUPPORT} icon={MessageCircle} label="Écrire au support" detail="WhatsApp · 01 57 86 69 59" />
+        <LigneCompte href={lienSupport} icon={MessageCircle} label="Écrire au support" detail={`WhatsApp · ${numeroLocal(entreprise, entreprise.whatsappSupport)}`} />
       </ul>
 
       {user && (

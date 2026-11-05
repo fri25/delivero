@@ -3,6 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { NouveauQuartierForm } from '@/components/quartiers/NouveauQuartierForm';
 import { QuartierLigne } from '@/components/quartiers/QuartierLigne';
 import { useQuartiers } from '@/api/quartiers';
+import { useEntreprise } from '@/lib/entreprise';
 
 /**
  * Neighbourhoods and their delivery price (Q-28, decided 13/10): the client's
@@ -10,6 +11,7 @@ import { useQuartiers } from '@/api/quartiers';
  * express price (dearest stop × number of stops).
  */
 export function QuartiersPage() {
+  const entreprise = useEntreprise();
   const { data: quartiers, isPending } = useQuartiers();
 
   const total = quartiers?.length ?? 0;
@@ -29,7 +31,7 @@ export function QuartiersPage() {
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Gestion du maillage géographique de Natitingou et de la grille tarifaire de livraison.
+            Gestion du maillage géographique de {entreprise.ville} et de la grille tarifaire de livraison.
           </p>
         </div>
 
@@ -67,7 +69,7 @@ export function QuartiersPage() {
           </div>
           <p className="text-sm font-semibold text-foreground">Aucun quartier configuré</p>
           <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-            Ajoutez le premier quartier de Natitingou ci-dessus pour initialiser la grille tarifaire.
+            Ajoutez le premier quartier de {entreprise.ville} ci-dessus pour initialiser la grille tarifaire.
           </p>
         </div>
       ) : (

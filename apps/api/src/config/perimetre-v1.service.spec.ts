@@ -17,6 +17,20 @@ function perimetre(env: Record<string, unknown>, fonctionnalites: string[]) {
         tauxCommission: 15,
         fonctionnalites: new Set(fonctionnalites),
         domainePrincipal: null,
+        identite: {
+          logoUrl: null,
+          couleurPrimaire: '#000000',
+          couleurMarine: '#000000',
+          couleurSignal: '#000000',
+          telephoneContact: null,
+          whatsappSupport: null,
+          emailContact: null,
+          ville: 'Test',
+          pays: 'BJ',
+          devise: 'XOF',
+          fuseauHoraire: 'Africa/Porto-Novo',
+          indicatifTelephone: '+229',
+        },
       }),
   } as unknown as ParametresTenantService;
   return new PerimetreV1Service(new ConfigService(env), parametres);
@@ -53,6 +67,20 @@ describe('PerimetreV1Service', () => {
     await expect(
       p.assertServiceOuvert(TypeService.emplettes),
     ).rejects.toThrow();
+  });
+
+  it('ne montre aux apps que ce que les deux ouvrent', async () => {
+    const p = perimetre(env, [
+      'service.repas',
+      'service.emplettes',
+      'paiement.especes',
+      'colis.contre_remboursement',
+    ]);
+    await expect(p.fonctionnalitesOuvertes()).resolves.toEqual([
+      'colis.contre_remboursement',
+      'paiement.especes',
+      'service.repas',
+    ]);
   });
 
   it('laisse passer un colis sans contre-remboursement', async () => {

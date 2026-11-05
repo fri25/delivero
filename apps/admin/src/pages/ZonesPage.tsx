@@ -9,8 +9,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCreateZone, useUpdateZone, useZones } from '@/api/zones';
 import { formatPrixFcfa } from '@/lib/format';
 import type { Zone } from '@/api/types';
+import { useEntreprise } from '@/lib/entreprise';
 
 function NouvelleZoneForm() {
+  const entreprise = useEntreprise();
   const createZone = useCreateZone();
   const [ouvert, setOuvert] = useState(false);
   const [nom, setNom] = useState('');
@@ -82,7 +84,7 @@ function NouvelleZoneForm() {
           <Input
             id="zone-nom"
             className="rounded-xl"
-            placeholder="Ex. Natitingou Centre"
+            placeholder={`Ex. ${entreprise.ville} Centre`}
             value={nom}
             onChange={(e) => setNom(e.target.value)}
             required

@@ -2,15 +2,17 @@ import { lienWhatsApp } from '@delivero/config/whatsapp';
 import { Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { LivreurContact } from '@/api/types';
+import { useEntreprise } from '@/lib/entreprise';
 
 /**
  * F-CLI-26: who delivers, with a one-tap call or WhatsApp message (decision of
  * 13/10: WhatsApp link rather than in-app messaging).
  */
 export function LivreurCard({ livreur, actif }: { livreur: LivreurContact | null; actif: boolean }) {
+  const entreprise = useEntreprise();
   if (!livreur) return null;
   const whatsapp = actif
-    ? lienWhatsApp(livreur.user.telephone, 'Bonjour, je suis votre client ChapExpress.')
+    ? lienWhatsApp(livreur.user.telephone, `Bonjour, je suis votre client ${entreprise.nomCommercial}.`)
     : null;
 
   return (

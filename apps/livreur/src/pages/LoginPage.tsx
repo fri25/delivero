@@ -6,8 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLogin } from '@/api/auth';
 import { useAuthStore } from '@/stores/auth-store';
+import { useEntreprise } from '@/lib/entreprise';
+import { decouperNom } from '@delivero/config/entreprise';
 
 export function LoginPage() {
+  const entreprise = useEntreprise();
+  const [debutNom, finNom] = decouperNom(entreprise.nomCommercial);
   const navigate = useNavigate();
   const location = useLocation();
   const login = useAuthStore((state) => state.login);
@@ -22,7 +26,8 @@ export function LoginPage() {
     <div className="mx-auto max-w-sm space-y-6">
       <div>
         <p className="font-heading text-2xl leading-none font-extrabold tracking-[-0.03em]">
-          Chap<span className="text-primary">Express</span>
+          {debutNom}
+            {finNom && <span className="text-primary">{finNom}</span>}
         </p>
         <h1 className="titre-page mt-6">Espace livreur</h1>
         <p className="mt-2 text-[15px] text-muted-foreground">Connectez-vous pour voir les courses à prendre.</p>

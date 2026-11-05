@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { jouerAlerte } from '../lib/alarme';
 import { useMesCommandes } from './commandes';
+import { entrepriseCourante } from '@delivero/config/entreprise';
 
 const INTERVALLE_MS = 6000;
 const TITRE = document.title;
@@ -15,7 +16,7 @@ export function useAlarmeCommandes(): number {
   const enAttente = commandes?.filter((commande) => commande.statut === 'en_attente_acceptation').length ?? 0;
 
   useEffect(() => {
-    document.title = enAttente > 0 ? `(${enAttente}) Nouvelle commande — ChapExpress` : TITRE;
+    document.title = enAttente > 0 ? `(${enAttente}) Nouvelle commande — ${entrepriseCourante().nomCommercial}` : TITRE;
     if (enAttente === 0) return;
     jouerAlerte();
     const minuterie = window.setInterval(jouerAlerte, INTERVALLE_MS);

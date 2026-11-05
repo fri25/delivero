@@ -6,6 +6,7 @@ import { formatPrixFcfa } from '@/lib/format';
 import { useMaintenant } from '@/lib/maintenant';
 import { bilan, evolution, joursGlissants, JOURS_PAR_PERIODE, type Bilan, type Periode } from '@/lib/ventes';
 import { cn } from '@/lib/utils';
+import { useEntreprise } from '@/lib/entreprise';
 
 const PERIODES: { valeur: Periode; label: string; comparaison: string; precedent: string }[] = [
   { valeur: 'jour', label: 'Aujourd’hui', comparaison: 'par rapport à hier', precedent: 'hier' },
@@ -195,6 +196,7 @@ function TopPlats({ plats }: { plats: Bilan['topPlats'] }) {
  * the period before. Amounts are the restaurant's dishes only.
  */
 export function VentesPage() {
+  const entreprise = useEntreprise();
   const { data: commandes, isPending, isError } = useMesCommandes();
   const maintenant = useMaintenant(60_000);
   const [periode, setPeriode] = useState<Periode>('jour');
@@ -293,7 +295,7 @@ export function VentesPage() {
 
       <div className="rounded-xl bg-muted p-3.5 text-sm text-muted-foreground">
         Montant brut de vos plats pour les commandes remises au livreur. Les frais de livraison et de service sont payés
-        par le client en sus. Les relevés de reversement bancaire ou mobile money sont administrés par ChapExpress.
+        par le client en sus. Les relevés de reversement bancaire ou mobile money sont administrés par {entreprise.nomCommercial}.
       </div>
     </div>
   );

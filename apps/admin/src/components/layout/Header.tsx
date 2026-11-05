@@ -2,9 +2,11 @@ import { LogOut, ShieldCheck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/auth-store';
+import { useEntreprise } from '@/lib/entreprise';
 
 /** Brand, signed-in name and sign-out; the menu lives in Navigation. */
 export function Header() {
+  const entreprise = useEntreprise();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
@@ -18,12 +20,12 @@ export function Header() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-heading text-lg font-bold tracking-tight text-white">ChapExpress</span>
+              <span className="font-heading text-lg font-bold tracking-tight text-white">{entreprise.nomCommercial}</span>
               <span className="rounded-full bg-cyan-400/20 px-2 py-0.5 text-[10px] font-bold text-cyan-300 ring-1 ring-cyan-400/30">
                 Administration
               </span>
             </div>
-            <span className="block text-[11px] text-white/60">Supervision & Gestion Natitingou</span>
+            <span className="block text-[11px] text-white/60">Supervision & Gestion {entreprise.ville}</span>
           </div>
         </Link>
 

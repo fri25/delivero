@@ -432,6 +432,46 @@ describe('Isolation entre entreprises (e2e)', () => {
     });
   });
 
+  // Étape 6: what the apps read to show the company's identity.
+  describe('identité publique (GET /tenant)', () => {
+    it('CHAP EXPRESS garde son nom, sa ville et ses 15 %', async () => {
+      const res = await request(server).get('/api/tenant').expect(200);
+      expect(res.body).toMatchObject({
+        slug: 'chapexpress',
+        nomCommercial: 'ChapExpress',
+        ville: 'Natitingou',
+        tauxCommission: 15,
+        couleurPrimaire: '#1450d8',
+      });
+    });
+
+    it('B voit son identité et seulement ce qu’elle ouvre', async () => {
+      const res = await enB(request(server).get('/api/tenant')).expect(200);
+      expect(res.body).toMatchObject({
+        slug: B.slug,
+        nomCommercial: 'Livraisons B',
+        ville: 'Djougou',
+        tauxCommission: 10,
+      });
+      expect(
+        (res.body as { fonctionnalites: string[] }).fonctionnalites,
+      ).toEqual([
+        'paiement.especes',
+        'paiement.mobile_money',
+        'service.colis',
+        'service.repas',
+      ]);
+    });
+
+    it('ne livre ni secret ni liste de domaines', async () => {
+      const res = await enB(request(server).get('/api/tenant')).expect(200);
+      const corps = JSON.stringify(res.body).toLowerCase();
+      for (const interdit of ['secret', 'cle', 'fedapay', 'domaine']) {
+        expect(corps).not.toContain(interdit);
+      }
+    });
+  });
+
   // Étape 5: settings, features and FedaPay account per company.
   describe('configuration par entreprise', () => {
     it('B est facturée à sa propre commission (10 %), pas aux 15 % de CHAP EXPRESS', async () => {

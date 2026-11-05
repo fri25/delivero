@@ -7,10 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLogin } from '@/api/auth';
 import { useAuthStore } from '@/stores/auth-store';
+import { useEntreprise } from '@/lib/entreprise';
 
 const ADMIN_ROLE_NAME = 'admin_dispatcher';
 
 export function LoginPage() {
+  const entreprise = useEntreprise();
   const navigate = useNavigate();
   const location = useLocation();
   const login = useAuthStore((state) => state.login);
@@ -31,7 +33,7 @@ export function LoginPage() {
           </div>
           <div>
             <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary mb-1">
-              ChapExpress Back-Office
+              {entreprise.nomCommercial} Back-Office
             </div>
             <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">
               Portail Dispatch & Admin

@@ -1,3 +1,4 @@
+import { entrepriseCourante } from '@delivero/config/entreprise';
 export interface PositionGps {
   latitude: number;
   longitude: number;
@@ -23,7 +24,7 @@ export function lirePositionGps(): Promise<PositionGps> {
         reject(
           new Error(
             error.code === error.PERMISSION_DENIED
-              ? 'Autorisez la localisation pour ChapExpress dans les réglages du navigateur.'
+              ? `Autorisez la localisation pour ${entrepriseCourante().nomCommercial} dans les réglages du navigateur.`
               : 'Position introuvable. Réessayez à l’extérieur ou près d’une fenêtre.',
           ),
         ),

@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useClotures, useCloturerCaisse, usePortefeuille, useRecapJournalier } from '@/api/livreur';
 import { formatDateHeure, formatPrixFcfa } from '@/lib/format';
 import type { ClotureCaisse, TypeService } from '@/api/types';
+import { useEntreprise } from '@/lib/entreprise';
 
 const LABELS_SERVICE: Record<TypeService, string> = {
   repas: 'Repas',
@@ -228,6 +229,7 @@ function HistoriqueClotures() {
 }
 
 export function PortefeuillePage() {
+  const entreprise = useEntreprise();
   const { data: portefeuille, isPending } = usePortefeuille();
 
   if (isPending) {
@@ -260,10 +262,10 @@ export function PortefeuillePage() {
         <h1 className="titre-page">Mon portefeuille</h1>
         <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
           {EMPLETTES_ACTIF
-            ? 'Avance en cours (Emplettes financées par vous) et solde en espèces à reverser à ChapExpress (Repas, Colis, Courses express, Emplettes).'
+            ? `Avance en cours (Emplettes financées par vous) et solde en espèces à reverser à ${entreprise.nomCommercial} (Repas, Colis, Courses express, Emplettes).`
             : afficherCaisse
-              ? 'Solde en espèces à reverser à ChapExpress (Repas, Colis, Courses express).'
-              : "Les paiements se font par Mobile Money : vous n'avez aucune espèce à reverser à ChapExpress."}{' '}
+              ? `Solde en espèces à reverser à ${entreprise.nomCommercial} (Repas, Colis, Courses express).`
+              : `Les paiements se font par Mobile Money : vous n'avez aucune espèce à reverser à ${entreprise.nomCommercial}.`}{' '}
           Mis à jour à chaque course prise ou livrée.
         </p>
       </div>

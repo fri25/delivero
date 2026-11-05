@@ -6,8 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLogin } from '@/api/auth';
 import { useAuthStore } from '@/stores/auth-store';
+import { useEntreprise } from '@/lib/entreprise';
+import { decouperNom } from '@delivero/config/entreprise';
 
 export function LoginPage() {
+  const entreprise = useEntreprise();
+  const [debutNom, finNom] = decouperNom(entreprise.nomCommercial);
   const navigate = useNavigate();
   const location = useLocation();
   const login = useAuthStore((state) => state.login);
@@ -23,7 +27,8 @@ export function LoginPage() {
       <div className="carte space-y-6 p-6 sm:p-8">
         <div>
           <p className="font-heading text-2xl leading-none font-extrabold tracking-[-0.03em]">
-            Chap<span className="text-primary">Express</span>
+            {debutNom}
+            {finNom && <span className="text-primary">{finNom}</span>}
           </p>
           <h1 className="titre-page mt-6">Espace partenaire</h1>
           <p className="mt-2 text-[15px] text-muted-foreground">
@@ -86,7 +91,7 @@ export function LoginPage() {
         </form>
 
         <div className="rounded-xl bg-muted p-3 text-center text-sm text-muted-foreground">
-          Pas encore de compte partenaire ? Contactez ChapExpress pour l'ouverture et la validation de votre fiche établissement.
+          Pas encore de compte partenaire ? Contactez {entreprise.nomCommercial} pour l'ouverture et la validation de votre fiche établissement.
         </div>
       </div>
     </div>

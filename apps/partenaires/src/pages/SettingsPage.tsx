@@ -11,6 +11,7 @@ import { useMonRestaurant, useUpdateMonRestaurant } from '@/api/restaurant';
 import { envoyerPhoto, miniature } from '@/lib/medias';
 import { cn } from '@/lib/utils';
 import type { Restaurant } from '@/api/types';
+import { useEntreprise } from '@/lib/entreprise';
 
 function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
   const updateRestaurant = useUpdateMonRestaurant();
@@ -234,6 +235,7 @@ function SettingsForm({ restaurant }: { restaurant: Restaurant }) {
 }
 
 export function SettingsPage() {
+  const entreprise = useEntreprise();
   const { data: restaurant, isPending } = useMonRestaurant();
 
   if (isPending) {
@@ -253,13 +255,13 @@ export function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="titre-page">Réglages du restaurant</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Configurez les paramètres de votre établissement et vos informations ChapExpress.</p>
+        <p className="text-sm text-muted-foreground mt-0.5">Configurez les paramètres de votre établissement et vos informations {entreprise.nomCommercial}.</p>
       </div>
 
       <SettingsForm key={restaurant.id} restaurant={restaurant} />
 
       <div className="carte space-y-2 p-4 text-sm sm:p-5">
-        <p className="font-bold">Conditions partenaires ChapExpress</p>
+        <p className="font-bold">Conditions partenaires {entreprise.nomCommercial}</p>
         <div className="space-y-1 text-xs sm:text-sm text-muted-foreground">
           <p>
             <span className="font-medium text-foreground">Taux de commission :</span>{' '}

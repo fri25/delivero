@@ -6,12 +6,16 @@ import { SonBouton } from '@/components/layout/SonBouton';
 import { useMonRestaurant } from '@/api/restaurant';
 import { useAuthStore } from '@/stores/auth-store';
 import { desactiverPush } from '@/lib/push';
+import { useEntreprise } from '@/lib/entreprise';
+import { decouperNom } from '@delivero/config/entreprise';
 
 /**
  * Restaurant name, open/closed switch, sound unlock and sign-out. Navigation
  * lives in the bottom tab bar (BottomNav).
  */
 export function Header() {
+  const entreprise = useEntreprise();
+  const [debutNom, finNom] = decouperNom(entreprise.nomCommercial);
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
@@ -26,12 +30,14 @@ export function Header() {
             <>
               <span className="block truncate text-lg leading-tight font-extrabold tracking-tight">{restaurant.nom}</span>
               <span className="block truncate text-xs text-muted-foreground">
-                Chap<span className="font-semibold">Express</span> · Partenaire
+                {debutNom}
+                {finNom && <span className="font-semibold">{finNom}</span>} · Partenaire
               </span>
             </>
           ) : (
             <span className="block font-heading text-xl leading-none font-extrabold tracking-[-0.03em]">
-              Chap<span className="text-primary">Express</span>
+              {debutNom}
+              {finNom && <span className="text-primary">{finNom}</span>}
             </span>
           )}
         </Link>

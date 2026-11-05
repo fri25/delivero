@@ -7,16 +7,18 @@ import { STATUTS_ANNULABLES } from '@/api/incidents';
 import { usePaiementRecu } from '@/api/saisie-manuelle';
 import { formatPrixFcfa } from '@/lib/format';
 import type { AdminCommandeRow } from '@/api/types';
+import { useEntreprise } from '@/lib/entreprise';
 
 const NON_PAYE = ['en_attente', 'echoue'];
 
 /**
  * F-ADM-04 (decision of 13/10): an order entered by the dispatcher is paid by
- * Mobile Money sent straight to the ChapExpress number. Once the money is
+ * Mobile Money sent straight to the company's number. Once the money is
  * there, the dispatcher enters the operator's reference and the order goes
  * out to the restaurant or the livreurs. Unpaid, it expires after 30 minutes.
  */
 export function PaiementRecuBouton({ row }: { row: AdminCommandeRow }) {
+  const entreprise = useEntreprise();
   const dialogue = useRef<HTMLDialogElement>(null);
   const [reference, setReference] = useState('');
   const confirmer = usePaiementRecu();
@@ -66,7 +68,7 @@ export function PaiementRecuBouton({ row }: { row: AdminCommandeRow }) {
           <div>
             <h2 className="font-heading text-lg font-semibold">Confirmer le paiement</h2>
             <p className="text-sm text-muted-foreground">
-              Vérifiez sur le téléphone ChapExpress que {formatPrixFcfa(row.montantTotal)} sont bien
+              Vérifiez sur le téléphone {entreprise.nomCommercial} que {formatPrixFcfa(row.montantTotal)} sont bien
               arrivés, puis saisissez la référence du SMS Mobile Money.
             </p>
           </div>

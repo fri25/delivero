@@ -1,3 +1,4 @@
+import { enTetesEntreprise } from '@delivero/config/entreprise';
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
 
 interface ApiErrorBody {
@@ -28,7 +29,8 @@ interface RequestOptions {
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, token, query } = options;
 
-  const headers: Record<string, string> = {};
+  // Company forced by ?entreprise= (étape 6); otherwise the API reads Origin.
+  const headers: Record<string, string> = { ...enTetesEntreprise() };
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
   }

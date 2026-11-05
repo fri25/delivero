@@ -8,6 +8,8 @@ import { estPageAvecBarre, estPageRacine } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
 import { useCartStore } from '@/stores/cart-store';
+import { useEntreprise } from '@/lib/entreprise';
+import { codeService, decouperNom, estOuvert } from '@delivero/config/entreprise';
 
 // Active link: ink + underline, no filled pill.
 const lienDesktop = ({ isActive }: { isActive: boolean }) =>
@@ -25,6 +27,9 @@ const SERVICES = [
 ];
 
 export function Header() {
+  const entreprise = useEntreprise();
+  const [debutNom, finNom] = decouperNom(entreprise.nomCommercial);
+  const services = SERVICES.filter((service) => estOuvert(entreprise, codeService(service.to)));
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const user = useAuthStore((state) => state.user);
@@ -64,7 +69,8 @@ export function Header() {
             to="/"
             className="shrink-0 font-heading text-xl leading-none font-extrabold tracking-[-0.03em] md:text-[22px]"
           >
-            Chap<span className="text-primary">Express</span>
+            {debutNom}
+            {finNom && <span className="text-primary">{finNom}</span>}
           </Link>
 
           {/* The home hero carries its own zone picker. */}
@@ -72,7 +78,7 @@ export function Header() {
         </div>
 
         <nav aria-label="Navigation principale" className="hidden flex-1 items-center gap-6 md:flex">
-          {SERVICES.map((service) => (
+          {services.map((service) => (
             <NavLink key={service.to} to={service.to} className={lienDesktop}>
               {service.label}
             </NavLink>

@@ -17,6 +17,7 @@ import { useStatistiques } from '@/api/statistiques';
 import { formatPrixFcfa } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { ClassementStatistique, Periode, Statistiques, TypeService } from '@/api/types';
+import { useEntreprise } from '@/lib/entreprise';
 
 const PERIODES: { valeur: Periode; label: string; comparaison: string; precedent: string }[] = [
   { valeur: 'jour', label: 'Aujourd’hui', comparaison: 'par rapport à hier', precedent: 'hier' },
@@ -214,6 +215,7 @@ function Classement({
  * the one before, what is waiting for action, and who carries the load.
  */
 export function TableauDeBordPage() {
+  const entreprise = useEntreprise();
   const [periode, setPeriode] = useState<Periode>('jour');
   const { data: stats, isPending, isError } = useStatistiques(periode);
   const { comparaison, precedent } = PERIODES.find((p) => p.valeur === periode)!;
@@ -223,7 +225,7 @@ export function TableauDeBordPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground">Tableau de bord général</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Supervision globale des opérations ChapExpress</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Supervision globale des opérations {entreprise.nomCommercial}</p>
         </div>
         <div role="radiogroup" aria-label="Période" className="flex rounded-full bg-muted/80 p-1 border border-border/60 self-start sm:self-auto">
           {PERIODES.map((option) => (
@@ -379,7 +381,7 @@ export function TableauDeBordPage() {
           <div className="rounded-2xl border border-border/60 bg-muted/30 p-3.5 text-xs text-muted-foreground">
             Les commandes Mobile Money jamais payées ne sont pas comptées. « Montant » = total payé par les clients
             (plats, livraison et commission compris). Le délai moyen se base sur la dernière mise à jour de la commande
-            livrée : estimation calculée pour la zone de Natitingou.
+            livrée : estimation calculée pour la zone de {entreprise.ville}.
           </div>
         </>
       )}

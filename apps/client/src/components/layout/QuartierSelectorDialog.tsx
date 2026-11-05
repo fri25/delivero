@@ -16,6 +16,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useAdresses } from '@/api/adresses';
 import { formatPrixFcfa } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { useEntreprise } from '@/lib/entreprise';
 
 /**
  * Delivery-zone picker. `hero`: white pill on the blue home banner;
@@ -28,6 +29,7 @@ export function QuartierSelectorDialog({
   variante?: 'hero' | 'compact';
   className?: string;
 }) {
+  const entreprise = useEntreprise();
   const [open, setOpen] = useState(false);
   const { data: quartiers, isPending } = useQuartiers();
   const token = useAuthStore((state) => state.token);
@@ -133,7 +135,7 @@ export function QuartierSelectorDialog({
 
         <div className="space-y-2 pt-2">
           <p className="text-sm font-bold text-foreground">
-            Tous les quartiers de Natitingou
+            Tous les quartiers de {entreprise.ville}
           </p>
 
           {isPending ? (

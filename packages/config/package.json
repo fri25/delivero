@@ -8,6 +8,7 @@
     "./perimetre-v1": "./perimetre-v1.ts",
     "./types-cuisine": "./types-cuisine.ts",
     "./whatsapp": "./whatsapp.ts",
-    "./marque.css": "./marque.css"
+    "./marque.css": "./marque.css",
+    "./entreprise": "./entreprise.ts"
   }
 }

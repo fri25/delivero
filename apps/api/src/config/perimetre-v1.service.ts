@@ -41,6 +41,27 @@ export class PerimetreV1Service {
     return (await this.parametres.courants()).fonctionnalites.has(code);
   }
 
+  /**
+   * Features the company really opens, within the platform ceiling: what
+   * the apps may show (GET /tenant, étape 6).
+   */
+  async fonctionnalitesOuvertes(): Promise<string[]> {
+    const { fonctionnalites } = await this.parametres.courants();
+    const services = this.liste('SERVICES_ACTIFS');
+    const modes = this.liste('MODES_PAIEMENT_ACTIFS');
+    const contreRemboursement =
+      this.config.get<boolean>('CONTRE_REMBOURSEMENT_ACTIF') === true;
+    return [...fonctionnalites]
+      .filter((code) => {
+        const [famille, valeur] = code.split('.');
+        if (famille === 'service') return services.includes(valeur);
+        if (famille === 'paiement') return modes.includes(valeur);
+        if (code === 'colis.contre_remboursement') return contreRemboursement;
+        return true;
+      })
+      .sort();
+  }
+
   async assertServiceOuvert(service: TypeService) {
     if (
       !this.liste('SERVICES_ACTIFS').includes(service) ||

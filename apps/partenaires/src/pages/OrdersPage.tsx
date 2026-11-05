@@ -9,6 +9,7 @@ import { estAujourdhui, etapeDe, type Etape } from '@/lib/commandes';
 import { useMaintenant } from '@/lib/maintenant';
 import { cn } from '@/lib/utils';
 import type { CommandeRepas } from '@/api/types';
+import { useEntreprise } from '@/lib/entreprise';
 
 const SECTIONS: { etape: Exclude<Etape, 'terminees'>; titre: string; accentClass: string }[] = [
   { etape: 'a_accepter', titre: 'À accepter en priorité', accentClass: 'text-destructive bg-destructive/10 border-destructive/30' },
@@ -65,6 +66,7 @@ function Section({
  * folded at the bottom.
  */
 export function OrdersPage() {
+  const entreprise = useEntreprise();
   const { data: commandes, isPending, isError } = useMesCommandes();
   const { data: restaurant } = useMonRestaurant();
   const maintenant = useMaintenant();
@@ -111,8 +113,8 @@ export function OrdersPage() {
           <div>
             <p className="text-base font-bold">Établissement suspendu</p>
             <p className="mt-1 text-xs sm:text-sm text-destructive/90 leading-relaxed">
-              Votre restaurant est suspendu par ChapExpress : il n’apparaît plus aux clients et ne reçoit plus de
-              commandes. Contactez le service support ChapExpress.
+              Votre restaurant est suspendu par {entreprise.nomCommercial} : il n’apparaît plus aux clients et ne reçoit plus de
+              commandes. Contactez le service support {entreprise.nomCommercial}.
             </p>
           </div>
         </div>

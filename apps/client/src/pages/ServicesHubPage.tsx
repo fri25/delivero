@@ -10,9 +10,11 @@ import { RestaurantRail } from '@/components/restaurants/RestaurantRail';
 import { InstallAppPrompt } from '@/components/layout/InstallAppPrompt';
 import { QuartierSelectorDialog } from '@/components/layout/QuartierSelectorDialog';
 import { getPlatImage, getServiceImage } from '@/data/images';
-import { WHATSAPP_SUPPORT } from '@/lib/support';
 import { cn } from '@/lib/utils';
 import { useRestaurants } from '@/api/restaurants';
+import { useEntreprise } from '@/lib/entreprise';
+import { useLienSupport } from '@/lib/support';
+import { codeService, estOuvert } from '@delivero/config/entreprise';
 
 const PHOTO_REPAS = getServiceImage('repas');
 const PHOTO_COLIS = getServiceImage('colis');
@@ -43,6 +45,10 @@ const SERVICES = [
 const REPERES = ['~30 min en ville', ESPECES_ACTIF ? 'Espèces ou Mobile Money' : 'Mobile Money', 'Prix fixe par quartier'];
 
 export function ServicesHubPage() {
+  const entreprise = useEntreprise();
+  const lienSupport = useLienSupport();
+  // Services the company opens (étape 6), within the compile-time ceiling.
+  const services = SERVICES.filter((service) => estOuvert(entreprise, codeService(service.to)));
   const navigate = useNavigate();
   const [recherche, setRecherche] = useState('');
   const { data: restaurants } = useRestaurants();
@@ -65,7 +71,7 @@ export function ServicesHubPage() {
           <h1 id="titre-accueil" className="mt-4 font-heading text-[28px] leading-[1.1] font-extrabold tracking-tight lg:text-[44px]">
             Livré chez vous,
             <br />
-            partout à Natitingou
+            partout à {entreprise.ville}
           </h1>
 
           <form role="search" onSubmit={chercher} className="mt-5 flex h-13 items-center gap-2 rounded-2xl bg-white pr-1.5 pl-4 text-foreground lg:max-w-lg">
@@ -110,8 +116,8 @@ export function ServicesHubPage() {
       <ActiveOrderBanner />
 
       <section aria-label="Nos services">
-        <div className={cn('grid gap-3 lg:gap-4', SERVICES.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3')}>
-          {SERVICES.map((service, index) => (
+        <div className={cn('grid gap-3 lg:gap-4', services.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : services.length === 2 ? 'grid-cols-2' : 'grid-cols-3')}>
+          {services.map((service, index) => (
             <ServiceTuile key={service.to} {...service} priority={index === 0} />
           ))}
         </div>
@@ -125,10 +131,10 @@ export function ServicesHubPage() {
       <section className="carte flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div>
           <h2 className="font-bold">Commander par téléphone ou poser une question</h2>
-          <p className="text-sm text-muted-foreground">L’équipe ChapExpress répond sur WhatsApp, 7 jours sur 7.</p>
+          <p className="text-sm text-muted-foreground">L’équipe {entreprise.nomCommercial} répond sur WhatsApp, 7 jours sur 7.</p>
         </div>
         <a
-          href={WHATSAPP_SUPPORT}
+          href={lienSupport}
           target="_blank"
           rel="noreferrer"
           className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-[#1f9d55] px-5 text-sm font-bold text-white hover:bg-[#1a8a4a]"

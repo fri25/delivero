@@ -23,12 +23,14 @@ import { useQuartiers } from '@/api/quartiers';
 import { useSectionActive } from '@/lib/section-active';
 import type { Plat } from '@/api/types';
 import { cn } from '@/lib/utils';
+import { useEntreprise } from '@/lib/entreprise';
 
 function ancre(categorie: string) {
   return `categorie-${categorie.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 }
 
 export function RestaurantPage() {
+  const entreprise = useEntreprise();
   const { id } = useParams<{ id: string }>();
   const { data: restaurant, isPending, isError, refetch } = useRestaurant(id);
   const addItem = useCartStore((state) => state.addItem);
@@ -247,7 +249,7 @@ export function RestaurantPage() {
             <DialogTitle className="font-heading text-2xl font-extrabold">Vider le panier actuel ?</DialogTitle>
           </DialogHeader>
           <p className="text-[15px] text-muted-foreground">
-            Votre panier contient des plats d'un autre restaurant. Une commande ChapExpress ne concerne qu'un seul restaurant à la fois.
+            Votre panier contient des plats d'un autre restaurant. Une commande {entreprise.nomCommercial} ne concerne qu'un seul restaurant à la fois.
           </p>
           <DialogFooter className="mt-3 gap-2 sm:gap-2">
             <Button variant="outline" className="h-11 font-bold" onClick={() => setConflictPlat(null)}>

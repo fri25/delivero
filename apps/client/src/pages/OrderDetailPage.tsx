@@ -15,8 +15,10 @@ import { useRecommanderRepas } from '@/lib/recommander';
 import { isStatutRepasActif } from '@/lib/statut-repas';
 import { formatPrixFcfa } from '@/lib/format';
 import { LoadError } from '@/components/layout/LoadError';
+import { useEntreprise } from '@/lib/entreprise';
 
 export function OrderDetailPage() {
+  const entreprise = useEntreprise();
   const { id } = useParams<{ id: string }>();
   const { data: commande, isPending, isError, refetch } = useCommandeRepas(id);
   const annuler = useAnnulerCommande();
@@ -122,8 +124,8 @@ export function OrderDetailPage() {
           </div>
           <div className="flex justify-between gap-3 text-muted-foreground">
             <dt>
-              Frais de service ChapExpress
-              <span className="block text-xs">15 % des plats + livraison</span>
+              Frais de service {entreprise.nomCommercial}
+              <span className="block text-xs">{entreprise.tauxCommission} % des plats + livraison</span>
             </dt>
             <dd className="shrink-0">{commande.commande.commission ? formatPrixFcfa(commande.commande.commission) : '—'}</dd>
           </div>

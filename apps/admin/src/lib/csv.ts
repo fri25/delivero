@@ -1,5 +1,6 @@
 import type { AdminCommandeRow, ClotureCaisse, TypeService } from '@/api/types';
 import { formatDateHeure } from '@/lib/format';
+import { entrepriseCourante } from '@delivero/config/entreprise';
 
 const SERVICE_LABELS: Record<TypeService, string> = {
   repas: 'Repas',
@@ -86,7 +87,7 @@ export function exporterCommandesCsv(commandes: AdminCommandeRow[], suffixe = ''
   ]);
 
   const dateStr = new Date().toISOString().slice(0, 10);
-  const nomFichier = `commandes-chapexpress${suffixe ? `-${suffixe}` : ''}-${dateStr}.csv`;
+  const nomFichier = `commandes-${entrepriseCourante().slug}${suffixe ? `-${suffixe}` : ''}-${dateStr}.csv`;
   const csv = genererCsv(colonnes, lignes);
   telechargerFichierCsv(nomFichier, csv);
 }
@@ -122,7 +123,7 @@ export function exporterCaisseCsv(clotures: ClotureCaisse[]) {
   ]);
 
   const dateStr = new Date().toISOString().slice(0, 10);
-  const nomFichier = `clotures-caisse-chapexpress-${dateStr}.csv`;
+  const nomFichier = `clotures-caisse-${entrepriseCourante().slug}-${dateStr}.csv`;
   const csv = genererCsv(colonnes, lignes);
   telechargerFichierCsv(nomFichier, csv);
 }
