@@ -316,6 +316,41 @@ utilisation, et retiré à l'étape 10.
 **Retour arrière.** Code précédent ; remettre la valeur par défaut si la
 migration finale a été jouée.
 
+**État au 05/11/2026** (branche `multi-tenant`, non déployé) :
+
+- `src/tenancy/` : contexte `AsyncLocalStorage`, `TenantMiddleware` sur
+  toutes les routes, résolution `X-Tenant` → `Origin` → `Host` →
+  CHAP EXPRESS (repli journalisé une fois par domaine), cache 60 s ;
+  entreprise inconnue → 404, suspendue → 403.
+- `src/prisma/extension-tenant.ts`, appliquée au client injecté partout
+  (`PrismaService`) : filtre sur 22 modèles (les 21 métier + `Membership`),
+  entreprise posée sur chaque écriture, y compris les créations en cascade
+  (lues dans `Prisma.dmmf`), jamais de changement d'entreprise par une mise
+  à jour ; requête métier hors contexte → erreur.
+- Jeton : `tid` ; jeton d'une autre entreprise → 403 et ligne
+  `securite.jeton_autre_entreprise` dans `audit_logs`. Un client qui se
+  connecte à une nouvelle entreprise y devient client (Q-MT-2), jamais un
+  autre rôle.
+- Temps réel (salons `tenant:<id>:user:<id>`), webhook FedaPay et
+  expiration des paiements (entreprise lue sur le paiement), CORS
+  (domaines de `tenant_domains`), seed et `bootstrap-admin`
+  (`prisma/client-script.ts`).
+- `test/isolation.e2e-spec.ts` : 14 cas sur deux entreprises ; **les 14
+  échouent quand on désactive l'extension**, tous passent avec.
+- Migration `20261105150000_tenant_id_sans_defaut` : la valeur par défaut
+  devient `current_setting('app.tenant_id')`. Une écriture sans entreprise
+  échoue (vérifié par un `INSERT` direct) ; les 59 tests e2e passent sans
+  elle, preuve qu'aucune écriture de l'API n'en dépendait.
+- **Ordre de déploiement : deux mises en production.** D'abord le commit
+  « every request scoped to its company » (avec les migrations des étapes
+  1 à 3 et 2), vérifié en production ; ensuite seulement le commit de la
+  migration `tenant_id_sans_defaut`. Déployées ensemble, l'ancienne API
+  encore en service pendant la bascule échouerait à chaque insertion.
+- Hors périmètre de cette étape, à faire à l'étape 6 : l'en-tête
+  `X-Tenant` envoyé par les apps (en attendant, l'`Origin` des apps et le
+  repli CHAP EXPRESS suffisent), et le CORS du temps réel, toujours sur
+  `CORS_ORIGINS`.
+
 ## Étape 5 — Configuration par entreprise
 
 | Aujourd'hui | Demain | Fichiers |

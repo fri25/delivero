@@ -98,9 +98,10 @@ model Notation {
   commentaire  String?
   createdAt    DateTime      @default(now()) @map("created_at")
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@unique([commandeId, cible])
@@ -123,9 +124,10 @@ model AbonnementPush {
   auth      String
   createdAt DateTime @default(now()) @map("created_at")
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([userId])
@@ -182,9 +184,10 @@ model Adresse {
   commandes                Commande[]
   commandesColisEnlevement CommandeColis[]
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -214,9 +217,10 @@ model Zone {
   commandesEmplettes            CommandeEmplettes[]
   commandesCoursesExpress       CommandeCoursesExpress[]
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@unique([tenantId, nom])
@@ -244,9 +248,10 @@ model Quartier {
   commandesColis       CommandeColis[]
   etapesCoursesExpress EtapeCourseExpress[]
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@unique([tenantId, nom])
@@ -296,9 +301,10 @@ model Partenaire {
   commandesRepas CommandeRepas[]
   notations      Notation[]
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -324,9 +330,10 @@ model Livreur {
   mouvementsPortefeuille MouvementPortefeuille[]
   cloturesCaisse         ClotureCaisse[]
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -362,9 +369,10 @@ model MouvementPortefeuille {
   clotureCaisse   ClotureCaisse?            @relation(fields: [clotureCaisseId], references: [id])
   createdAt       DateTime                  @default(now()) @map("created_at")
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -393,9 +401,10 @@ model ClotureCaisse {
 
   mouvements MouvementPortefeuille[]
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -468,9 +477,10 @@ model Commande {
   notations              Notation[]
   mouvementsPortefeuille MouvementPortefeuille[]
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -513,9 +523,10 @@ model Plat {
 
   lignes LigneCommandeRepas[]
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -535,9 +546,10 @@ model CommandeRepas {
 
   lignes LigneCommandeRepas[]
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -554,9 +566,10 @@ model LigneCommandeRepas {
   prixUnitaire    Decimal       @map("prix_unitaire") @db.Decimal(10, 2)
   instructions    String?
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -614,9 +627,10 @@ model Paiement {
   confirmeParId     String?   @map("confirme_par_id")
   confirmePar       User?     @relation("PaiementConfirmePar", fields: [confirmeParId], references: [id])
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -659,9 +673,10 @@ model GrilleTarifaireColis {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -741,9 +756,10 @@ model CommandeColis {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -836,9 +852,10 @@ model CommandeEmplettes {
 
   articles ArticleEmplette[]
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -864,9 +881,10 @@ model ArticleEmplette {
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -900,9 +918,10 @@ model GrilleTarifaireCoursesExpress {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -936,9 +955,10 @@ model CommandeCoursesExpress {
 
   etapes EtapeCourseExpress[]
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -969,9 +989,10 @@ model EtapeCourseExpress {
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  // Company (étape 2 of docs/plan-migration-multi-tenant.md). The default
-  // keeps the previous API version working; removed at étape 4.
-  tenantId String @default("tnt_chapexpress") @map("tenant_id")
+  // Company (étapes 2 and 4 of docs/plan-migration-multi-tenant.md). Set by
+  // the Prisma extension; a write that escapes it fails instead of landing
+  // in some company: the default reads app.tenant_id, unset outside RLS.
+  tenantId String @default(dbgenerated("current_setting('app.tenant_id'::text)")) @map("tenant_id")
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
