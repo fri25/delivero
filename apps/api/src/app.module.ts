@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -23,6 +23,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { QuartiersModule } from './quartiers/quartiers.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { RestaurantsModule } from './restaurants/restaurants.module';
+import { TenancyModule } from './tenancy/tenancy.module';
+import { TenantMiddleware } from './tenancy/tenant.middleware';
 import { ZonesModule } from './zones/zones.module';
 
 @Module({
@@ -38,6 +40,7 @@ import { ZonesModule } from './zones/zones.module';
     }),
     PerimetreV1Module,
     PrismaModule,
+    TenancyModule,
     QuartiersModule,
     PortefeuilleModule,
     RealtimeModule,
@@ -60,4 +63,10 @@ import { ZonesModule } from './zones/zones.module';
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  // Étape 4 (docs/plan-migration-multi-tenant.md): every request is bound to
+  // its company before guards and controllers run.
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(TenantMiddleware).forRoutes('*');
+  }
+}

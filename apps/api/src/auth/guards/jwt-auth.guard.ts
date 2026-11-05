@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -8,6 +9,8 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
+import { tenantCourant } from '../../tenancy/contexte-tenant';
+import { JournalSecuriteService } from '../../tenancy/journal-securite.service';
 import { roleEffectif, TENANT_PAR_DEFAUT } from '../appartenance';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import type { JwtPayload } from '../types/auth-user.type';
@@ -18,6 +21,7 @@ export class JwtAuthGuard implements CanActivate {
     private readonly jwtService: JwtService,
     private readonly reflector: Reflector,
     private readonly prisma: PrismaService,
+    private readonly journal: JournalSecuriteService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -43,14 +47,28 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Token invalide ou expiré.');
     }
 
+    // Étape 4 (docs/plan-migration-multi-tenant.md): a session belongs to
+    // one company. Tokens issued before étape 4 carry no tid: CHAP EXPRESS.
+    const tenantId = tenantCourant();
+    if ((payload.tid ?? TENANT_PAR_DEFAUT) !== tenantId) {
+      await this.journal.signaler({
+        action: 'securite.jeton_autre_entreprise',
+        tenantId,
+        acteurId: payload.sub,
+        ip: request.ip,
+        details: { tidJeton: payload.tid ?? null, chemin: request.path },
+      });
+      throw new ForbiddenException(
+        'Ce compte appartient à une autre entreprise.',
+      );
+    }
+
     // V05 : le rôle n'est plus pris tel quel dans le jeton mais relu en base
     // à chaque requête — un compte rétrogradé ou supprimé perd l'accès
     // immédiatement, sans attendre l'expiration du JWT (2h par défaut).
     // V13 : les permissions du rôle sont chargées ici (même requête) pour que
-    // RolesGuard puisse les vérifier — jusqu'ici RolePermission était seedé
-    // mais jamais lu, seul le nom du rôle comptait.
-    // Étape 3 (docs/plan-migration-multi-tenant.md): the role comes from the
-    // membership in the company, users.role_id only as a fallback.
+    // RolesGuard puisse les vérifier.
+    // Étape 3 : le rôle vient de l'appartenance à l'entreprise.
     const avecPermissions = {
       include: { permissions: { include: { permission: true } } },
     } as const;
@@ -59,7 +77,7 @@ export class JwtAuthGuard implements CanActivate {
       include: {
         role: avecPermissions,
         memberships: {
-          where: { tenantId: TENANT_PAR_DEFAUT },
+          where: { tenantId },
           include: { role: avecPermissions },
         },
       },
@@ -67,7 +85,7 @@ export class JwtAuthGuard implements CanActivate {
     if (!user) {
       throw new UnauthorizedException('Compte introuvable.');
     }
-    const role = roleEffectif(user);
+    const role = roleEffectif(user, tenantId);
 
     request.user = {
       id: user.id,

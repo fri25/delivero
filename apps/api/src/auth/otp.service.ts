@@ -12,7 +12,14 @@ import * as bcrypt from 'bcryptjs';
 import { Prisma } from '@prisma/client';
 import { Messagerie } from '../notifications/messagerie';
 import { PrismaService } from '../prisma/prisma.service';
-import { appartenanceInitiale, AVEC_ROLE, roleEffectif } from './appartenance';
+import { tenantCourant } from '../tenancy/contexte-tenant';
+import {
+  appartenanceInitiale,
+  avecRole,
+  roleEffectif,
+  TENANT_PAR_DEFAUT,
+  type UtilisateurAvecRole,
+} from './appartenance';
 import { AuthService } from './auth.service';
 import { DemanderOtpDto, VerifierOtpDto } from './dto/otp.dto';
 import { normaliserTelephoneBenin, variantesTelephone } from './telephone';
@@ -45,7 +52,7 @@ export class OtpService {
   async demander(dto: DemanderOtpDto) {
     const telephone = this.normaliser(dto.telephone);
     const user = await this.trouverUtilisateur(telephone);
-    if (user && roleEffectif(user).name !== CLIENT_ROLE_NAME) {
+    if (user && this.seConnecteParMotDePasse(user)) {
       throw new BadRequestException(
         'Ce compte se connecte avec son mot de passe.',
       );
@@ -136,7 +143,7 @@ export class OtpService {
     }
 
     let user = await this.trouverUtilisateur(telephone);
-    if (user && roleEffectif(user).name !== CLIENT_ROLE_NAME) {
+    if (user && this.seConnecteParMotDePasse(user)) {
       throw new BadRequestException(
         'Ce compte se connecte avec son mot de passe.',
       );
@@ -160,7 +167,21 @@ export class OtpService {
     }
 
     user ??= await this.creerClient(telephone, dto.nom!.trim());
-    return this.authService.buildAuthResponse(user);
+    return this.authService.buildAuthResponse(
+      await this.authService.devenirClientSiNouveau(user),
+    );
+  }
+
+  /**
+   * OTP is the clients' sign-in. Someone with no membership in this company
+   * yet is let through: they become one of its clients (decision Q-MT-2).
+   */
+  private seConnecteParMotDePasse(user: UtilisateurAvecRole): boolean {
+    const tenantId = tenantCourant();
+    if (user.memberships.length === 0 && tenantId !== TENANT_PAR_DEFAUT) {
+      return false;
+    }
+    return roleEffectif(user, tenantId).name !== CLIENT_ROLE_NAME;
   }
 
   private normaliser(saisie: string): string {
@@ -176,7 +197,7 @@ export class OtpService {
   private trouverUtilisateur(telephone: string) {
     return this.prisma.user.findFirst({
       where: { telephone: { in: variantesTelephone(telephone) } },
-      include: AVEC_ROLE,
+      include: avecRole(tenantCourant()),
     });
   }
 
@@ -193,7 +214,7 @@ export class OtpService {
           roleId: role.id,
           memberships: appartenanceInitiale(role.id),
         },
-        include: AVEC_ROLE,
+        include: avecRole(tenantCourant()),
       });
     } catch (error) {
       // Two verifications racing for the same new number.
@@ -203,7 +224,7 @@ export class OtpService {
       ) {
         return this.prisma.user.findUniqueOrThrow({
           where: { telephone },
-          include: AVEC_ROLE,
+          include: avecRole(tenantCourant()),
         });
       }
       throw error;

@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from './../src/prisma/prisma.service';
+import { executerDansTenant } from './../src/tenancy/contexte-tenant';
 
 // Étape 3 of docs/plan-migration-multi-tenant.md: the role comes from the
 // membership in CHAP EXPRESS, users.role_id only as a fallback. Login and
@@ -13,6 +14,9 @@ describe('Appartenances (e2e)', () => {
   let app: INestApplication<App>;
   let server: App;
   let prisma: PrismaService;
+  // Memberships are scoped to a company since étape 4.
+  const chez = <T>(fn: () => T | PromiseLike<T>) =>
+    executerDansTenant('tnt_chapexpress', fn);
 
   const inscrire = async () => {
     const telephone = `+229${Date.now()}${Math.floor(Math.random() * 10)}`;
@@ -49,9 +53,11 @@ describe('Appartenances (e2e)', () => {
     await app.close();
   });
 
-  it('tout compte existant est membre de CHAP EXPRESS avec son rôle', async () => {
+  it('tout compte existant est membre d’une entreprise avec son rôle', async () => {
+    // Since étape 4 the isolation suite adds accounts of a second company:
+    // every account belongs to at least one, CHAP EXPRESS or that one.
     const sansAppartenance = await prisma.user.count({
-      where: { memberships: { none: { tenantId: 'tnt_chapexpress' } } },
+      where: { memberships: { none: {} } },
     });
     expect(sansAppartenance).toBe(0);
     const roleDivergent = await prisma.$queryRaw<{ n: bigint }[]>`
@@ -63,12 +69,14 @@ describe('Appartenances (e2e)', () => {
   it('l’inscription crée l’appartenance client', async () => {
     const { user } = await inscrire();
     expect(user.role).toBe('client');
-    const appartenance = await prisma.membership.findUnique({
-      where: {
-        userId_tenantId: { userId: user.id, tenantId: 'tnt_chapexpress' },
-      },
-      include: { role: true },
-    });
+    const appartenance = await chez(() =>
+      prisma.membership.findUnique({
+        where: {
+          userId_tenantId: { userId: user.id, tenantId: 'tnt_chapexpress' },
+        },
+        include: { role: true },
+      }),
+    );
     expect(appartenance?.statut).toBe('actif');
     expect(appartenance?.role.name).toBe('client');
   });
@@ -80,12 +88,14 @@ describe('Appartenances (e2e)', () => {
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
 
-    await prisma.membership.update({
-      where: {
-        userId_tenantId: { userId: user.id, tenantId: 'tnt_chapexpress' },
-      },
-      data: { statut: 'suspendu' },
-    });
+    await chez(() =>
+      prisma.membership.update({
+        where: {
+          userId_tenantId: { userId: user.id, tenantId: 'tnt_chapexpress' },
+        },
+        data: { statut: 'suspendu' },
+      }),
+    );
 
     await request(server)
       .get('/api/auth/me')
@@ -100,7 +110,9 @@ describe('Appartenances (e2e)', () => {
   it('un compte sans appartenance garde son rôle historique', async () => {
     // Account created by the previous API version during a deployment.
     const { token, user } = await inscrire();
-    await prisma.membership.deleteMany({ where: { userId: user.id } });
+    await chez(() =>
+      prisma.membership.deleteMany({ where: { userId: user.id } }),
+    );
     const res = await request(server)
       .get('/api/auth/me')
       .set('Authorization', `Bearer ${token}`)
@@ -113,12 +125,14 @@ describe('Appartenances (e2e)', () => {
     const livreur = await prisma.role.findUniqueOrThrow({
       where: { name: 'livreur' },
     });
-    await prisma.membership.update({
-      where: {
-        userId_tenantId: { userId: user.id, tenantId: 'tnt_chapexpress' },
-      },
-      data: { roleId: livreur.id },
-    });
+    await chez(() =>
+      prisma.membership.update({
+        where: {
+          userId_tenantId: { userId: user.id, tenantId: 'tnt_chapexpress' },
+        },
+        data: { roleId: livreur.id },
+      }),
+    );
     // users.role_id still says client: the client route must now refuse.
     await request(server)
       .get('/api/commandes/colis/mes-commandes')

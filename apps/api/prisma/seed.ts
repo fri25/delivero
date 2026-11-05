@@ -1,7 +1,7 @@
 import 'dotenv/config';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient, TypePartenaire } from '@prisma/client';
+import { TypePartenaire } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { clientScript, pourChapExpress } from './client-script';
 import { assurerAppartenances, assurerSocle } from './socle';
 
 const SALT_ROUNDS = 12;
@@ -87,24 +87,45 @@ const PILOT_RESTAURANTS: PilotRestaurant[] = [
     motDePasse: 'demo12345',
     nom: 'Chez Guillaume',
     description: 'Pâtisserie',
-    adresse: 'Quartier Yimporima, près du carrefour du marché central, Natitingou',
+    adresse:
+      'Quartier Yimporima, près du carrefour du marché central, Natitingou',
     pointDeRepere: 'En face de la station-service, immeuble à façade jaune',
     horaires: 'Lundi–samedi 6h30–19h00 ; dimanche 7h00–13h00',
     typesCuisine: ['Pâtisserie', 'Petit-déjeuner'],
     delaiPreparationMin: 10,
     plats: [
       { nom: 'Croissant', categorie: 'Viennoiseries & pâtisseries', prix: 300 },
-      { nom: 'Pain au chocolat', categorie: 'Viennoiseries & pâtisseries', prix: 350 },
-      { nom: 'Gâteau à la part', categorie: 'Viennoiseries & pâtisseries', prix: 500 },
-      { nom: 'Beignets sucrés (x5)', categorie: 'Viennoiseries & pâtisseries', prix: 250 },
-      { nom: 'Cake maison', categorie: 'Viennoiseries & pâtisseries', prix: 600 },
+      {
+        nom: 'Pain au chocolat',
+        categorie: 'Viennoiseries & pâtisseries',
+        prix: 350,
+      },
+      {
+        nom: 'Gâteau à la part',
+        categorie: 'Viennoiseries & pâtisseries',
+        prix: 500,
+      },
+      {
+        nom: 'Beignets sucrés (x5)',
+        categorie: 'Viennoiseries & pâtisseries',
+        prix: 250,
+      },
+      {
+        nom: 'Cake maison',
+        categorie: 'Viennoiseries & pâtisseries',
+        prix: 600,
+      },
       {
         nom: "Gâteau d'anniversaire sur commande",
         categorie: 'Viennoiseries & pâtisseries',
         prix: 8000,
         description: "Sur commande, 24 h à l'avance minimum.",
       },
-      { nom: 'Jus locaux (bissap / gingembre)', categorie: 'Boissons', prix: 500 },
+      {
+        nom: 'Jus locaux (bissap / gingembre)',
+        categorie: 'Boissons',
+        prix: 500,
+      },
     ],
   },
   {
@@ -123,9 +144,21 @@ const PILOT_RESTAURANTS: PilotRestaurant[] = [
       { nom: 'Pintade braisée', categorie: 'Grillades', prix: 3000 },
       { nom: 'Lapin sauce tomate', categorie: 'Grillades', prix: 2500 },
       { nom: 'Riz (accompagnement)', categorie: 'Accompagnements', prix: 500 },
-      { nom: 'Igname pilée (accompagnement)', categorie: 'Accompagnements', prix: 500 },
-      { nom: 'Pâte rouge (accompagnement)', categorie: 'Accompagnements', prix: 500 },
-      { nom: 'Frites (accompagnement)', categorie: 'Accompagnements', prix: 500 },
+      {
+        nom: 'Igname pilée (accompagnement)',
+        categorie: 'Accompagnements',
+        prix: 500,
+      },
+      {
+        nom: 'Pâte rouge (accompagnement)',
+        categorie: 'Accompagnements',
+        prix: 500,
+      },
+      {
+        nom: 'Frites (accompagnement)',
+        categorie: 'Accompagnements',
+        prix: 500,
+      },
       { nom: 'Supplément piment', categorie: 'Suppléments', prix: 200 },
       { nom: 'Supplément akpan', categorie: 'Suppléments', prix: 200 },
     ],
@@ -134,7 +167,8 @@ const PILOT_RESTAURANTS: PilotRestaurant[] = [
     telephone: '+22900000013',
     motDePasse: 'demo12345',
     nom: 'John Café',
-    description: 'Cafés et thés infusés au moringa, sandwichs, petits-déjeuners',
+    description:
+      'Cafés et thés infusés au moringa, sandwichs, petits-déjeuners',
     adresse: "Avenue de l'Indépendance, centre-ville de Natitingou",
     pointDeRepere: 'À côté de la pharmacie, terrasse bleue',
     horaires: 'Lundi–samedi 6h00–20h00 ; dimanche fermé',
@@ -154,28 +188,41 @@ const PILOT_RESTAURANTS: PilotRestaurant[] = [
       { nom: 'Sandwich thon', categorie: 'Sandwichs', prix: 1200 },
       { nom: 'Sandwich poulet', categorie: 'Sandwichs', prix: 1500 },
       { nom: 'Croque-monsieur', categorie: 'Sandwichs', prix: 1300 },
-      { nom: 'Smoothie moringa-ananas', categorie: 'Boissons fraîches', prix: 1200 },
+      {
+        nom: 'Smoothie moringa-ananas',
+        categorie: 'Boissons fraîches',
+        prix: 1200,
+      },
     ],
   },
   {
     telephone: '+22900000014',
     motDePasse: 'demo12345',
     nom: 'Le Bélier',
-    description: "Igname pilée (sauce arachide et fromage peul), tête de mouton façon Bélier ; également pizzas et chawarmas",
+    description:
+      'Igname pilée (sauce arachide et fromage peul), tête de mouton façon Bélier ; également pizzas et chawarmas',
     adresse: 'Quartier Tchirimina, Natitingou',
     pointDeRepere: 'Près du stade municipal, enseigne rouge',
     horaires: 'Tous les jours 10h00–23h00',
     typesCuisine: ['Cuisine locale', 'Fast-food', 'Pizza'],
     delaiPreparationMin: 25,
     plats: [
-      { nom: 'Igname pilée sauce arachide + fromage peul', categorie: 'Cuisine locale', prix: 2500 },
+      {
+        nom: 'Igname pilée sauce arachide + fromage peul',
+        categorie: 'Cuisine locale',
+        prix: 2500,
+      },
       {
         nom: 'Tête de mouton façon Bélier',
         categorie: 'Cuisine locale',
         prix: 4500,
         description: 'Sur commande, délai de préparation environ 45 min.',
       },
-      { nom: 'Pâte noire sauce légume', categorie: 'Cuisine locale', prix: 1500 },
+      {
+        nom: 'Pâte noire sauce légume',
+        categorie: 'Cuisine locale',
+        prix: 1500,
+      },
       { nom: 'Pizza margherita', categorie: 'Pizzas', prix: 3500 },
       { nom: 'Pizza poulet', categorie: 'Pizzas', prix: 4500 },
       { nom: 'Pizza complète', categorie: 'Pizzas', prix: 5500 },
@@ -221,7 +268,8 @@ const PILOT_RESTAURANTS: PilotRestaurant[] = [
     telephone: '+22900000016',
     motDePasse: 'demo12345',
     nom: "Jardin de l'Atacora",
-    description: 'Restaurant de jardin — cuisine africaine et plats internationaux, cadre verdoyant',
+    description:
+      'Restaurant de jardin — cuisine africaine et plats internationaux, cadre verdoyant',
     adresse: 'Route de la Chute de Kota, sortie sud de Natitingou',
     pointDeRepere: "Grand portail vert, 500 m après l'hôtel",
     horaires: 'Tous les jours 11h00–23h00',
@@ -229,19 +277,43 @@ const PILOT_RESTAURANTS: PilotRestaurant[] = [
     delaiPreparationMin: 30,
     plats: [
       { nom: 'Poulet DG', categorie: 'Plats principaux', prix: 3500 },
-      { nom: 'Riz sauté aux crevettes', categorie: 'Plats principaux', prix: 3000 },
-      { nom: 'Spaghetti bolognaise', categorie: 'Plats principaux', prix: 2200 },
+      {
+        nom: 'Riz sauté aux crevettes',
+        categorie: 'Plats principaux',
+        prix: 3000,
+      },
+      {
+        nom: 'Spaghetti bolognaise',
+        categorie: 'Plats principaux',
+        prix: 2200,
+      },
       { nom: 'Steak-frites', categorie: 'Plats principaux', prix: 3800 },
-      { nom: 'Poisson braisé complet', categorie: 'Plats principaux', prix: 3200 },
-      { nom: 'Igname frite + viande', categorie: 'Plats principaux', prix: 2000 },
+      {
+        nom: 'Poisson braisé complet',
+        categorie: 'Plats principaux',
+        prix: 3200,
+      },
+      {
+        nom: 'Igname frite + viande',
+        categorie: 'Plats principaux',
+        prix: 2000,
+      },
       {
         nom: 'Plat du jour',
         categorie: 'Plats principaux',
         prix: 2000,
         description: 'Composition variable selon le jour.',
       },
-      { nom: 'Salade composée', categorie: 'Accompagnements & boissons', prix: 1500 },
-      { nom: 'Jus naturels', categorie: 'Accompagnements & boissons', prix: 800 },
+      {
+        nom: 'Salade composée',
+        categorie: 'Accompagnements & boissons',
+        prix: 1500,
+      },
+      {
+        nom: 'Jus naturels',
+        categorie: 'Accompagnements & boissons',
+        prix: 800,
+      },
     ],
   },
   {
@@ -255,7 +327,11 @@ const PILOT_RESTAURANTS: PilotRestaurant[] = [
     typesCuisine: ['Cuisine locale', 'Fast-food', 'Sandwichs & chawarma'],
     delaiPreparationMin: 20,
     plats: [
-      { nom: 'Riz sauce tomate + viande', categorie: 'Riz & pâtes', prix: 1500 },
+      {
+        nom: 'Riz sauce tomate + viande',
+        categorie: 'Riz & pâtes',
+        prix: 1500,
+      },
       { nom: 'Riz gras', categorie: 'Riz & pâtes', prix: 1800 },
       { nom: 'Spaghetti sauce viande', categorie: 'Riz & pâtes', prix: 1500 },
       { nom: 'Spaghetti aux œufs', categorie: 'Riz & pâtes', prix: 1200 },
@@ -269,8 +345,7 @@ const PILOT_RESTAURANTS: PilotRestaurant[] = [
   },
 ];
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+const prisma = clientScript();
 
 async function main() {
   // V10 : le seed crée des comptes de démonstration à mot de passe connu
@@ -306,7 +381,9 @@ async function main() {
     create: { zoneId: zone.id, tarifBase: 600 },
   });
 
-  const restaurantRole = await prisma.role.findUniqueOrThrow({ where: { name: 'restaurant' } });
+  const restaurantRole = await prisma.role.findUniqueOrThrow({
+    where: { name: 'restaurant' },
+  });
   const restaurantUser = await prisma.user.upsert({
     where: { telephone: DEMO_RESTAURANT.telephone },
     update: {},
@@ -346,7 +423,9 @@ async function main() {
       where: { partenaireId: restaurantPartenaire.id, nom: plat.nom },
     });
     if (!existing) {
-      await prisma.plat.create({ data: { ...plat, partenaireId: restaurantPartenaire.id } });
+      await prisma.plat.create({
+        data: { ...plat, partenaireId: restaurantPartenaire.id },
+      });
     }
   }
 
@@ -389,12 +468,16 @@ async function main() {
         where: { partenaireId: partenaire.id, nom: plat.nom },
       });
       if (!existing) {
-        await prisma.plat.create({ data: { ...plat, partenaireId: partenaire.id } });
+        await prisma.plat.create({
+          data: { ...plat, partenaireId: partenaire.id },
+        });
       }
     }
   }
 
-  const clientRole = await prisma.role.findUniqueOrThrow({ where: { name: 'client' } });
+  const clientRole = await prisma.role.findUniqueOrThrow({
+    where: { name: 'client' },
+  });
   await prisma.user.upsert({
     where: { telephone: DEMO_CLIENT.telephone },
     update: {},
@@ -406,7 +489,9 @@ async function main() {
     },
   });
 
-  const livreurRole = await prisma.role.findUniqueOrThrow({ where: { name: 'livreur' } });
+  const livreurRole = await prisma.role.findUniqueOrThrow({
+    where: { name: 'livreur' },
+  });
   const livreurUser = await prisma.user.upsert({
     where: { telephone: DEMO_LIVREUR.telephone },
     update: {},
@@ -446,7 +531,7 @@ async function main() {
   await assurerAppartenances(prisma);
 }
 
-main()
+pourChapExpress(main)
   .catch((error) => {
     console.error(error);
     process.exitCode = 1;

@@ -17,6 +17,10 @@ import {
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import {
+  executerDansTenant,
+  executerEnPlateforme,
+} from '../tenancy/contexte-tenant';
 import { PaiementsService } from './paiements.service';
 
 // Decision of 2026-10-13: a Mobile Money order still unpaid 30 minutes after
@@ -44,6 +48,7 @@ const EN_ATTENTE_DE_PAIEMENT = {
 
 const EXPIRABLE_SELECT = {
   id: true,
+  tenantId: true,
   typeService: true,
   clientId: true,
   clientTelephoneInvite: true,
@@ -90,37 +95,45 @@ export class ExpirationPaiementsService
     }
     this.enCours = true;
     try {
-      const commandes = await this.prisma.commande.findMany({
-        where: {
-          paiement: {
-            is: {
-              mode: ModePaiement.mobile_money,
-              statut: { in: STATUTS_NON_PAYES },
-              createdAt: {
-                lt: new Date(maintenant.getTime() - DELAI_EXPIRATION_MS),
+      // Runs outside any request: the scan spans every company, then each
+      // order is cancelled in the context of its own (étape 4).
+      const commandes = await executerEnPlateforme(() =>
+        this.prisma.commande.findMany({
+          where: {
+            paiement: {
+              is: {
+                mode: ModePaiement.mobile_money,
+                statut: { in: STATUTS_NON_PAYES },
+                createdAt: {
+                  lt: new Date(maintenant.getTime() - DELAI_EXPIRATION_MS),
+                },
               },
             },
+            OR: [
+              { commandeRepas: { statut: StatutRepas.en_attente_acceptation } },
+              { commandeColis: { statut: StatutColis.confirmee } },
+              { commandeEmplettes: { statut: StatutEmplettes.confirmee } },
+              {
+                commandeCoursesExpress: {
+                  statut: StatutCoursesExpress.confirmee,
+                },
+              },
+            ],
           },
-          OR: [
-            { commandeRepas: { statut: StatutRepas.en_attente_acceptation } },
-            { commandeColis: { statut: StatutColis.confirmee } },
-            { commandeEmplettes: { statut: StatutEmplettes.confirmee } },
-            {
-              commandeCoursesExpress: {
-                statut: StatutCoursesExpress.confirmee,
-              },
-            },
-          ],
-        },
-        select: EXPIRABLE_SELECT,
-        orderBy: { createdAt: 'asc' },
-        take: LOT,
-      });
+          select: EXPIRABLE_SELECT,
+          orderBy: { createdAt: 'asc' },
+          take: LOT,
+        }),
+      );
 
       let annulees = 0;
       for (const commande of commandes) {
         try {
-          if (await this.expirer(commande, maintenant)) {
+          if (
+            await executerDansTenant(commande.tenantId, () =>
+              this.expirer(commande, maintenant),
+            )
+          ) {
             annulees += 1;
           }
         } catch (error) {

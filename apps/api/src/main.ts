@@ -6,6 +6,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { ResolutionTenantService } from './tenancy/resolution-tenant.service';
 
 async function bootstrap() {
   // rawBody: the FedaPay webhook signature is computed over the exact bytes
@@ -42,8 +43,23 @@ async function bootstrap() {
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
+  // Étape 4: the domains of the companies (tenant_domains) are allowed too,
+  // so opening a company does not need a redeploy.
+  const resolution = app.get(ResolutionTenantService);
   app.enableCors({
-    origin: corsOrigins.length > 0 ? corsOrigins : true,
+    origin:
+      corsOrigins.length === 0
+        ? true
+        : (origine, autoriser) => {
+            if (!origine || corsOrigins.includes(origine)) {
+              autoriser(null, true);
+              return;
+            }
+            resolution.origineConnue(origine).then(
+              (connue) => autoriser(null, connue),
+              () => autoriser(null, false),
+            );
+          },
   });
 
   const port = config.get<number>('PORT', 3000);

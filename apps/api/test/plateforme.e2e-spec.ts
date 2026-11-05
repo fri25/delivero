@@ -93,12 +93,13 @@ describe('Plateforme : entreprise CHAP EXPRESS (e2e)', () => {
     expect(colonnes.every((c) => c.is_nullable === 'NO')).toBe(true);
   });
 
-  it('toutes les lignes métier, anciennes et nouvelles, sont à CHAP EXPRESS', async () => {
-    // Rows of the seed, and of the other suites when they ran first, were
-    // created through code that does not set tenant_id yet.
+  it('toute ligne métier appartient à CHAP EXPRESS ou à une entreprise de test', async () => {
+    // Since étape 4 the isolation suite creates a second company
+    // (tnt_e2e_…); nothing may belong to anything else.
     for (const table of TABLES_METIER) {
       const [{ n }] = await prisma.$queryRawUnsafe<{ n: bigint }[]>(
-        `SELECT count(*) AS n FROM "${table}" WHERE tenant_id <> 'tnt_chapexpress'`,
+        `SELECT count(*) AS n FROM "${table}"
+         WHERE tenant_id <> 'tnt_chapexpress' AND tenant_id NOT LIKE 'tnt_e2e_%'`,
       );
       expect({ table, autres: Number(n) }).toEqual({ table, autres: 0 });
     }

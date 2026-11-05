@@ -7,7 +7,9 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
+import { TENANT_PAR_DEFAUT } from '../auth/appartenance';
 import type { JwtPayload } from '../auth/types/auth-user.type';
+import { contexteTenant } from '../tenancy/contexte-tenant';
 
 // Temps réel minimal (F-CLI-05 / F-RES-01) : remplace le polling pour le
 // suivi client et l'alerte nouvelle commande côté restaurant. Une seule
@@ -41,7 +43,10 @@ export class RealtimeGateway
     }
     try {
       const payload = this.jwtService.verify<JwtPayload>(token);
-      void client.join(this.userRoom(payload.sub));
+      // A socket only hears the company of its session (étape 4).
+      void client.join(
+        this.userRoom(payload.tid ?? TENANT_PAR_DEFAUT, payload.sub),
+      );
     } catch {
       client.disconnect(true);
     }
@@ -51,11 +56,13 @@ export class RealtimeGateway
     this.logger.debug(`Socket ${client.id} déconnecté.`);
   }
 
+  /** Emits in the company of the current request or background task. */
   emitToUser(userId: string, event: string, payload: unknown) {
-    this.server.to(this.userRoom(userId)).emit(event, payload);
+    const tenantId = contexteTenant()?.tenantId ?? TENANT_PAR_DEFAUT;
+    this.server.to(this.userRoom(tenantId, userId)).emit(event, payload);
   }
 
-  private userRoom(userId: string): string {
-    return `user:${userId}`;
+  private userRoom(tenantId: string, userId: string): string {
+    return `tenant:${tenantId}:user:${userId}`;
   }
 }

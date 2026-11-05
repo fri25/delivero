@@ -6,10 +6,12 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
+import { tenantCourant } from '../tenancy/contexte-tenant';
 import {
   appartenanceInitiale,
-  AVEC_ROLE,
+  avecRole,
   roleEffectif,
+  TENANT_PAR_DEFAUT,
   type UtilisateurAvecRole,
 } from './appartenance';
 import { LoginDto } from './dto/login.dto';
@@ -57,7 +59,7 @@ export class AuthService {
         roleId: clientRole.id,
         memberships: appartenanceInitiale(clientRole.id),
       },
-      include: AVEC_ROLE,
+      include: avecRole(tenantCourant()),
     });
 
     return this.buildAuthResponse(user);
@@ -66,7 +68,7 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { telephone: dto.telephone },
-      include: AVEC_ROLE,
+      include: avecRole(tenantCourant()),
     });
 
     if (
@@ -76,24 +78,54 @@ export class AuthService {
       throw new UnauthorizedException('Téléphone ou mot de passe incorrect.');
     }
 
-    return this.buildAuthResponse(user);
+    return this.buildAuthResponse(await this.devenirClientSiNouveau(user));
   }
 
   async me(userId: string) {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
-      include: AVEC_ROLE,
+      include: avecRole(tenantCourant()),
     });
     return this.toProfile(user);
   }
 
+  /**
+   * Decision Q-MT-2 (one account per phone number across companies): a
+   * person who already has an account and signs in to another company
+   * becomes one of its clients. Never another role: livreurs, restaurants
+   * and admins are added by the company itself.
+   */
+  async devenirClientSiNouveau(
+    user: UtilisateurAvecRole,
+  ): Promise<UtilisateurAvecRole> {
+    const tenantId = tenantCourant();
+    if (user.memberships.length > 0 || tenantId === TENANT_PAR_DEFAUT) {
+      return user;
+    }
+    const clientRole = await this.prisma.role.findUniqueOrThrow({
+      where: { name: CLIENT_ROLE_NAME },
+    });
+    await this.prisma.membership.create({
+      data: { userId: user.id, roleId: clientRole.id } as {
+        userId: string;
+        roleId: string;
+        tenantId: string;
+      },
+    });
+    return this.prisma.user.findUniqueOrThrow({
+      where: { id: user.id },
+      include: avecRole(tenantId),
+    });
+  }
+
   // Also used by OtpService once a code is verified. Throws when the
-  // membership in the company is suspended.
+  // membership in the company is suspended or missing.
   buildAuthResponse(user: UtilisateurAvecRole) {
     const profile = this.toProfile(user);
     const accessToken = this.jwtService.sign({
       sub: user.id,
       role: profile.role,
+      tid: tenantCourant(),
     });
     return { accessToken, user: profile };
   }
@@ -104,7 +136,7 @@ export class AuthService {
       telephone: user.telephone,
       email: user.email ?? null,
       nom: user.nom,
-      role: roleEffectif(user).name,
+      role: roleEffectif(user, tenantCourant()).name,
     };
   }
 }

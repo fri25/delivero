@@ -2,27 +2,24 @@ import { UnauthorizedException } from '@nestjs/common';
 import type { Prisma, Role } from '@prisma/client';
 
 /**
- * CHAP EXPRESS, the only company until étape 4 of
- * docs/plan-migration-multi-tenant.md resolves the company of each request.
- * Inserted with this fixed id by migration plateforme_tenants.
+ * CHAP EXPRESS, tenant n°1, inserted with this fixed id by migration
+ * plateforme_tenants. Since étape 4 it is only the fallback of an unknown
+ * domain (until étape 10) and of tokens issued before étape 4.
  */
 export const TENANT_PAR_DEFAUT = 'tnt_chapexpress';
 
 /**
- * Loads a user's role in the company (membership) and, as a fallback, the
- * legacy users.role_id: an account created by the previous API version
- * during a deployment has no membership yet. Removed at étape 7.
+ * Loads a user's membership in a company and, as a fallback, the legacy
+ * users.role_id (only meaningful for CHAP EXPRESS, removed at étape 7).
  */
-export const AVEC_ROLE = {
-  role: true,
-  memberships: {
-    where: { tenantId: TENANT_PAR_DEFAUT },
-    include: { role: true },
-  },
-} satisfies Prisma.UserInclude;
+export const avecRole = (tenantId: string) =>
+  ({
+    role: true,
+    memberships: { where: { tenantId }, include: { role: true } },
+  }) satisfies Prisma.UserInclude;
 
 export type UtilisateurAvecRole = Prisma.UserGetPayload<{
-  include: typeof AVEC_ROLE;
+  include: ReturnType<typeof avecRole>;
 }>;
 
 interface AvecAppartenances<R> {
@@ -31,15 +28,20 @@ interface AvecAppartenances<R> {
 }
 
 /**
- * The user's role in the company. A suspended membership closes the access
- * even though the legacy column still carries a role.
+ * The user's role in the company. No membership: the legacy role for CHAP
+ * EXPRESS (account created by the previous API version during a deployment),
+ * no access anywhere else. A suspended membership closes the access.
  */
 export function roleEffectif<R extends Pick<Role, 'name'>>(
   user: AvecAppartenances<R>,
+  tenantId: string,
 ): R {
   const [appartenance] = user.memberships;
   if (!appartenance) {
-    return user.role;
+    if (tenantId === TENANT_PAR_DEFAUT) {
+      return user.role;
+    }
+    throw new UnauthorizedException('Aucun accès à cette entreprise.');
   }
   if (appartenance.statut !== 'actif') {
     throw new UnauthorizedException('Accès suspendu pour ce compte.');
@@ -48,12 +50,12 @@ export function roleEffectif<R extends Pick<Role, 'name'>>(
 }
 
 /**
- * Nested write that makes a new account a member of the company with its
- * role. users.role_id is still set by the caller, for the previous API
- * version (expand/contract, see the plan).
+ * Nested write that makes a new account a member of the company of the
+ * request (set by the Prisma extension) with its role. users.role_id is
+ * still set by the caller, for the previous API version.
  */
 export function appartenanceInitiale(
   roleId: string,
 ): Prisma.UserUncheckedCreateInput['memberships'] {
-  return { create: { tenantId: TENANT_PAR_DEFAUT, roleId } };
+  return { create: { roleId } as { roleId: string; tenantId: string } };
 }

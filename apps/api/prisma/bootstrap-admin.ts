@@ -1,7 +1,6 @@
 import 'dotenv/config';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { clientScript, pourChapExpress } from './client-script';
 import { assurerAppartenances, assurerSocle } from './socle';
 
 // Production counterpart of seed.ts: creates the roles/permissions and the
@@ -13,8 +12,7 @@ import { assurerAppartenances, assurerSocle } from './socle';
 
 const SALT_ROUNDS = 12;
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+const prisma = clientScript();
 
 async function main() {
   const telephone = process.env.ADMIN_TELEPHONE?.trim();
@@ -50,7 +48,7 @@ async function main() {
   console.log(`Compte admin_dispatcher ${telephone} créé.`);
 }
 
-main()
+pourChapExpress(main)
   .catch((error) => {
     console.error(error);
     process.exitCode = 1;

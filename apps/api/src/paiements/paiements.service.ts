@@ -23,6 +23,10 @@ import { cheminCommande } from '../notifications/messages-statut';
 import { NotificationsService } from '../notifications/notifications.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { FedapayClient } from './fedapay.client';
+import {
+  executerDansTenant,
+  executerEnPlateforme,
+} from '../tenancy/contexte-tenant';
 
 const COMMANDE_SELECT = {
   id: true,
@@ -313,24 +317,30 @@ export class PaiementsService {
       return { recu: true };
     }
 
-    const paiement = await this.prisma.paiement.findUnique({
-      where: { referenceTransaction: String(transactionId) },
-      select: { commandeId: true },
-    });
+    // FedaPay calls from its servers: the company comes from the payment,
+    // never from the request (étape 4 of docs/plan-migration-multi-tenant.md).
+    const paiement = await executerEnPlateforme(() =>
+      this.prisma.paiement.findUnique({
+        where: { referenceTransaction: String(transactionId) },
+        select: { commandeId: true, tenantId: true },
+      }),
+    );
     // Not ours, or superseded by a newer transaction: acknowledge and ignore,
     // otherwise FedaPay keeps retrying.
     if (!paiement) {
       return { recu: true };
     }
 
-    const commande = await this.getCommande(paiement.commandeId);
-    // Re-read rather than trust the event payload.
-    const transaction = await this.fedapay.lireTransaction(transactionId);
-    await this.appliquerStatut(
-      commande,
-      String(transactionId),
-      transaction.status,
-    );
+    await executerDansTenant(paiement.tenantId, async () => {
+      const commande = await this.getCommande(paiement.commandeId);
+      // Re-read rather than trust the event payload.
+      const transaction = await this.fedapay.lireTransaction(transactionId);
+      await this.appliquerStatut(
+        commande,
+        String(transactionId),
+        transaction.status,
+      );
+    });
     return { recu: true };
   }
 
