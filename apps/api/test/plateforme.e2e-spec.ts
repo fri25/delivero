@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from './../src/prisma/prisma.service';
+import { executerEnPlateforme } from './../src/tenancy/contexte-tenant';
 
 // CHAP EXPRESS as tenant n°1, inserted by migration plateforme_tenants
 // (docs/plan-migration-multi-tenant.md, étape 1). Its settings are the values
@@ -102,10 +103,13 @@ describe('Plateforme : entreprise CHAP EXPRESS (e2e)', () => {
   it('toute ligne métier appartient à CHAP EXPRESS ou à une entreprise de test', async () => {
     // Since étape 4 the isolation suite creates a second company
     // (tnt_e2e_…); nothing may belong to anything else.
+    // Platform mode: under RLS (étape 7) a raw count only sees one company.
     for (const table of TABLES_METIER) {
-      const [{ n }] = await prisma.$queryRawUnsafe<{ n: bigint }[]>(
-        `SELECT count(*) AS n FROM "${table}"
-         WHERE tenant_id <> 'tnt_chapexpress' AND tenant_id NOT LIKE 'tnt_e2e_%'`,
+      const [{ n }] = await executerEnPlateforme(() =>
+        prisma.$queryRawUnsafe<{ n: bigint }[]>(
+          `SELECT count(*) AS n FROM "${table}"
+           WHERE tenant_id <> 'tnt_chapexpress' AND tenant_id NOT LIKE 'tnt_e2e_%'`,
+        ),
       );
       expect({ table, autres: Number(n) }).toEqual({ table, autres: 0 });
     }

@@ -138,6 +138,54 @@ chantier multi-entreprises ([plan](plan-migration-multi-tenant.md)).
 La restauration doit avoir été **essayée une fois** sur une copie avant la
 première migration du chantier, en notant sa durée.
 
+## 8. Rôle de base restreint (sécurité par ligne)
+
+Depuis l'étape 7 du [plan multi-entreprises](plan-migration-multi-tenant.md),
+les 22 tables métier portent une politique PostgreSQL `isolation_entreprise` :
+une connexion ne voit que les lignes de l'entreprise réglée dans
+`app.tenant_id` (posé par l'API à chaque emprunt de connexion). **Un rôle
+superutilisateur ou `BYPASSRLS` ignore ces politiques** : c'est le cas du rôle
+propriétaire créé par la console Neon (membre de `neon_superuser`). Tant que
+l'API s'y connecte, l'extension Prisma reste la seule barrière ; rien ne casse,
+la protection supplémentaire est simplement inactive.
+
+Pour l'activer, une fois, depuis le PC (éditeur SQL Neon ou `psql` avec l'URL
+du propriétaire) :
+
+```sql
+-- Created by SQL, not by the console: no neon_superuser, no BYPASSRLS.
+CREATE ROLE rapidliv_app LOGIN PASSWORD '<mot de passe long>'
+  NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;
+GRANT USAGE ON SCHEMA public TO rapidliv_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO rapidliv_app;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO rapidliv_app;
+-- Tables created by later migrations (run as the owner):
+ALTER DEFAULT PRIVILEGES FOR ROLE neondb_owner IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO rapidliv_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE neondb_owner IN SCHEMA public
+  GRANT USAGE, SELECT ON SEQUENCES TO rapidliv_app;
+```
+
+Puis, sur le service API de Render :
+
+1. `DATABASE_URL_MIGRATIONS` = l'URL actuelle (propriétaire) : les migrations
+   du démarrage continuent de tourner avec elle (`prisma.config.ts`).
+2. `DATABASE_URL` = la même URL avec `rapidliv_app` et son mot de passe.
+3. Redéployer, puis vérifier : connexion back-office, une commande de bout en
+   bout, et dans l'éditeur SQL Neon connecté en `rapidliv_app` :
+   `SELECT count(*) FROM commandes;` doit renvoyer **0** (aucune entreprise
+   réglée).
+
+Les scripts lancés depuis le PC (`comptages`, `seed`, `bootstrap-admin`)
+gardent l'URL du propriétaire. Retour arrière : remettre l'ancienne
+`DATABASE_URL` (aucune migration à défaire) ; défaire les politiques elles-mêmes :
+`prisma/retour-arriere/20261106100000_rls_isolation_entreprise.sql`.
+
+**Limite.** Le rôle de l'API peut lui-même régler `app.plateforme` (lecture
+transverse, utilisée par les tâches planifiées et la future app plateforme).
+La sécurité par ligne rattrape un filtre oublié ou une requête SQL brute ; elle
+ne protège pas d'un attaquant capable d'exécuter du SQL arbitraire avec ce rôle.
+
 ## Limites et sortie
 
 - Neon gratuit : 0,5 Go, base suspendue après 5 min d'inactivité (réveil en

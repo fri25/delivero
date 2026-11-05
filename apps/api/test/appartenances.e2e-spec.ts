@@ -4,7 +4,10 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from './../src/prisma/prisma.service';
-import { executerDansTenant } from './../src/tenancy/contexte-tenant';
+import {
+  executerDansTenant,
+  executerEnPlateforme,
+} from './../src/tenancy/contexte-tenant';
 
 // Étape 3 of docs/plan-migration-multi-tenant.md: the role comes from the
 // membership in CHAP EXPRESS, users.role_id only as a fallback. Login and
@@ -56,13 +59,16 @@ describe('Appartenances (e2e)', () => {
   it('tout compte existant est membre d’une entreprise avec son rôle', async () => {
     // Since étape 4 the isolation suite adds accounts of a second company:
     // every account belongs to at least one, CHAP EXPRESS or that one.
-    const sansAppartenance = await prisma.user.count({
-      where: { memberships: { none: {} } },
-    });
+    // Across companies: platform mode, or RLS (étape 7) hides memberships.
+    const sansAppartenance = await executerEnPlateforme(() =>
+      prisma.user.count({ where: { memberships: { none: {} } } }),
+    );
     expect(sansAppartenance).toBe(0);
-    const roleDivergent = await prisma.$queryRaw<{ n: bigint }[]>`
+    const roleDivergent = await executerEnPlateforme(
+      () => prisma.$queryRaw<{ n: bigint }[]>`
       SELECT count(*) AS n FROM memberships m JOIN users u ON u.id = m.user_id
-      WHERE m.role_id <> u.role_id`;
+      WHERE m.role_id <> u.role_id`,
+    );
     expect(Number(roleDivergent[0].n)).toBe(0);
   });
 

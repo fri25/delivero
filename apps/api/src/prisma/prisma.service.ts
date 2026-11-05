@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import { extensionTenant } from './extension-tenant';
+import { creerPoolTenant } from './pool-tenant';
 
 @Injectable()
 export class PrismaService
@@ -11,9 +12,12 @@ export class PrismaService
 {
   constructor(config: ConfigService) {
     super({
-      adapter: new PrismaPg({
-        connectionString: config.getOrThrow<string>('DATABASE_URL'),
-      }),
+      // Every connection carries the company of its request (étape 7, RLS).
+      adapter: new PrismaPg(
+        creerPoolTenant({
+          connectionString: config.getOrThrow<string>('DATABASE_URL'),
+        }),
+      ),
     });
     // Every module injects this client: returning the extended one scopes
     // all their queries to the company of the request (étape 4,

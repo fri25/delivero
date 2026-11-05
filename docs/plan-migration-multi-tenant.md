@@ -497,6 +497,42 @@ requête HTTP (une transaction interactive par requête).
 **Retour arrière.** `DISABLE ROW LEVEL SECURITY` par table, sans toucher aux
 données.
 
+**État au 06/11/2026** (branche `multi-tenant`, non déployé) :
+
+- Migration `20261106100000_rls_isolation_entreprise` : `ENABLE` + `FORCE
+  ROW LEVEL SECURITY` et politique `isolation_entreprise` sur les 22 tables
+  (les 21 métier + `memberships`), en une seule migration : elle ne touche
+  aucune donnée et se défait d'un bloc
+  (`prisma/retour-arriere/…_rls_isolation_entreprise.sql`, aller-retour
+  essayé). Politique : `tenant_id = current_setting('app.tenant_id', true)`
+  ou `current_setting('app.plateforme', true) = 'on'`.
+- **Écart au plan** : pas de transaction par requête. Le pool `pg` de l'API
+  (`src/prisma/pool-tenant.ts`) pose `app.tenant_id` et `app.plateforme` au
+  niveau de la session à chaque emprunt de connexion, d'après le contexte de
+  l'appelant ; la requête n'est faite que si l'entreprise de la connexion
+  change. Coût : au plus un aller-retour par emprunt, pas de transaction
+  ajoutée — non mesuré sur Neon, à vérifier au p95 après déploiement (seuil
+  + 20 % inchangé).
+- **Écart au plan** : pas de rôle `rapidliv_plateforme` avec `BYPASSRLS`. Le
+  mode plateforme (tâches planifiées, future app plateforme) passe par
+  `app.plateforme = 'on'`, sur la même connexion. Un seul rôle à créer en
+  production, `rapidliv_app` ; procédure : [deploiement.md § 8](deploiement.md).
+  Les migrations passent par `DATABASE_URL_MIGRATIONS` (propriétaire) si elle
+  est renseignée.
+- Tant que l'API se connecte avec le rôle propriétaire Neon (`BYPASSRLS`),
+  les politiques sont inactives : la mise en production de l'étape 7 ne
+  change rien tant que le § 8 n'est pas appliqué.
+- Les e2e tournent avec un rôle restreint (`rapidliv_app_e2e`, créé par
+  `test/global-setup-e2e.ts`), migrations et seed avec le propriétaire.
+  Nouvelle suite `test/rls.e2e-spec.ts` : rôle soumis aux politiques, SQL
+  brut limité à l'entreprise du contexte, rien sans contexte, tout en mode
+  plateforme, `UPDATE` d'une autre entreprise sans effet, `INSERT` pour une
+  autre entreprise refusé. Les vérifications transverses des suites
+  existantes passent en mode plateforme. e2e 72/72 sur base neuve, unitaires
+  72/72.
+- **Reporté à l'étape 10** : suppression de `users.role_id` (encore lu en
+  repli pour CHAP EXPRESS, voir étape 3).
+
 ## Étape 8 — Espace de gestion de l'entreprise
 
 Dans l'app `admin` existante :

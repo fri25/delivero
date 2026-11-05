@@ -3,6 +3,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import { TENANT_PAR_DEFAUT } from '../src/auth/appartenance';
 import { extensionTenant } from '../src/prisma/extension-tenant';
+import { creerPoolTenant } from '../src/prisma/pool-tenant';
 import { executerDansTenant } from '../src/tenancy/contexte-tenant';
 
 /**
@@ -12,7 +13,9 @@ import { executerDansTenant } from '../src/tenancy/contexte-tenant';
  * of relying on a column default.
  */
 export function clientScript(): PrismaClient {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+  const adapter = new PrismaPg(
+    creerPoolTenant({ connectionString: process.env.DATABASE_URL }),
+  );
   return new PrismaClient({ adapter }).$extends(
     extensionTenant,
   ) as unknown as PrismaClient;

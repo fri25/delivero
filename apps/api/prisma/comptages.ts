@@ -16,6 +16,8 @@ import 'dotenv/config';
 import { readFileSync } from 'node:fs';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
+import { creerPoolTenant } from '../src/prisma/pool-tenant';
+import { executerEnPlateforme } from '../src/tenancy/contexte-tenant';
 
 interface Comptage {
   lignes: number;
@@ -23,7 +25,10 @@ interface Comptage {
 }
 type Instantane = Record<string, Comptage>;
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+// Platform mode: counts every company, whatever role the script uses (RLS).
+const adapter = new PrismaPg(
+  creerPoolTenant({ connectionString: process.env.DATABASE_URL }),
+);
 const prisma = new PrismaClient({ adapter });
 
 // Identifiers come from information_schema, never from user input; quoting
@@ -122,7 +127,7 @@ async function main() {
   }
 }
 
-main()
+executerEnPlateforme(main)
   .catch((error: unknown) => {
     console.error(error);
     process.exitCode = 1;
