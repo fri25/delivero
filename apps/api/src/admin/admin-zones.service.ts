@@ -24,7 +24,8 @@ export class AdminZonesService {
   }
 
   async create(dto: CreateZoneDto) {
-    const existing = await this.prisma.zone.findUnique({
+    // Unique per company since étape 5 (UNIQUE (tenant_id, nom)).
+    const existing = await this.prisma.zone.findFirst({
       where: { nom: dto.nom },
     });
     if (existing) {

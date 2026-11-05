@@ -139,7 +139,8 @@ export class CommandesCoursesExpressService {
     dto: CreateCommandeCoursesExpressDto,
     invite?: InfosInvite,
   ) {
-    this.perimetre.assertModePaiementOuvert(dto.modePaiement);
+    await this.perimetre.assertServiceOuvert(TypeService.courses_express);
+    await this.perimetre.assertModePaiementOuvert(dto.modePaiement);
     this.medias.assertUrlsAutorisees(dto.photoUrls, 'courses');
 
     const zone = await this.prisma.zone.findUnique({

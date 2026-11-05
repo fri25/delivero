@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ModePaiement, TypeService } from '@prisma/client';
+import { ParametresTenantService } from '../tenancy/parametres-tenant.service';
 
 /**
  * Garde serveur du périmètre V1 — le pendant de
@@ -15,10 +16,19 @@ import { ModePaiement, TypeService } from '@prisma/client';
  * commandes déjà en base restent consultables, livrables et encaissables —
  * fermer un parcours ne doit jamais laisser une course en cours dans une
  * impasse.
+ *
+ * Étape 5 (docs/plan-migration-multi-tenant.md) : deux niveaux. Les variables
+ * SERVICES_ACTIFS, MODES_PAIEMENT_ACTIFS et CONTRE_REMBOURSEMENT_ACTIF restent
+ * le plafond de la plateforme (ce qui est ouvert techniquement) ; les
+ * fonctionnalités de l'entreprise (tenant_features) décident de ce qu'elle
+ * ouvre. Il faut les deux.
  */
 @Injectable()
 export class PerimetreV1Service {
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly parametres: ParametresTenantService,
+  ) {}
 
   private liste(cle: string): string[] {
     return (this.config.get<string>(cle) ?? '')
@@ -27,16 +37,26 @@ export class PerimetreV1Service {
       .filter((valeur) => valeur.length > 0);
   }
 
-  assertServiceOuvert(service: TypeService) {
-    if (!this.liste('SERVICES_ACTIFS').includes(service)) {
+  private async ouvertPourEntreprise(code: string): Promise<boolean> {
+    return (await this.parametres.courants()).fonctionnalites.has(code);
+  }
+
+  async assertServiceOuvert(service: TypeService) {
+    if (
+      !this.liste('SERVICES_ACTIFS').includes(service) ||
+      !(await this.ouvertPourEntreprise(`service.${service}`))
+    ) {
       throw new ForbiddenException(
         `Le service demandé n’est pas encore ouvert.`,
       );
     }
   }
 
-  assertModePaiementOuvert(mode: ModePaiement) {
-    if (!this.liste('MODES_PAIEMENT_ACTIFS').includes(mode)) {
+  async assertModePaiementOuvert(mode: ModePaiement) {
+    if (
+      !this.liste('MODES_PAIEMENT_ACTIFS').includes(mode) ||
+      !(await this.ouvertPourEntreprise(`paiement.${mode}`))
+    ) {
       throw new ForbiddenException(
         'Ce moyen de paiement n’est pas disponible. Seul le Mobile Money est accepté.',
       );
@@ -47,11 +67,14 @@ export class PerimetreV1Service {
    * RG-04 : le contre-remboursement suppose un encaissement en espèces auprès
    * du destinataire. Retiré de la V1 en même temps que les espèces.
    */
-  assertContreRemboursementOuvert(montant?: number | null) {
+  async assertContreRemboursementOuvert(montant?: number | null) {
     if (montant === undefined || montant === null) {
       return;
     }
-    if (this.config.get<boolean>('CONTRE_REMBOURSEMENT_ACTIF') !== true) {
+    if (
+      this.config.get<boolean>('CONTRE_REMBOURSEMENT_ACTIF') !== true ||
+      !(await this.ouvertPourEntreprise('colis.contre_remboursement'))
+    ) {
       throw new ForbiddenException(
         'Le contre-remboursement n’est pas disponible pour le moment.',
       );

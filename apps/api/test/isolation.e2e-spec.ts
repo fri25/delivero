@@ -1,5 +1,6 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { createHmac } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -47,6 +48,8 @@ describe('Isolation entre entreprises (e2e)', () => {
   let colisA: string;
   let colisB: string;
   let commandeRepasB: string;
+  let zoneBId: string;
+  let adresseBId: string;
 
   const enB = (req: request.Test) => req.set('X-Tenant', B.slug);
   const login = async (identifiants: object, tenant?: string) => {
@@ -67,7 +70,8 @@ describe('Isolation entre entreprises (e2e)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
-    app = moduleFixture.createNestApplication();
+    // rawBody: the FedaPay webhook signature covers the exact bytes (main.ts).
+    app = moduleFixture.createNestApplication({ rawBody: true });
     app.setGlobalPrefix('api');
     app.useGlobalPipes(
       new ValidationPipe({
@@ -88,6 +92,31 @@ describe('Isolation entre entreprises (e2e)', () => {
     await executerEnPlateforme(async () => {
       await prisma.tenant.create({
         data: { id: B.id, slug: B.slug, nom: 'Entreprise B (e2e)' },
+      });
+      // Étape 5: B has its own settings (a commission of 10 %, test value
+      // only) and opens neither cash on delivery nor Courses express.
+      await prisma.tenantSettings.create({
+        data: {
+          tenantId: B.id,
+          nomCommercial: 'Livraisons B',
+          couleurPrimaire: '#000000',
+          couleurMarine: '#000000',
+          couleurSignal: '#000000',
+          ville: 'Djougou',
+          pays: 'BJ',
+          devise: 'XOF',
+          fuseauHoraire: 'Africa/Porto-Novo',
+          indicatifTelephone: '+229',
+          tauxCommission: 10,
+        },
+      });
+      await prisma.tenantFeature.createMany({
+        data: [
+          'service.repas',
+          'service.colis',
+          'paiement.especes',
+          'paiement.mobile_money',
+        ].map((code) => ({ tenantId: B.id, code, actif: true })),
       });
       const admin = await prisma.user.create({
         data: {
@@ -122,7 +151,7 @@ describe('Isolation entre entreprises (e2e)', () => {
         tarifBaseCoursesExpress: 1500,
       })
       .expect(201);
-    const zoneBId = (zoneB.body as { id: string }).id;
+    zoneBId = (zoneB.body as { id: string }).id;
     const quartierB = await enB(request(server).post('/api/admin/quartiers'))
       .set(auth(adminB))
       .send({ nom: `Quartier B ${suffixe}`, fraisLivraison: 800 })
@@ -162,7 +191,7 @@ describe('Isolation entre entreprises (e2e)', () => {
         estParDefaut: true,
       })
       .expect(201);
-    const adresseBId = (adresseB.body as { id: string }).id;
+    adresseBId = (adresseB.body as { id: string }).id;
     const colis = await enB(request(server).post('/api/commandes/colis'))
       .set(auth(clientB))
       .send({
@@ -400,6 +429,114 @@ describe('Isolation entre entreprises (e2e)', () => {
       expect((res.body as Array<{ id: string }>).map((p) => p.id)).toEqual([
         restaurantBId,
       ]);
+    });
+  });
+
+  // Étape 5: settings, features and FedaPay account per company.
+  describe('configuration par entreprise', () => {
+    it('B est facturée à sa propre commission (10 %), pas aux 15 % de CHAP EXPRESS', async () => {
+      const repas = await executerEnPlateforme(() =>
+        prisma.commandeRepas.findUniqueOrThrow({
+          where: { id: commandeRepasB },
+          include: { commande: true },
+        }),
+      );
+      const base =
+        Number(repas.commande.sousTotal) +
+        Number(repas.commande.fraisLivraison);
+      expect(Number(repas.commande.commission)).toBe(Math.round(base * 0.1));
+      expect(Number(repas.commande.commission)).not.toBe(
+        Math.round(base * 0.15),
+      );
+    });
+
+    it('B refuse le contre-remboursement, qu’elle n’a pas ouvert', async () => {
+      await enB(request(server).post('/api/commandes/colis'))
+        .set(auth(clientB))
+        .send({
+          adresseEnlevementId: adresseBId,
+          zoneId: zoneBId,
+          quartierLivraisonId: quartierBId,
+          taille: 'petit',
+          destinataireNom: 'Destinataire B',
+          destinataireTelephone: '+22991234567',
+          adresseLivraison: 'Chez B',
+          pointDeRepereLivraison: 'Repère livraison B',
+          modePaiement: 'especes',
+          montantContreRemboursement: 5000,
+          conditionsAcceptees: true,
+        })
+        .expect(403);
+    });
+
+    describe('webhook FedaPay', () => {
+      const transactionB = `tx-e2e-${suffixe}`;
+      const corps = JSON.stringify({
+        name: 'transaction.approved',
+        entity: { id: transactionB },
+      });
+      // Signed with CHAP EXPRESS's secret (setup-e2e.ts).
+      const signatureChapExpress = () => {
+        const t = Math.floor(Date.now() / 1000);
+        const hmac = createHmac('sha256', 'wh_e2e_chapexpress')
+          .update(`${t}.${corps}`, 'utf8')
+          .digest('hex');
+        return `t=${t},s=${hmac}`;
+      };
+
+      beforeAll(async () => {
+        await executerEnPlateforme(async () => {
+          const repas = await prisma.commandeRepas.findUniqueOrThrow({
+            where: { id: commandeRepasB },
+          });
+          await prisma.paiement.update({
+            where: { commandeId: repas.commandeId },
+            data: { referenceTransaction: transactionB },
+          });
+        });
+      });
+
+      const statutPaiementB = () =>
+        executerEnPlateforme(async () => {
+          const paiement = await prisma.paiement.findUniqueOrThrow({
+            where: { referenceTransaction: transactionB },
+          });
+          return paiement.statut;
+        });
+
+      it('signé par CHAP EXPRESS pour un paiement de B : accusé, ignoré, journalisé', async () => {
+        const avant = await statutPaiementB();
+        await request(server)
+          .post('/api/paiements/webhook/fedapay')
+          .set('Content-Type', 'application/json')
+          .set('X-FEDAPAY-SIGNATURE', signatureChapExpress())
+          .send(corps)
+          .expect(200);
+        expect(await statutPaiementB()).toBe(avant);
+        const evenements = await executerEnPlateforme(() =>
+          prisma.auditLog.count({
+            where: { action: 'securite.webhook_autre_entreprise' },
+          }),
+        );
+        expect(evenements).toBeGreaterThan(0);
+      });
+
+      it('sur l’adresse de B, la clé de CHAP EXPRESS ne signe pas', async () => {
+        await request(server)
+          .post(`/api/paiements/webhook/fedapay/${B.slug}`)
+          .set('Content-Type', 'application/json')
+          .set('X-FEDAPAY-SIGNATURE', signatureChapExpress())
+          .send(corps)
+          .expect(401);
+      });
+
+      it('une adresse d’entreprise inconnue est refusée', async () => {
+        await request(server)
+          .post('/api/paiements/webhook/fedapay/inconnue')
+          .set('Content-Type', 'application/json')
+          .send(corps)
+          .expect(404);
+      });
     });
   });
 });

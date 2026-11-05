@@ -171,8 +171,9 @@ export class CommandesColisService {
     dto: CreateCommandeColisDto,
     invite?: InfosInvite,
   ) {
-    this.perimetre.assertModePaiementOuvert(dto.modePaiement);
-    this.perimetre.assertContreRemboursementOuvert(
+    await this.perimetre.assertServiceOuvert(TypeService.colis);
+    await this.perimetre.assertModePaiementOuvert(dto.modePaiement);
+    await this.perimetre.assertContreRemboursementOuvert(
       dto.montantContreRemboursement,
     );
 

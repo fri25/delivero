@@ -5,6 +5,9 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { TENANT_PAR_DEFAUT } from '../auth/appartenance';
+import { tenantCourant } from '../tenancy/contexte-tenant';
+import { SecretsTenantService } from '../tenancy/secrets-tenant.service';
 
 // Minimal REST client for FedaPay (F-ADM-16), without the official SDK: only
 // 3 calls are needed, and the SDK relies on global state (setApiKey).
@@ -34,14 +37,59 @@ export interface CreerTransactionInput {
   metadata: Record<string, string>;
 }
 
+interface IdentifiantsFedapay {
+  cleSecrete: string | null;
+  secretWebhook: string | null;
+  environnement: 'sandbox' | 'live';
+}
+
 @Injectable()
 export class FedapayClient {
   private readonly logger = new Logger(FedapayClient.name);
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly secrets: SecretsTenantService,
+  ) {}
 
-  estConfigure(): boolean {
-    return Boolean(this.config.get<string>('FEDAPAY_SECRET_KEY'));
+  async estConfigure(): Promise<boolean> {
+    return Boolean((await this.identifiants(tenantCourant())).cleSecrete);
+  }
+
+  /**
+   * FedaPay account of a company (decision Q-MT-4: each company collects on
+   * its own account). Its encrypted keys first; for CHAP EXPRESS only, the
+   * FEDAPAY_* variables as before (double read during the switch, étape 5
+   * of docs/plan-migration-multi-tenant.md). Another company without keys
+   * cannot take payments.
+   */
+  private async identifiants(tenantId: string): Promise<IdentifiantsFedapay> {
+    const cleSecrete = await this.secrets.lire(tenantId, 'fedapay.cle_secrete');
+    if (cleSecrete) {
+      const environnement = await this.secrets.lire(
+        tenantId,
+        'fedapay.environnement',
+      );
+      return {
+        cleSecrete,
+        secretWebhook: await this.secrets.lire(
+          tenantId,
+          'fedapay.secret_webhook',
+        ),
+        environnement: environnement === 'live' ? 'live' : 'sandbox',
+      };
+    }
+    if (tenantId === TENANT_PAR_DEFAUT) {
+      return {
+        cleSecrete: this.config.get<string>('FEDAPAY_SECRET_KEY') || null,
+        secretWebhook:
+          this.config.get<string>('FEDAPAY_WEBHOOK_SECRET') || null,
+        environnement:
+          this.config.get<'sandbox' | 'live'>('FEDAPAY_ENVIRONMENT') ??
+          'sandbox',
+      };
+    }
+    return { cleSecrete: null, secretWebhook: null, environnement: 'sandbox' };
   }
 
   async creerTransaction(
@@ -92,12 +140,13 @@ export class FedapayClient {
    * hex HMAC-SHA256 of `<timestamp>.<raw body>` keyed with the webhook
    * endpoint secret.
    */
-  verifierSignatureWebhook(
+  async verifierSignatureWebhook(
     corpsBrut: string,
     entete: string | undefined,
+    tenantId: string,
     maintenantSecondes = Math.floor(Date.now() / 1000),
-  ): boolean {
-    const secret = this.config.get<string>('FEDAPAY_WEBHOOK_SECRET');
+  ): Promise<boolean> {
+    const secret = (await this.identifiants(tenantId)).secretWebhook;
     if (!secret || !entete) {
       return false;
     }
@@ -114,14 +163,13 @@ export class FedapayClient {
     chemin: string,
     body?: unknown,
   ): Promise<unknown> {
-    const secretKey = this.config.get<string>('FEDAPAY_SECRET_KEY');
+    const { cleSecrete: secretKey, environnement } =
+      await this.identifiants(tenantCourant());
     if (!secretKey) {
       throw new ServiceUnavailableException(
         'Le paiement Mobile Money est momentanément indisponible.',
       );
     }
-    const environnement =
-      this.config.get<'sandbox' | 'live'>('FEDAPAY_ENVIRONMENT') ?? 'sandbox';
 
     let response: Response;
     try {

@@ -7,3 +7,6 @@
 process.env.SERVICES_ACTIFS = 'repas,colis,courses_express,emplettes';
 process.env.MODES_PAIEMENT_ACTIFS = 'mobile_money,especes';
 process.env.CONTRE_REMBOURSEMENT_ACTIF = 'true';
+// CHAP EXPRESS's FedaPay webhook secret, for the cross-company webhook test
+// (étape 5). Test-only value.
+process.env.FEDAPAY_WEBHOOK_SECRET = 'wh_e2e_chapexpress';

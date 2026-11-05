@@ -38,6 +38,7 @@ import {
   PAIEMENT_ENGAGE_WHERE,
 } from '../paiements/paiement-engage';
 import { CreateCommandeRepasDto } from './dto/create-commande-repas.dto';
+import { ParametresTenantService } from '../tenancy/parametres-tenant.service';
 
 const DETAIL_INCLUDE = {
   commande: {
@@ -111,6 +112,7 @@ export class CommandesRepasService {
     private readonly notifications: NotificationsService,
     private readonly perimetre: PerimetreV1Service,
     private readonly alertesLivreurs: AlertesLivreursService,
+    private readonly parametres: ParametresTenantService,
   ) {}
 
   // F-CLI-05 : notifie le client d'un changement de statut, pour remplacer
@@ -143,7 +145,8 @@ export class CommandesRepasService {
     dto: CreateCommandeRepasDto,
     invite?: InfosInvite,
   ) {
-    this.perimetre.assertModePaiementOuvert(dto.modePaiement);
+    await this.perimetre.assertServiceOuvert(TypeService.repas);
+    await this.perimetre.assertModePaiementOuvert(dto.modePaiement);
 
     const partenaire = await this.prisma.partenaire.findFirst({
       // Suspended by ChapExpress (F-ADM-08): takes no order.
@@ -204,7 +207,12 @@ export class CommandesRepasService {
     const fraisLivraison = tarifQuartier(
       Number(adresse.quartierTarifaire.fraisLivraison),
     );
-    const commission = Math.round((sousTotal + fraisLivraison) * 0.15);
+    // Service fee: the company's rate (tenant_settings, étape 5), 15 % for
+    // CHAP EXPRESS as before. x * (15 / 100) gives exactly x * 0.15.
+    const { tauxCommission } = await this.parametres.courants();
+    const commission = Math.round(
+      (sousTotal + fraisLivraison) * (tauxCommission / 100),
+    );
     const montantTotal = sousTotal + fraisLivraison + commission;
 
     const commandeRepas = await this.prisma.$transaction(async (tx) => {

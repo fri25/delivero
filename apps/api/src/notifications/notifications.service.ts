@@ -6,7 +6,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CourrielService } from './courriel.service';
 import { JetonInviteService } from './jeton-invite.service';
 import { Messagerie } from './messagerie';
+import { ParametresTenantService } from '../tenancy/parametres-tenant.service';
 import { notificationStatut, type Notification } from './messages-statut';
+
+type NotificationPersonnalisee = Notification & { marque: string };
 
 /** What any order carries to reach its client, signed-in or guest. */
 export interface ContactCommande {
@@ -42,6 +45,7 @@ export class NotificationsService implements OnModuleInit {
     private readonly jetonInvite: JetonInviteService,
     private readonly config: ConfigService,
     private readonly courriel: CourrielService,
+    private readonly parametres: ParametresTenantService,
   ) {}
 
   onModuleInit() {
@@ -185,7 +189,7 @@ export class NotificationsService implements OnModuleInit {
   commandeAnnuleeParChapExpress(commande: ContactCommande, motif: string) {
     const notification: Notification = {
       titre: 'Commande annulée',
-      message: `ChapExpress a annulé votre commande (${motif}). Si vous avez payé, vous serez remboursé.`,
+      message: `{{marque}} a annulé votre commande (${motif}). Si vous avez payé, vous serez remboursé.`,
     };
     if (commande.clientId) {
       this.envoyerEnArrierePlan(commande.clientId, notification);
@@ -229,7 +233,7 @@ export class NotificationsService implements OnModuleInit {
   nouvelleCommandeRestaurant(partenaireUserId: string) {
     this.envoyerEnArrierePlan(partenaireUserId, {
       titre: 'Nouvelle commande',
-      message: 'Une nouvelle commande ChapExpress attend votre acceptation.',
+      message: 'Une nouvelle commande {{marque}} attend votre acceptation.',
     });
   }
 
@@ -260,12 +264,29 @@ export class NotificationsService implements OnModuleInit {
     commandeId: string,
     notification: Notification,
   ) {
+    void this.personnaliser(notification)
+      .then((personnalisee) =>
+        this.envoyerInvite(contact, commandeId, personnalisee),
+      )
+      .catch((error: unknown) =>
+        this.logger.error(
+          `Notification invité non envoyée (${commandeId})`,
+          error,
+        ),
+      );
+  }
+
+  private envoyerInvite(
+    contact: string | { telephone?: string | null; email?: string | null },
+    commandeId: string,
+    notification: NotificationPersonnalisee,
+  ) {
     const telephone = typeof contact === 'string' ? contact : contact.telephone;
     const email = typeof contact === 'object' ? contact.email : undefined;
     const lien = this.jetonInvite.lien(commandeId);
 
     if (telephone) {
-      const texte = `ChapExpress — ${notification.titre} : ${notification.message} ${lien}`;
+      const texte = `${notification.marque} — ${notification.titre} : ${notification.message} ${lien}`;
       void this.messagerie
         .envoyer(telephone, texte)
         .catch((error: unknown) =>
@@ -280,7 +301,7 @@ export class NotificationsService implements OnModuleInit {
       const texteCourriel = `${notification.message}\n\nSuivi de votre commande :\n${lien}`;
       const htmlCourriel = `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b;">
-          <h2 style="color: #0f766e;">ChapExpress — ${notification.titre}</h2>
+          <h2 style="color: #0f766e;">${notification.marque} — ${notification.titre}</h2>
           <p style="font-size: 16px; line-height: 1.5;">${notification.message}</p>
           <div style="margin: 24px 0;">
             <a href="${lien}" style="background-color: #0d9488; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; display: inline-block;">
@@ -296,7 +317,7 @@ export class NotificationsService implements OnModuleInit {
       void this.courriel
         .envoyer({
           a: email,
-          objet: `ChapExpress — ${notification.titre}`,
+          objet: `${notification.marque} — ${notification.titre}`,
           texte: texteCourriel,
           html: htmlCourriel,
         })
@@ -310,12 +331,33 @@ export class NotificationsService implements OnModuleInit {
   }
 
   private envoyerEnArrierePlan(userId: string, notification: Notification) {
-    void this.notifier(userId, notification).catch((error: unknown) =>
-      this.logger.error(`Notification non envoyée à ${userId}`, error),
-    );
+    void this.personnaliser(notification)
+      .then((personnalisee) => this.notifier(userId, personnalisee))
+      .catch((error: unknown) =>
+        this.logger.error(`Notification non envoyée à ${userId}`, error),
+      );
   }
 
-  private async notifier(userId: string, notification: Notification) {
+  /**
+   * Name of the company in the texts (étape 5): {{marque}} in a message, and
+   * the sender line of SMS and e-mails. ChapExpress for CHAP EXPRESS.
+   */
+  private async personnaliser(
+    notification: Notification,
+  ): Promise<NotificationPersonnalisee> {
+    const { nomCommercial: marque } = await this.parametres.courants();
+    return {
+      ...notification,
+      titre: notification.titre.replaceAll('{{marque}}', marque),
+      message: notification.message.replaceAll('{{marque}}', marque),
+      marque,
+    };
+  }
+
+  private async notifier(
+    userId: string,
+    notification: NotificationPersonnalisee,
+  ) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { telephone: true, email: true },
@@ -325,7 +367,7 @@ export class NotificationsService implements OnModuleInit {
     }
 
     if (user.email) {
-      const baseUrl = this.config.get<string>(
+      const baseUrl = await this.parametres.urlApplicationClient(
         'CLIENT_URL',
         'http://localhost:5173',
       );
@@ -346,7 +388,7 @@ export class NotificationsService implements OnModuleInit {
         : '';
       const htmlCourriel = `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b;">
-          <h2 style="color: #0f766e;">ChapExpress — ${notification.titre}</h2>
+          <h2 style="color: #0f766e;">${notification.marque} — ${notification.titre}</h2>
           <p style="font-size: 16px; line-height: 1.5;">${notification.message}</p>
           ${boutonHtml}
         </div>
@@ -354,7 +396,7 @@ export class NotificationsService implements OnModuleInit {
       void this.courriel
         .envoyer({
           a: user.email,
-          objet: `ChapExpress — ${notification.titre}`,
+          objet: `${notification.marque} — ${notification.titre}`,
           texte: texteCourriel,
           html: htmlCourriel,
         })
@@ -370,7 +412,7 @@ export class NotificationsService implements OnModuleInit {
 
     await this.messagerie.envoyer(
       user.telephone,
-      `ChapExpress — ${notification.titre} : ${notification.message}`,
+      `${notification.marque} — ${notification.titre} : ${notification.message}`,
     );
   }
 

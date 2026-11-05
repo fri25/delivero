@@ -44,15 +44,21 @@ describe('Plateforme : entreprise CHAP EXPRESS (e2e)', () => {
     });
   });
 
-  it('ouvre les services et paiements de la V1, et seulement eux', async () => {
+  it('déclare chacune des fonctionnalités de la plateforme', async () => {
+    // Their V1 values (3 services, Mobile Money only) are set by migration
+    // plateforme_tenants; the e2e run opens them all for its duration
+    // (fonctionnalites-e2e.ts), so only their presence is checked here.
     const fonctionnalites = await prisma.tenantFeature.findMany({
-      where: { tenantId: 'tnt_chapexpress', actif: true },
+      where: { tenantId: 'tnt_chapexpress' },
       orderBy: { code: 'asc' },
     });
     expect(fonctionnalites.map((f) => f.code)).toEqual([
+      'colis.contre_remboursement',
+      'paiement.especes',
       'paiement.mobile_money',
       'service.colis',
       'service.courses_express',
+      'service.emplettes',
       'service.repas',
     ]);
   });

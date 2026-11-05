@@ -204,7 +204,8 @@ model Adresse {
 // — simplification à revoir une fois Q-28 tranchée.
 model Zone {
   id             String   @id @default(cuid())
-  nom            String   @unique
+  // Unique per company: @@unique([tenantId, nom]) below (étape 5).
+  nom            String
   description    String?
   fraisLivraison Decimal  @default(500) @map("frais_livraison") @db.Decimal(10, 2)
   createdAt      DateTime @default(now()) @map("created_at")
@@ -234,7 +235,8 @@ model Zone {
 // Edited from the back-office (Quartiers page); see docs/regles-gestion.md RG-08.
 model Quartier {
   id             String   @id @default(cuid())
-  nom            String   @unique
+  // Unique per company: @@unique([tenantId, nom]) below (étape 5).
+  nom            String
   fraisLivraison Decimal  @map("frais_livraison") @db.Decimal(10, 2)
   // "Autre quartier": catch-all for names not (yet) in the list — the client
   // must then type the name of their neighbourhood.

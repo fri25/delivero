@@ -5,6 +5,8 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { TENANT_PAR_DEFAUT } from '../auth/appartenance';
+import { contexteTenant } from '../tenancy/contexte-tenant';
 
 // Photos (F-CLI-16 colis, F-CLI-23 courses express) stored on Cloudinary
 // (decision of 2026-10-06). The browser uploads straight to Cloudinary with a
@@ -17,7 +19,14 @@ export type UsageMedia = (typeof USAGES_MEDIA)[number];
 // Only images: anything else is refused by Cloudinary itself, the format list
 // being part of the signed parameters.
 const FORMATS_AUTORISES = 'jpg,jpeg,png,webp';
-const RACINE = 'chapexpress';
+// Cloudinary root folder of the company (étape 5 of
+// docs/plan-migration-multi-tenant.md): CHAP EXPRESS keeps its historical
+// folder, so the URLs already stored stay valid; any other company uses its
+// id, which never changes (a slug can be renamed).
+function racine(): string {
+  const tenantId = contexteTenant()?.tenantId ?? TENANT_PAR_DEFAUT;
+  return tenantId === TENANT_PAR_DEFAUT ? 'chapexpress' : tenantId;
+}
 
 /** Same ceiling as the client-side compression target (exigences NF). */
 export const TAILLE_MAX_OCTETS = 300 * 1024;
@@ -54,7 +63,7 @@ export class MediasService {
     }
     const parametres: Record<string, string> = {
       allowed_formats: FORMATS_AUTORISES,
-      folder: `${RACINE}/${usage}`,
+      folder: `${racine()}/${usage}`,
       timestamp: Math.floor(Date.now() / 1000).toString(),
     };
     return {
@@ -81,7 +90,7 @@ export class MediasService {
       if (
         !this.estActif() ||
         !url.startsWith(prefixe) ||
-        !url.includes(`/${RACINE}/${usage}/`)
+        !url.includes(`/${racine()}/${usage}/`)
       ) {
         throw new BadRequestException('Photo non reconnue. Renvoyez-la.');
       }

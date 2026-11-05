@@ -13,6 +13,7 @@ import { Prisma } from '@prisma/client';
 import { Messagerie } from '../notifications/messagerie';
 import { PrismaService } from '../prisma/prisma.service';
 import { tenantCourant } from '../tenancy/contexte-tenant';
+import { ParametresTenantService } from '../tenancy/parametres-tenant.service';
 import {
   appartenanceInitiale,
   avecRole,
@@ -47,6 +48,7 @@ export class OtpService {
     private readonly prisma: PrismaService,
     private readonly messagerie: Messagerie,
     private readonly authService: AuthService,
+    private readonly parametres: ParametresTenantService,
   ) {}
 
   async demander(dto: DemanderOtpDto) {
@@ -103,9 +105,11 @@ export class OtpService {
     ]);
 
     try {
+      // Name of the company the client signs in to (étape 5).
+      const { nomCommercial } = await this.parametres.courants();
       await this.messagerie.envoyer(
         telephone,
-        `Votre code ChapExpress : ${code}. Valable 10 minutes. Ne le communiquez à personne, pas même à un livreur.`,
+        `Votre code ${nomCommercial} : ${code}. Valable 10 minutes. Ne le communiquez à personne, pas même à un livreur.`,
       );
     } catch (error) {
       this.logger.error(

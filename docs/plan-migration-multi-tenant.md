@@ -376,6 +376,49 @@ reconfiguré.
 
 **Retour arrière.** Code précédent : l'env n'a pas été vidé.
 
+**État au 06/11/2026** (branche `multi-tenant`, non déployé) :
+
+- `src/tenancy/parametres-tenant.service.ts` : réglages et fonctionnalités
+  de l'entreprise de la requête (cache 60 s). Pas de valeur par défaut :
+  une entreprise sans réglages ne peut pas chiffrer une commande.
+- Périmètre : variables d'environnement = plafond de la plateforme,
+  `tenant_features` = ce que l'entreprise ouvre ; il faut les deux.
+  Repas, Colis et Courses express vérifient désormais aussi que leur
+  service est ouvert (comme Emplettes). Rien ne change pour CHAP EXPRESS.
+- Commission : `tenant_settings.taux_commission`, calculée
+  `x × (taux / 100)`, identique au franc près à l'ancien `x × 0,15`
+  (vérifié de 0 à 2 000 000 FCFA). Le calcul affiché dans l'app client
+  (`CartPage`) suit à l'étape 6.
+- FedaPay : clés de chaque entreprise dans `tenant_secrets`, chiffrées
+  AES-256-GCM avec `TENANT_SECRETS_KEY` ; pour CHAP EXPRESS seulement,
+  repli sur `FEDAPAY_*`. Webhook `POST /paiements/webhook/fedapay/<slug>`
+  vérifié avec le secret de cette entreprise ; l'ancienne adresse reste
+  celle de CHAP EXPRESS. Un webhook signé par une entreprise pour un
+  paiement d'une autre est ignoré et journalisé
+  (`securite.webhook_autre_entreprise`).
+- Adresse de retour du paiement et liens des courriels : domaine principal
+  vérifié de l'entreprise ; **CHAP EXPRESS garde `CLIENT_APP_URL` /
+  `CLIENT_URL`** tant que ses domaines ne sont pas vérifiés.
+- Textes (code SMS, notifications, courriels) au nom de l'entreprise ;
+  dossier Cloudinary par entreprise (`chapexpress/` conservé pour CHAP
+  EXPRESS, identifiant `tnt_…` pour les autres). Expéditeurs Twilio et
+  courriel : ceux de la plateforme pour toutes, pas de surcharge par
+  entreprise pour l'instant.
+- Migration `20261105180000_unicite_nom_par_entreprise` : suppression de
+  l'unicité globale du nom des zones et des quartiers.
+- Tests : unitaires (chiffrement, clés FedaPay par entreprise, plafond ∩
+  fonctionnalités), e2e (commission de B à 10 %, contre-remboursement
+  refusé chez B, webhook croisé ignoré, adresse de webhook inconnue
+  refusée). Les e2e ouvrent les fonctionnalités de CHAP EXPRESS le temps
+  du passage puis les restaurent (`test/fonctionnalites-e2e.ts`). Base
+  neuve : 64 e2e et 71 unitaires verts.
+- **À faire en production avant d'ouvrir une deuxième entreprise** :
+  générer `TENANT_SECRETS_KEY` (`openssl rand -base64 32`) dans Render ;
+  enregistrer les clés FedaPay de chaque nouvelle entreprise (écran de
+  l'étape 8) et déclarer `…/paiements/webhook/fedapay/<slug>` dans son
+  tableau FedaPay. Pour CHAP EXPRESS, rien d'obligatoire : ses variables
+  `FEDAPAY_*` et son adresse de webhook actuelles continuent de marcher.
+
 ## Étape 6 — Apps paramétrées
 
 | Élément | Changement |

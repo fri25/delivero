@@ -6,7 +6,6 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   ModePaiement,
   Prisma,
@@ -27,6 +26,8 @@ import {
   executerDansTenant,
   executerEnPlateforme,
 } from '../tenancy/contexte-tenant';
+import { JournalSecuriteService } from '../tenancy/journal-securite.service';
+import { ParametresTenantService } from '../tenancy/parametres-tenant.service';
 
 const COMMANDE_SELECT = {
   id: true,
@@ -88,8 +89,9 @@ export class PaiementsService {
     private readonly fedapay: FedapayClient,
     private readonly realtime: RealtimeGateway,
     private readonly notifications: NotificationsService,
-    private readonly config: ConfigService,
     private readonly alertesLivreurs: AlertesLivreursService,
+    private readonly journal: JournalSecuriteService,
+    private readonly parametres: ParametresTenantService,
   ) {}
 
   /**
@@ -171,7 +173,7 @@ export class PaiementsService {
     const transaction = await this.fedapay.creerTransaction({
       montant: Math.round(Number(paiement.montant)),
       description: `ChapExpress — ${LIBELLES_SERVICE[commande.typeService]}`,
-      callbackUrl: `${this.clientAppUrl()}${cheminRetour}`,
+      callbackUrl: `${await this.parametres.urlApplicationClient('CLIENT_APP_URL')}${cheminRetour}`,
       client: {
         prenom,
         nom,
@@ -296,11 +298,23 @@ export class PaiementsService {
     return this.etat(commande, StatutPaiement.reussi);
   }
 
-  /** Server-to-server confirmation from FedaPay, the source of truth. */
-  async traiterWebhook(corpsBrut: string | undefined, signature?: string) {
+  /**
+   * Server-to-server confirmation from FedaPay, the source of truth. The
+   * signature is checked with the webhook secret of the company the URL
+   * names (étape 5): each company has its own FedaPay account.
+   */
+  async traiterWebhook(
+    corpsBrut: string | undefined,
+    signature: string | undefined,
+    tenantId: string,
+  ) {
     if (
       !corpsBrut ||
-      !this.fedapay.verifierSignatureWebhook(corpsBrut, signature)
+      !(await this.fedapay.verifierSignatureWebhook(
+        corpsBrut,
+        signature,
+        tenantId,
+      ))
     ) {
       throw new UnauthorizedException('Signature de webhook invalide.');
     }
@@ -328,6 +342,15 @@ export class PaiementsService {
     // Not ours, or superseded by a newer transaction: acknowledge and ignore,
     // otherwise FedaPay keeps retrying.
     if (!paiement) {
+      return { recu: true };
+    }
+    // Signed by company A for a payment of company B: never applied.
+    if (paiement.tenantId !== tenantId) {
+      await this.journal.signaler({
+        action: 'securite.webhook_autre_entreprise',
+        tenantId,
+        details: { transactionId: String(transactionId) },
+      });
       return { recu: true };
     }
 
@@ -513,13 +536,6 @@ export class PaiementsService {
       commandeServiceId: this.specialisation(commande)?.id ?? commande.id,
       statut,
     };
-  }
-
-  private clientAppUrl(): string {
-    return (this.config.get<string>('CLIENT_APP_URL') ?? '').replace(
-      /\/+$/,
-      '',
-    );
   }
 }
 

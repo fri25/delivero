@@ -359,7 +359,9 @@ async function main() {
   await assurerSocle(prisma);
 
   const zone = await prisma.zone.upsert({
-    where: { nom: 'Natitingou centre' },
+    where: {
+      tenantId_nom: { tenantId: 'tnt_chapexpress', nom: 'Natitingou centre' },
+    },
     update: {},
     create: { nom: 'Natitingou centre' },
   });

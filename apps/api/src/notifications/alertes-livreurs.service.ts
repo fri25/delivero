@@ -90,7 +90,7 @@ export class AlertesLivreursService {
       if (livreur.disponible) {
         this.notifications.courseDisponibleLivreur(livreur.userId, {
           titre: 'Nouvelle course',
-          message: `${LIBELLES[commande.typeService]} : ouvrez ChapExpress Livreur pour la prendre.`,
+          message: `${LIBELLES[commande.typeService]} : ouvrez {{marque}} Livreur pour la prendre.`,
           url: '/',
         });
       }

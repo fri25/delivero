@@ -139,7 +139,7 @@ export class CommandesEmplettesService {
   }
 
   async create(clientId: string, dto: CreateCommandeEmplettesDto) {
-    this.perimetre.assertServiceOuvert(TypeService.emplettes);
+    await this.perimetre.assertServiceOuvert(TypeService.emplettes);
 
     if (dto.mode !== ModeEmplettes.liste_libre) {
       throw new BadRequestException(

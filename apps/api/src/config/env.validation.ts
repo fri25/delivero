@@ -87,6 +87,11 @@ export const envValidationSchema = Joi.object({
   // auprès du destinataire — retiré de la V1 avec les espèces.
   CONTRE_REMBOURSEMENT_ACTIF: Joi.boolean().default(false),
   JWT_SECRET: Joi.string().min(32).required(),
+  // Master key of the per-company credentials (tenant_secrets, étape 5 of
+  // docs/plan-migration-multi-tenant.md): 32 random bytes in base64
+  // (openssl rand -base64 32). Optional while CHAP EXPRESS keeps its
+  // FedaPay keys in FEDAPAY_*; required to store any company secret.
+  TENANT_SECRETS_KEY: Joi.string().base64().length(44).allow('').default(''),
   // V05 : 7 jours était trop long pour un jeton non révocable — 2h par
   // défaut, le refresh se fait par re-login côté client.
   JWT_EXPIRES_IN: Joi.string().default('2h'),
