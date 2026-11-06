@@ -523,8 +523,9 @@ async function main() {
     },
   });
 
+  // Étape 10: admin_entreprise (admin_dispatcher before).
   const adminRoleForUser = await prisma.role.findUniqueOrThrow({
-    where: { name: 'admin_dispatcher' },
+    where: { name: 'admin_entreprise' },
   });
   await prisma.user.upsert({
     where: { telephone: DEMO_ADMIN.telephone },

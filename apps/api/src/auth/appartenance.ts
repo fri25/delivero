@@ -32,7 +32,8 @@ export type UtilisateurAvecRole = Prisma.UserGetPayload<{
 }>;
 
 interface AvecAppartenances<R> {
-  role: R;
+  /** users.role_id: null for every account created since étape 10. */
+  role: R | null;
   memberships: Array<{ statut: string; role: R }>;
 }
 
@@ -47,7 +48,7 @@ export function roleEffectif<R extends Pick<Role, 'name'>>(
 ): R {
   const [appartenance] = user.memberships;
   if (!appartenance) {
-    if (tenantId === TENANT_PAR_DEFAUT) {
+    if (tenantId === TENANT_PAR_DEFAUT && user.role) {
       return user.role;
     }
     throw new UnauthorizedException('Aucun accès à cette entreprise.');
@@ -60,8 +61,8 @@ export function roleEffectif<R extends Pick<Role, 'name'>>(
 
 /**
  * Nested write that makes a new account a member of the company of the
- * request (set by the Prisma extension) with its role. users.role_id is
- * still set by the caller, for the previous API version.
+ * request (set by the Prisma extension) with its role. users.role_id is no
+ * longer written (étape 10).
  */
 export function appartenanceInitiale(
   roleId: string,

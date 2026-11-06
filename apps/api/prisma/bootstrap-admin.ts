@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import * as bcrypt from 'bcryptjs';
+import { appartenanceInitiale } from '../src/auth/appartenance';
 import { clientScript, pourChapExpress } from './client-script';
 import { assurerAppartenances, assurerSocle } from './socle';
 
@@ -27,8 +28,10 @@ async function main() {
 
   await assurerSocle(prisma);
 
+  // Étape 10: admin_entreprise (admin_dispatcher before), with its
+  // membership in CHAP EXPRESS; users.role_id is no longer written.
   const adminRole = await prisma.role.findUniqueOrThrow({
-    where: { name: 'admin_dispatcher' },
+    where: { name: 'admin_entreprise' },
   });
   const existant = await prisma.user.findUnique({ where: { telephone } });
   if (existant) {
@@ -41,11 +44,11 @@ async function main() {
       telephone,
       passwordHash: await bcrypt.hash(motDePasse, SALT_ROUNDS),
       nom,
-      roleId: adminRole.id,
+      memberships: appartenanceInitiale(adminRole.id),
     },
   });
   await assurerAppartenances(prisma);
-  console.log(`Compte admin_dispatcher ${telephone} créé.`);
+  console.log(`Compte admin_entreprise ${telephone} créé.`);
 }
 
 pourChapExpress(main)

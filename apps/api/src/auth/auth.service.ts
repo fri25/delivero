@@ -56,7 +56,6 @@ export class AuthService {
         email: emailNormalise,
         nom: dto.nom,
         passwordHash,
-        roleId: clientRole.id,
         memberships: appartenanceInitiale(clientRole.id),
       },
       include: avecRole(tenantCourant()),

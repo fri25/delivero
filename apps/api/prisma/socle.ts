@@ -174,15 +174,20 @@ export async function assurerSocle(prisma: PrismaClient): Promise<void> {
 export async function assurerAppartenances(
   prisma: PrismaClient,
 ): Promise<void> {
+  // Étape 10: only legacy accounts still carry users.role_id; newer ones
+  // are created with their membership.
   const sansAppartenance = await prisma.user.findMany({
-    where: { memberships: { none: { tenantId: 'tnt_chapexpress' } } },
+    where: {
+      memberships: { none: { tenantId: 'tnt_chapexpress' } },
+      roleId: { not: null },
+    },
     select: { id: true, roleId: true },
   });
   await prisma.membership.createMany({
     data: sansAppartenance.map((user) => ({
       userId: user.id,
       tenantId: 'tnt_chapexpress',
-      roleId: user.roleId,
+      roleId: user.roleId as string,
     })),
     skipDuplicates: true,
   });

@@ -2,9 +2,10 @@
  * Role codes (roles.name). Étape 8 of docs/plan-migration-multi-tenant.md:
  * the company's back-office has two roles, admin_entreprise (everything,
  * settings and users included) and gestionnaire (day-to-day operations).
- * admin_dispatcher, the CHAP EXPRESS role until now, carries the same
- * permissions as admin_entreprise until its memberships are renamed
- * (étape 10): an account keeps its access during the deployment.
+ * admin_dispatcher, the CHAP EXPRESS role until then, carries the same
+ * permissions as admin_entreprise; its memberships were renamed at étape 10
+ * (migration nettoyage_roles). Still accepted, for an account created by an
+ * older API during a deployment.
  */
 export const ROLES = {
   client: 'client',
@@ -13,7 +14,7 @@ export const ROLES = {
   livreur: 'livreur',
   adminEntreprise: 'admin_entreprise',
   gestionnaire: 'gestionnaire',
-  /** @deprecated alias of admin_entreprise, renamed at étape 10. */
+  /** @deprecated alias of admin_entreprise (renamed at étape 10). */
   adminDispatcher: 'admin_dispatcher',
   direction: 'direction',
 } as const;

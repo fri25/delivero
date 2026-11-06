@@ -39,6 +39,11 @@ services:
       # Optional: without it, migrations use DATABASE_URL.
       - key: DATABASE_URL_MIGRATIONS
         sync: false
+      # Unknown domain → this company (étape 10). Keeps CHAP EXPRESS's
+      # behaviour; remove once its domains are checked (docs/deploiement.md
+      # § 10): an unknown domain is then refused.
+      - key: ENTREPRISE_REPLI
+        value: chapexpress
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN

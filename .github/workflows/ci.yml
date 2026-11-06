@@ -67,6 +67,6 @@ jobs:
       # One suite at a time: they share the seeded demo accounts.
       - run: pnpm --filter @delivero/api test:e2e -- --runInBand
       # Migrations must lose nothing: a second deploy on the seeded base is a no-op.
-      - run: pnpm --filter @delivero/api comptages > /tmp/avant.json
+      - run: pnpm --silent --filter @delivero/api comptages > /tmp/avant.json
       - run: pnpm --filter @delivero/api prisma:deploy
       - run: pnpm --filter @delivero/api comptages -- --comparer /tmp/avant.json

@@ -86,7 +86,7 @@ describe('Isolation entre entreprises (e2e)', () => {
 
     // --- Company B and its admin (platform side, as the étape 9 app will).
     const adminRole = await prisma.role.findUniqueOrThrow({
-      where: { name: 'admin_dispatcher' },
+      where: { name: 'admin_entreprise' },
     });
     const adminBTelephone = numero('1');
     await executerEnPlateforme(async () => {

@@ -12,7 +12,7 @@ import { assurerSocle } from './socle';
 // docs/plan-migration-multi-tenant.md), on the model of bootstrap-admin.ts.
 // Idempotent: an existing account (a CHAP EXPRESS admin, for instance) is
 // added to platform_admins, its password is never overwritten. A platform
-// account belongs to no company: the users.role_id it needs gets client.
+// account belongs to no company.
 //
 // PLATEFORME_TELEPHONE="+229..." PLATEFORME_MOT_DE_PASSE="..." PLATEFORME_NOM="..." \
 //   pnpm --filter @delivero/api prisma:bootstrap-plateforme
@@ -42,15 +42,11 @@ async function main() {
         'PLATEFORME_MOT_DE_PASSE (12 caractères minimum) est obligatoire pour un nouveau compte.',
       );
     }
-    const client = await prisma.role.findUniqueOrThrow({
-      where: { name: 'client' },
-    });
     user = await prisma.user.create({
       data: {
         telephone,
         nom,
         passwordHash: await bcrypt.hash(motDePasse, SALT_ROUNDS),
-        roleId: client.id,
       },
     });
     console.log(`Compte ${telephone} créé.`);

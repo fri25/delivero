@@ -215,7 +215,6 @@ export class OtpService {
           telephone,
           nom,
           passwordHash: null,
-          roleId: role.id,
           memberships: appartenanceInitiale(role.id),
         },
         include: avecRole(tenantCourant()),

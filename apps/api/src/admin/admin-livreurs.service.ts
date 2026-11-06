@@ -76,7 +76,6 @@ export class AdminLivreursService {
           telephone: dto.telephone,
           nom: dto.nom,
           passwordHash,
-          roleId: livreurRole.id,
           memberships: appartenanceInitiale(livreurRole.id),
         },
       });

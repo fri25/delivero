@@ -104,8 +104,11 @@ async function main() {
     return;
   }
 
+  // A file written by `pnpm … comptages > avant.json` without --silent
+  // starts with pnpm's banner: the snapshot is what follows the first "{".
+  const fichier = readFileSync(process.argv[indexComparer + 1], 'utf8');
   const avant = JSON.parse(
-    readFileSync(process.argv[indexComparer + 1], 'utf8'),
+    fichier.slice(Math.max(0, fichier.indexOf('{'))),
   ) as Instantane;
   const ecarts = comparer(avant, courant);
   for (const table of Object.keys(courant).filter((t) => !avant[t])) {

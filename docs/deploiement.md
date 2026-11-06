@@ -70,8 +70,8 @@ $env:ADMIN_NOM="Prénom Nom"
 pnpm prisma:bootstrap-admin
 ```
 
-Le script crée les rôles, les permissions et ce compte `admin_dispatcher`
-(alias d'`admin_entreprise` depuis l'étape 8 du chantier multi-entreprises),
+Le script crée les rôles, les permissions et ce compte `admin_entreprise`
+(`admin_dispatcher` avant le chantier multi-entreprises),
 rien d'autre. Relançable sans risque : un compte existant n'est pas modifié.
 Fermer le terminal ensuite (les variables y restent). Zones, restaurants et
 livreurs se créent depuis l'app admin ; les quartiers viennent de la
@@ -118,7 +118,7 @@ chantier multi-entreprises ([plan](plan-migration-multi-tenant.md)).
 1. **Sauvegarde** depuis le PC (la base Neon de production) :
    `pg_dump -Fc "$PROD_URL" > delivero-$(date +%Y%m%d-%H%M).dump`.
 2. **Comptages de référence** :
-   `DATABASE_URL="$PROD_URL" pnpm --filter @delivero/api comptages > avant.json`
+   `DATABASE_URL="$PROD_URL" pnpm --silent --filter @delivero/api comptages > avant.json`
    (lecture seule).
 3. **Copie de répétition** : créer une branche Neon jetable (ou une base
    locale), y restaurer le dump avec
@@ -212,6 +212,98 @@ super-admin avec son mot de passe actuel ; ses accès d'entreprise ne
 changent pas. La session plateforme est distincte : elle n'ouvre que
 `/api/plateforme`, et une session d'entreprise y est refusée (403).
 Retirer un super-admin : supprimer sa ligne de `platform_admins`.
+
+## 10. Multi-entreprises : mise en production et deuxième entreprise
+
+Chantier décrit dans [plan-migration-multi-tenant.md](plan-migration-multi-tenant.md),
+étapes 0 à 10, sur la branche `multi-tenant`. Rien n'est encore déployé.
+
+### Mise en production du chantier
+
+1. **Avant** : sauvegarde, comptages de référence et répétition sur une copie
+   (§ 7). La répétition se fait avec la branche entière.
+2. **Variables Render de l'API**, avant le déploiement :
+   - `TENANT_SECRETS_KEY` : `openssl rand -base64 32`, à conserver hors de
+     Render aussi (sans elle, les clés FedaPay saisies par les entreprises
+     sont illisibles) ;
+   - `ENTREPRISE_REPLI=chapexpress` : déclarée dans `render.yaml` ; si le
+     service n'est pas resynchronisé depuis le blueprint, l'ajouter à la
+     main. **Sans elle, toute requête d'un domaine absent de
+     `tenant_domains` est refusée.**
+   - `DATABASE_URL_MIGRATIONS` : seulement avec le rôle restreint (§ 8).
+3. **Deux déploiements**, dans cet ordre :
+   1. le commit `c5ce24a` (chaque requête liée à son entreprise) ;
+   2. puis la tête de branche. Elle contient la migration
+      `tenant_id_sans_defaut` (commit `65f2795`) : déployée en même temps
+      que le code qui pose l'entreprise, l'ancienne instance encore active
+      pendant la bascule échouerait sur ses écritures.
+   Pendant la seconde bascule (une minute environ), l'instance `c5ce24a`
+   ne reconnaît pas encore `admin_entreprise` : le back-office peut
+   répondre « Accès refusé » le temps qu'elle s'arrête.
+4. **Après** : `comptages -- --comparer avant.json` (§ 7), connexion de
+   chaque rôle CHAP EXPRESS, une commande de bout en bout. Le journal de
+   l'API ne doit afficher aucun « Domaine … inconnu » pour les domaines
+   CHAP EXPRESS ; s'il en affiche, ajouter ce domaine depuis l'app
+   plateforme.
+5. **Super-admin** de la plateforme (§ 9) et, quand l'hébergement est
+   décidé, l'app plateforme elle-même.
+6. **FedaPay CHAP EXPRESS** : rien d'obligatoire, les variables `FEDAPAY_*`
+   restent lues. Pour passer sur ses propres clés : écran Réglages du
+   back-office, puis remplacer dans le tableau de bord FedaPay l'adresse du
+   webhook par `…/api/paiements/webhook/fedapay/chapexpress` (l'ancienne
+   adresse reste servie).
+7. **Facultatif** : rôle de base restreint (§ 8).
+
+### Retirer le repli sur CHAP EXPRESS
+
+Le but de l'étape 10 : un domaine inconnu est refusé, aucune requête ne
+tombe par défaut chez CHAP EXPRESS.
+
+1. Laisser tourner quelques jours et relever dans les journaux de l'API les
+   messages « Domaine … inconnu : repli sur chapexpress ».
+2. Ajouter chacun de ces domaines légitimes à CHAP EXPRESS depuis l'app
+   plateforme (les 4 domaines `chapexpress-*.onrender.com` y sont déjà,
+   migration `plateforme_tenants` — à comparer avec les noms réels des
+   services Render).
+3. Supprimer `ENTREPRISE_REPLI` du service API, redéployer, vérifier une
+   connexion sur chacune des 4 apps. Retour arrière : remettre la variable.
+
+### Hébergement des sous-domaines — Q-MT-6, à trancher
+
+Question ouverte, pas tranchée ici. Les options :
+
+- **Domaines propres à chaque entreprise sur les sites statiques Render
+  existants** : chaque domaine (ex. `livraison-b.bj`) est ajouté aux 4 sites
+  Render et déclaré dans l'app plateforme. Rien à installer ; une
+  configuration DNS par entreprise. Limites et coût de l'offre Render à
+  vérifier.
+- **Domaine générique `*.rapidliv.com` sur Render** : une entreprise ouvre
+  sans toucher à Render (`<slug>.rapidliv.com`). Suppose un certificat
+  générique et l'offre Render qui le permet — à vérifier.
+- **Serveur Caddy (`deploy/`) avec certificats à la demande** : nécessite un
+  serveur (VPS) et d'y servir aussi les 4 apps ; le `Caddyfile` actuel ne
+  fait que relayer l'API.
+
+En attendant, une deuxième entreprise peut ouvrir sur ses propres services
+Render (`<entreprise>-client.onrender.com`…) déclarés dans l'app plateforme.
+
+### Entreprise de démonstration et recette croisée
+
+1. App plateforme → **Nouvelle entreprise** (identifiant `demo`,
+   commission de test, services voulus, offre « Pilote » en essai, premier
+   administrateur). Ajouter ses domaines et créer les enregistrements TXT
+   affichés, puis **Vérifier**.
+2. L'administrateur de la démo se connecte au back-office ouvert sur un
+   domaine de la démo (ou, sur un domaine partagé, avec `?entreprise=demo`),
+   saisit dans **Réglages** ses clés FedaPay **sandbox** et déclare dans le
+   tableau de bord FedaPay sandbox l'adresse de webhook affichée.
+3. Il crée une zone, ses quartiers, un restaurant, un livreur.
+4. Recette croisée, à la main, selon la grille de
+   [architecture-multi-tenant.md § 4](architecture-multi-tenant.md) : un
+   compte de chaque entreprise ne voit, ne modifie ni n'est notifié de rien
+   de l'autre (commandes, restaurants, livreurs, clients, journal) ; un
+   jeton de l'une est refusé chez l'autre ; un paiement sandbox de la démo
+   ne touche aucune commande CHAP EXPRESS.
 
 ## Limites et sortie
 

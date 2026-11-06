@@ -92,6 +92,14 @@ export const envValidationSchema = Joi.object({
   // (openssl rand -base64 32). Optional while CHAP EXPRESS keeps its
   // FedaPay keys in FEDAPAY_*; required to store any company secret.
   TENANT_SECRETS_KEY: Joi.string().base64().length(44).allow('').default(''),
+  // Étape 10: company (slug) served when a request names none and comes
+  // from an unknown domain. Empty: refused (404), the target once every
+  // company's domains are in tenant_domains. render.yaml sets chapexpress
+  // until CHAP EXPRESS's domains are checked (docs/deploiement.md § 10).
+  ENTREPRISE_REPLI: Joi.string()
+    .pattern(/^[a-z0-9-]+$/)
+    .allow('')
+    .default(''),
   // V05 : 7 jours était trop long pour un jeton non révocable — 2h par
   // défaut, le refresh se fait par re-login côté client.
   JWT_EXPIRES_IN: Joi.string().default('2h'),

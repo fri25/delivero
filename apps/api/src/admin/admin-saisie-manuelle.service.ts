@@ -50,7 +50,6 @@ export class AdminSaisieManuelleService {
       create: {
         telephone,
         nom,
-        roleId: clientRole.id,
         memberships: appartenanceInitiale(clientRole.id),
       },
     });

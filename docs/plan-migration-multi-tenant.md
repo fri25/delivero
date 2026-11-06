@@ -659,6 +659,42 @@ entreprise suspendue ne peut plus se connecter ni commander.
 - Suppression du repli « CHAP EXPRESS par défaut » : une requête sans
   entreprise identifiable est désormais refusée.
 
+**État au 06/11/2026** (branche `multi-tenant`, non déployé) — ce qui se
+code est fait ; ce qui reste est une décision ou une action en production :
+
+- **Repli « CHAP EXPRESS par défaut »** : remplacé par `ENTREPRISE_REPLI`
+  (slug). Vide : un domaine inconnu est refusé (404) — l'état visé. Le
+  `render.yaml` le règle à `chapexpress`, le comportement de production ne
+  change donc pas au déploiement ; le retirer est une action d'exploitation,
+  une fois les domaines vérifiés ([deploiement.md § 10](deploiement.md)).
+  `/api/health`, les webhooks FedaPay et les manifestes PWA ne dépendent
+  plus du domaine appelant. Testé en unitaire
+  (`resolution-tenant.service.spec.ts`) ; les e2e gardent le repli.
+- **Rôles** (migration `20261106180000_nettoyage_roles`, retour arrière
+  essayé) : les appartenances `admin_dispatcher` deviennent
+  `admin_entreprise` (mêmes permissions) ; `users.role_id` devient
+  facultatif et n'est plus écrit par l'API ni par `bootstrap-admin` ; il
+  reste lu en repli pour un compte CHAP EXPRESS sans appartenance. **Reste**
+  (contraction, une version plus tard) : `ALTER TABLE users DROP COLUMN
+  role_id` et le repli de `roleEffectif`.
+- **Manifeste PWA par entreprise** : `GET /api/tenant/<slug>/manifeste/<app>`
+  (nom, couleur, logo ou monogramme SVG `…/icone.svg`). Les 4 apps
+  remplacent leur manifeste au chargement **seulement** pour une autre
+  entreprise que CHAP EXPRESS : ses PWA installées ne changent pas.
+- **Temps réel** : rien à changer. Les apps n'ouvrent Socket.IO qu'en
+  WebSocket (`transports: ['websocket']`), qui n'est pas soumis à CORS ; le
+  jeton (`tid`) choisit la salle de l'entreprise.
+- **Reste à décider : Q-MT-6** (hébergement des sous-domaines). Options et
+  conséquences : [deploiement.md § 10](deploiement.md). Tant qu'elle n'est
+  pas tranchée, une deuxième entreprise peut ouvrir sur ses propres domaines
+  Render (`<entreprise>-client.onrender.com`…) déclarés dans l'app
+  plateforme.
+- **Reste à faire en production** : l'entreprise de démonstration (compte
+  FedaPay sandbox) et la recette croisée sur CHAP EXPRESS et la démo
+  (procédure : [deploiement.md § 10](deploiement.md)).
+- Tests : e2e 92/92 sur base neuve ; unitaires API 77, client 54, livreur
+  8, partenaires 7 ; les 5 apps compilent.
+
 ---
 
 ## Tests de non-régression, à chaque étape
@@ -671,8 +707,8 @@ entreprise suspendue ne peut plus se connecter ni commander.
 - Une commande de bout en bout en production (Repas, Mobile Money sandbox
   ou petit montant réel) après les étapes 3, 4, 5 et 7.
 
-## Prochaine étape
+## Mise en production
 
-Démarrer par l'**étape 0** (filet de sécurité et CI), qui ne modifie ni la
-base ni le comportement, puis l'**étape 1**. Je les implémente sur une
-branche dédiée, chacune soumise à votre validation avant la suivante.
+Les étapes 0 à 10 sont sur la branche `multi-tenant`, rien n'est déployé.
+Ordre, réglages et vérifications : [deploiement.md § 10](deploiement.md),
+« Mise en production du chantier ».

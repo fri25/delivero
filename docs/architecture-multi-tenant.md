@@ -457,3 +457,52 @@ Tranchées le 04/11/2026 :
 | **Q-MT-6** | Hébergement des sous-domaines : offre payante Render ou serveur Caddy ? | **Ouvert** : la réponse « oui » ne désigne pas une des deux options. Sans incidence avant l'étape 10 du [plan de migration](plan-migration-multi-tenant.md) |
 
 Le plan détaillé est dans [plan-migration-multi-tenant.md](plan-migration-multi-tenant.md).
+
+## 7. État réalisé (06/11/2026)
+
+Implémenté sur la branche `multi-tenant` (non déployé), étape par étape :
+[plan-migration-multi-tenant.md](plan-migration-multi-tenant.md), section
+« État au … » de chaque étape. Carte des mécanismes, pour qui reprend le code :
+
+| Mécanisme | Où | Remarque |
+|---|---|---|
+| Contexte d'entreprise | `apps/api/src/tenancy/contexte-tenant.ts` | `AsyncLocalStorage` ; `executerDansTenant`, `executerEnPlateforme` (rare, nommé) |
+| Résolution de l'entreprise | `tenancy/resolution-tenant.service.ts`, `tenant.middleware.ts` | `X-Tenant` → `Origin` → `Host` ; domaine inconnu refusé sauf `ENTREPRISE_REPLI` ; `/api/plateforme`, `/api/health`, webhooks et manifestes hors entreprise |
+| Barrière 1 : extension Prisma | `src/prisma/extension-tenant.ts` | filtre les lectures, injecte `tenant_id` (écritures imbriquées comprises), lève une erreur sans contexte |
+| Barrière 2 : sécurité par ligne | migration `20261106100000_rls_isolation_entreprise`, `src/prisma/pool-tenant.ts` | `app.tenant_id` / `app.plateforme` posés à chaque emprunt de connexion ; inactive tant que l'API utilise un rôle `BYPASSRLS` ([deploiement.md § 8](deploiement.md)) |
+| Session et rôle | `src/auth/guards/jwt-auth.guard.ts`, `auth/appartenance.ts`, `auth/roles.ts` | jeton `tid` ; rôle et permissions relus dans l'appartenance à chaque requête |
+| Réglages, fonctionnalités | `tenancy/parametres-tenant.service.ts`, `config/perimetre-v1.service.ts` | fonctionnalités = plafond plateforme (variables) ∩ choix de l'entreprise |
+| Secrets (FedaPay) | `tenancy/secrets-tenant.service.ts`, `paiements/fedapay.client.ts` | AES-256-GCM, clé `TENANT_SECRETS_KEY` ; webhook `…/fedapay/<slug>` |
+| Espace entreprise | `src/entreprise/`, `apps/admin` (Réglages, Utilisateurs, Journal, Clients) | `admin_entreprise` / `gestionnaire` |
+| Journal | `entreprise/journal-activite.interceptor.ts`, `tenancy/journal-securite.service.ts` | écritures réussies : route, cible, noms des champs |
+| Plateforme | `src/plateforme/`, `apps/plateforme` | session `scope: plateforme`, comptes `platform_admins` |
+| Apps | `packages/config/entreprise.ts` | `GET /api/tenant`, cache local, couleurs, manifeste PWA hors CHAP EXPRESS |
+
+**Écarts avec la cible des sections 2 et 3**, chacun justifié dans le plan :
+
+- Sécurité par ligne : réglage de session par connexion plutôt qu'une
+  transaction par requête ; pas de rôle `rapidliv_plateforme` séparé, le
+  mode plateforme passe par `app.plateforme` (étape 7).
+- Journal (§ 2.8) : ni valeurs ni avant/après, seulement les noms des
+  champs envoyés — un mot de passe ou une clé FedaPay ne doit jamais y
+  entrer. Les remboursements gardent leur propre trace (qui, quand,
+  montant, référence Mobile Money).
+- Suppression d'une entreprise : non faite (suspension à la place), faute
+  d'outil d'export.
+- `users.role_id` : facultatif et plus écrit, pas encore supprimé
+  (contraction prévue une version plus tard).
+- Q-MT-6 (hébergement) : toujours ouverte ([deploiement.md § 10](deploiement.md)).
+
+**Règles pour le code à venir** :
+
+- Toute requête métier tourne dans un contexte d'entreprise ; une tâche de
+  fond ou un script qui n'en a pas en ouvre un (`executerDansTenant`) ou
+  lit en mode plateforme et nomme ensuite l'entreprise de chaque ligne.
+- Une nouvelle table métier reçoit `tenant_id`, entre dans `MODELES_TENANT`
+  (`extension-tenant.ts`) et reçoit sa politique `isolation_entreprise` dans
+  la même migration.
+- Un `include` imbriqué vers une table métier depuis une table plateforme
+  (`users`, `tenants`) n'est pas filtré par l'extension : filtrer
+  explicitement par `tenantId` (exemple : `JwtAuthGuard`).
+- Une valeur visible par le client (nom, ville, contacts, commission) se lit
+  dans l'entreprise, jamais en dur.

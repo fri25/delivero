@@ -6,7 +6,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { TENANT_PAR_DEFAUT } from '../auth/appartenance';
 import { ROLES, ROLES_BACK_OFFICE } from '../auth/roles';
 import {
   normaliserTelephoneBenin,
@@ -103,8 +102,6 @@ export class EntrepriseUtilisateursService {
         telephone,
         nom: dto.nom,
         passwordHash,
-        // Legacy column, only read for CHAP EXPRESS (removed at étape 10).
-        roleId: role.id,
         memberships: {
           create: { roleId: role.id } as { roleId: string; tenantId: string },
         },
@@ -149,13 +146,6 @@ export class EntrepriseUtilisateursService {
       data: { statut: dto.statut, roleId: role?.id },
       select: SELECTION,
     });
-    // Keeps the legacy fallback of CHAP EXPRESS consistent (étape 3).
-    if (role && tenantCourant() === TENANT_PAR_DEFAUT) {
-      await this.prisma.user.update({
-        where: { id: appartenance.userId },
-        data: { roleId: role.id },
-      });
-    }
     return versVue(modifiee);
   }
 

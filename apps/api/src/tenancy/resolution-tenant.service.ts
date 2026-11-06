@@ -4,8 +4,8 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
-import { TENANT_PAR_DEFAUT } from '../auth/appartenance';
 import { PrismaService } from '../prisma/prisma.service';
 
 interface TenantResolu {
@@ -29,10 +29,11 @@ const nomHote = (valeur: string | undefined): string | null => {
 /**
  * Company of a request (étape 4 of docs/plan-migration-multi-tenant.md):
  * X-Tenant header (slug), else the Origin of the app that calls, else the
- * Host, looked up in tenant_domains. Until a second company opens (étape 10)
- * an unknown domain falls back on CHAP EXPRESS, logged so a misconfigured
- * domain does not go unnoticed. tenants and tenant_domains are platform
- * tables: these lookups need no company context.
+ * Host, looked up in tenant_domains. An unknown domain is refused (étape 10),
+ * unless ENTREPRISE_REPLI names a company to fall back on (CHAP EXPRESS in
+ * production until its domains are checked), logged once per host so a
+ * misconfigured domain does not go unnoticed. tenants and tenant_domains
+ * are platform tables: these lookups need no company context.
  */
 @Injectable()
 export class ResolutionTenantService {
@@ -43,7 +44,10 @@ export class ResolutionTenantService {
   >();
   private readonly hotesSignales = new Set<string>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
 
   async resoudre(req: Request): Promise<string> {
     const slug = req.header('x-tenant')?.trim().toLowerCase();
@@ -71,13 +75,27 @@ export class ResolutionTenantService {
 
     const hote =
       nomHote(req.header('origin')) ?? nomHote(req.header('host')) ?? '?';
+    const repli = this.config.get<string>('ENTREPRISE_REPLI') ?? '';
+    if (!repli) {
+      throw new NotFoundException('Aucune entreprise pour ce domaine.');
+    }
+    const tenant = await this.enCache(`slug:${repli}`, () =>
+      this.prisma.tenant.findUnique({
+        where: { slug: repli },
+        select: { id: true, statut: true },
+      }),
+    );
+    if (!tenant) {
+      this.logger.error(`ENTREPRISE_REPLI=${repli} : entreprise inconnue.`);
+      throw new NotFoundException('Aucune entreprise pour ce domaine.');
+    }
     if (!this.hotesSignales.has(hote)) {
       this.hotesSignales.add(hote);
       this.logger.warn(
-        `Domaine ${hote} inconnu : repli sur CHAP EXPRESS (étape 10 : refusé).`,
+        `Domaine ${hote} inconnu : repli sur ${repli} (ENTREPRISE_REPLI).`,
       );
     }
-    return TENANT_PAR_DEFAUT;
+    return this.verifierStatut(tenant);
   }
 
   /** After a change by the platform (status, domains), étape 9. */

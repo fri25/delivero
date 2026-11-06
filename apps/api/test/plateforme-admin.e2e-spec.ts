@@ -167,6 +167,35 @@ describe('Plateforme super-admin (e2e)', () => {
     );
   });
 
+  it('sert le manifeste PWA et l’icône de l’entreprise (étape 10)', async () => {
+    const res = await request(server)
+      .get(`/api/tenant/${slug}/manifeste/livreur`)
+      .query({ origine: 'https://livreur.exemple.bj' })
+      .expect(200);
+    expect(res.headers['content-type']).toContain('application/manifest+json');
+    const manifeste = JSON.parse(res.text) as {
+      name: string;
+      start_url: string;
+      icons: { src: string }[];
+    };
+    expect(manifeste).toMatchObject({
+      name: 'Livraisons Plateforme e2e Livreur',
+      start_url: 'https://livreur.exemple.bj/',
+    });
+    expect(manifeste.icons.map((i) => i.src)).toContain('../icone.svg');
+    const icone = await request(server)
+      .get(`/api/tenant/${slug}/icone.svg`)
+      .expect(200);
+    expect(icone.headers['content-type']).toContain('image/svg+xml');
+    await request(server)
+      .get(`/api/tenant/${slug}/manifeste/inconnue`)
+      .expect(404);
+    await request(server)
+      .get(`/api/tenant/${slug}/manifeste/client`)
+      .query({ origine: 'javascript:alert(1)' })
+      .expect(400);
+  });
+
   it('les fonctionnalités fermées disparaissent aussitôt', async () => {
     await pf(
       request(server).put(

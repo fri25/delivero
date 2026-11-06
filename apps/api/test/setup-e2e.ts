@@ -15,6 +15,11 @@ process.env.CONTRE_REMBOURSEMENT_ACTIF = 'true';
 process.env.FEDAPAY_WEBHOOK_SECRET = 'wh_e2e_chapexpress';
 // Master key of tenant_secrets (étape 8: FedaPay keys typed in the
 // back-office). Test-only value.
+// Étape 10: requests without X-Tenant come from an unknown host (supertest)
+// and stand for CHAP EXPRESS, as in production until its domains are
+// checked. The refusal without fallback is unit-tested
+// (resolution-tenant.service.spec.ts).
+process.env.ENTREPRISE_REPLI = 'chapexpress';
 process.env.TENANT_SECRETS_KEY = 'ZTJlLXVuaXF1ZW1lbnQtY2xlLWRlLXRlc3QtMzItb2M=';
 
 // Étape 7 (RLS): the API under test connects with a role that is neither

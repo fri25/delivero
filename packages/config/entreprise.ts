@@ -117,7 +117,34 @@ export function abonnerEntreprise(abonne: () => void): () => void {
 function definir(entreprise: Entreprise) {
   courante = entreprise;
   appliquerCouleurs(entreprise);
+  appliquerManifeste(entreprise);
   abonnes.forEach((abonne) => abonne());
+}
+
+export type ApplicationPwa = 'client' | 'livreur' | 'partenaires' | 'admin';
+
+let pwa: { apiUrl: string; application: ApplicationPwa } | null = null;
+
+/**
+ * Installed name and icon of the app for its company (étape 10 of
+ * docs/plan-migration-multi-tenant.md). CHAP EXPRESS keeps the manifest
+ * built with the app, so its PWAs already installed do not change; any other
+ * company gets the one the API builds from its settings.
+ */
+export function activerManifeste(apiUrl: string, application: ApplicationPwa): void {
+  pwa = { apiUrl, application };
+  appliquerManifeste(courante);
+}
+
+function appliquerManifeste(entreprise: Entreprise) {
+  if (!pwa || typeof document === 'undefined') return;
+  if (entreprise.slug === ENTREPRISE_PAR_DEFAUT.slug) return;
+  const lien = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+  if (lien) {
+    lien.crossOrigin = 'anonymous';
+    lien.href = `${pwa.apiUrl}/tenant/${encodeURIComponent(entreprise.slug)}/manifeste/${pwa.application}?origine=${encodeURIComponent(window.location.origin)}`;
+  }
+  document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute('content', entreprise.couleurMarine);
 }
 
 /**

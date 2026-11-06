@@ -9,7 +9,8 @@ import { executerEnPlateforme } from './../src/tenancy/contexte-tenant';
 
 // Étape 8 of docs/plan-migration-multi-tenant.md: the company back-office
 // (settings, FedaPay keys, accounts and roles, activity journal, clients).
-// A is CHAP EXPRESS (seed, admin_dispatcher = alias of admin_entreprise);
+// A is CHAP EXPRESS (seed; its admin_dispatcher became admin_entreprise at
+// étape 10);
 // B is created here with an admin_entreprise.
 const DEMO_ADMIN = { telephone: '+22900000004', motDePasse: 'demo12345' };
 const MOT_DE_PASSE = 'motdepasse123';
@@ -121,8 +122,8 @@ describe('Espace entreprise (e2e)', () => {
     await app.close();
   });
 
-  it('le profil porte les permissions du rôle, admin_dispatcher compris', () => {
-    expect(adminA.user.role).toBe('admin_dispatcher');
+  it('le profil porte les permissions du rôle', () => {
+    expect(adminA.user.role).toBe('admin_entreprise');
     expect(adminA.user.permissions).toEqual(
       expect.arrayContaining([
         'entreprise.parametres',

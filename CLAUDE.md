@@ -5,6 +5,15 @@ Quatre services sous un même point d'entrée : Repas, Colis, Courses express,
 Emplettes. Cinq modules : Client, Restaurant, Commerce partenaire, Livreur,
 Back-office (admin + dispatching, porté par une seule personne).
 
+**Multi-entreprises (branche `multi-tenant`, 06/11/2026, non déployée)** : la
+plateforme devient **RapidLiv**, SaaS de livraison où CHAP EXPRESS est
+l'entreprise n°1 (`tnt_chapexpress`). Schéma partagé + `tenant_id` sur les
+tables métier, double barrière (extension Prisma + sécurité par ligne
+PostgreSQL), espace entreprise dans `apps/admin`, super-admin dans
+`apps/plateforme`. Architecture et règles pour le code à venir :
+[docs/architecture-multi-tenant.md](docs/architecture-multi-tenant.md) § 7 ;
+étapes et état : [docs/plan-migration-multi-tenant.md](docs/plan-migration-multi-tenant.md).
+
 Monorepo pnpm en implémentation active. Les **4 services** (Repas, Colis, Emplettes
 en mode liste libre, Courses express) sont livrés côté API NestJS/Prisma et côté
 apps `client`/`livreur` (phasage retenu : Repas → Colis → Emplettes → Courses
@@ -144,6 +153,11 @@ Détail complet : [docs/regles-gestion.md](docs/regles-gestion.md).
 
 ## Garde-fous
 
+- Isolation entre entreprises : toute requête métier tourne dans un contexte
+  d'entreprise, une nouvelle table métier reçoit `tenant_id`, sa place dans
+  `MODELES_TENANT` et sa politique RLS — voir
+  [docs/architecture-multi-tenant.md](docs/architecture-multi-tenant.md) § 7.
+
 - Ne jamais coder une règle financière (commission, avance, plafond, reversement)
   sans la vérifier dans `docs/regles-gestion.md` ou `docs/service-*.md` — ce cahier
   des charges n'a pas toujours de valeur chiffrée fixée, voir
@@ -171,3 +185,5 @@ Détail complet : [docs/regles-gestion.md](docs/regles-gestion.md).
 | Un budget de perf, une exigence mesurable | [docs/exigences-non-fonctionnelles.md](docs/exigences-non-fonctionnelles.md) |
 | Un point non tranché (Q-NN) avant de décider seul | [docs/decisions-ouvertes.md](docs/decisions-ouvertes.md) |
 | Le catalogue de lancement Repas (7 restaurants pilotes, REST-NN) | [docs/annexe-a-catalogue-lancement.md](docs/annexe-a-catalogue-lancement.md) |
+| Le multi-entreprises (RapidLiv), l'isolation, les rôles d'entreprise | [docs/architecture-multi-tenant.md](docs/architecture-multi-tenant.md), [docs/plan-migration-multi-tenant.md](docs/plan-migration-multi-tenant.md) |
+| L'administration d'une entreprise ou de la plateforme (mode d'emploi) | [docs/guide-administration.md](docs/guide-administration.md) |

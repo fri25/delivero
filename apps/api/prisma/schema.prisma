@@ -53,8 +53,11 @@ model User {
   email        String?  @unique @map("email")
   passwordHash String?  @map("password_hash")
   nom          String
-  roleId       String   @map("role_id")
-  role         Role     @relation(fields: [roleId], references: [id])
+  // Legacy role (before memberships, étape 3), only read as a fallback for
+  // CHAP EXPRESS accounts without membership. No longer written (étape 10),
+  // dropped by a later migration (docs/plan-migration-multi-tenant.md).
+  roleId       String?  @map("role_id")
+  role         Role?    @relation(fields: [roleId], references: [id])
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 

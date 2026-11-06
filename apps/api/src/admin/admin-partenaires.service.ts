@@ -75,7 +75,6 @@ export class AdminPartenairesService {
           telephone,
           nom: dto.nom,
           passwordHash,
-          roleId: role.id,
           memberships: appartenanceInitiale(role.id),
         },
       });

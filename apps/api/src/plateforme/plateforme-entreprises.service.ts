@@ -234,8 +234,6 @@ export class PlateformeEntreprisesService {
               telephone,
               nom: dto.admin.nom,
               passwordHash,
-              // Legacy column, only read for CHAP EXPRESS (étape 10).
-              roleId: role.id,
             },
           })
         ).id;
