@@ -70,7 +70,8 @@ $env:ADMIN_NOM="Prénom Nom"
 pnpm prisma:bootstrap-admin
 ```
 
-Le script crée les rôles, les permissions et ce compte `admin_dispatcher`,
+Le script crée les rôles, les permissions et ce compte `admin_dispatcher`
+(alias d'`admin_entreprise` depuis l'étape 8 du chantier multi-entreprises),
 rien d'autre. Relançable sans risque : un compte existant n'est pas modifié.
 Fermer le terminal ensuite (les variables y restent). Zones, restaurants et
 livreurs se créent depuis l'app admin ; les quartiers viennent de la
@@ -185,6 +186,32 @@ gardent l'URL du propriétaire. Retour arrière : remettre l'ancienne
 transverse, utilisée par les tâches planifiées et la future app plateforme).
 La sécurité par ligne rattrape un filtre oublié ou une requête SQL brute ; elle
 ne protège pas d'un attaquant capable d'exécuter du SQL arbitraire avec ce rôle.
+
+## 9. App plateforme RapidLiv (super-admin)
+
+`apps/plateforme` (étape 9 du [plan multi-entreprises](plan-migration-multi-tenant.md))
+gère les entreprises : création, suspension, domaines, fonctionnalités,
+offre, statistiques et journal. **Pas encore déclarée dans `render.yaml`** :
+à ajouter quand l'hébergement est décidé (Q-MT-6), sur le modèle de l'app
+admin (site statique, `VITE_API_URL`), en `noindex`, et son origine à
+ajouter à `CORS_ORIGINS` de l'API.
+
+Premier super-administrateur, depuis le PC, comme au § 4 :
+
+```powershell
+cd apps/api
+$env:DATABASE_URL="<chaîne Neon, rôle propriétaire>"
+$env:PLATEFORME_TELEPHONE="+229XXXXXXXX"
+$env:PLATEFORME_MOT_DE_PASSE="<12 caractères minimum>"
+$env:PLATEFORME_NOM="Prénom Nom"
+pnpm prisma:bootstrap-plateforme
+```
+
+Un numéro déjà inscrit (un admin CHAP EXPRESS, par exemple) devient
+super-admin avec son mot de passe actuel ; ses accès d'entreprise ne
+changent pas. La session plateforme est distincte : elle n'ouvre que
+`/api/plateforme`, et une session d'entreprise y est refusée (403).
+Retirer un super-admin : supprimer sa ligne de `platform_admins`.
 
 ## Limites et sortie
 

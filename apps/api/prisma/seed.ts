@@ -36,6 +36,13 @@ const DEMO_ADMIN = {
   nom: 'Admin Démo',
 } as const;
 
+// Étape 9: super-admin of the RapidLiv platform (dev only).
+const DEMO_PLATEFORME = {
+  telephone: '+22900000009',
+  motDePasse: 'demo12345',
+  nom: 'Équipe RapidLiv',
+} as const;
+
 // Plafonds d'avance/de caisse : valeurs de développement arbitraires, la
 // question du montant réel n'est pas tranchée (Q-02, voir
 // docs/decisions-ouvertes.md) — ne jamais réutiliser ces chiffres comme une
@@ -531,6 +538,24 @@ async function main() {
   });
 
   await assurerAppartenances(prisma);
+
+  // Étape 9: RapidLiv platform super-admin (apps/plateforme), member of no
+  // company: created after the CHAP EXPRESS memberships above.
+  const plateforme = await prisma.user.upsert({
+    where: { telephone: DEMO_PLATEFORME.telephone },
+    update: {},
+    create: {
+      telephone: DEMO_PLATEFORME.telephone,
+      passwordHash: await bcrypt.hash(DEMO_PLATEFORME.motDePasse, SALT_ROUNDS),
+      nom: DEMO_PLATEFORME.nom,
+      roleId: clientRole.id,
+    },
+  });
+  await prisma.platformAdmin.upsert({
+    where: { userId: plateforme.id },
+    update: {},
+    create: { userId: plateforme.id },
+  });
 }
 
 pourChapExpress(main)

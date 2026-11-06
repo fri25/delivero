@@ -612,6 +612,41 @@ Nouvelle app `apps/plateforme`, même stack et composants, servie sur
 **Tests.** Un `admin_entreprise` appelle `/plateforme/*` → 403 ; une
 entreprise suspendue ne peut plus se connecter ni commander.
 
+**État au 06/11/2026** (branche `multi-tenant`, non déployé) :
+
+- API `src/plateforme/` sous `/api/plateforme`, toujours en contexte
+  plateforme (`TenantMiddleware` ne résout aucune entreprise pour ces
+  routes). Session propre : `POST /plateforme/auth/connexion` (comptes de
+  `platform_admins` seulement), jeton `scope: plateforme`, relu à chaque
+  requête par `PlateformeAuthGuard`. Le garde des entreprises refuse ce
+  jeton (sinon, sans `tid`, il vaudrait CHAP EXPRESS) ; une session
+  d'entreprise sur `/plateforme/*` reçoit 403.
+- Entreprises : liste avec statistiques (commandes, commandes et montant
+  commandé sur 30 jours, livreurs inscrits et disponibles, clients,
+  partenaires), détail, création en une transaction (réglages au Bénin,
+  thème de base, commission **saisie**, fonctionnalités, offre, premier
+  `admin_entreprise` — numéro nouveau ou déjà inscrit), suspension et
+  réactivation (effet immédiat sur l'instance qui la fait, cache de 60 s sur
+  les autres). Fonctionnalités par entreprise, offre et statut d'abonnement
+  (manuel, Q-MT-5). Domaines : ajout, principal, retrait, vérification par
+  enregistrement TXT `_rapidliv.<domaine>` = `rapidliv-verification=<id>`.
+  Journal plateforme (toutes entreprises, ou la plateforme seule) ; les
+  actions des super-admins y sont écrites avec `tenant_id` nul.
+- **Non fait** : suppression d'une entreprise (exige un export préalable,
+  pas d'outil d'export à ce jour) ; la suspension en tient lieu.
+- `apps/plateforme` : connexion, entreprises (chiffres globaux et tableau),
+  fiche entreprise, création, journal. Pas de PWA (outil de bureau),
+  session dans `sessionStorage`. Non déclarée dans `render.yaml` :
+  [deploiement.md § 9](deploiement.md).
+- Premier super-admin : `pnpm prisma:bootstrap-plateforme` ; en dev, le seed
+  crée `+22900000009` / `demo12345`.
+- Tests : `test/plateforme-admin.e2e-spec.ts` (admin d'entreprise → 403,
+  session plateforme refusée sur les routes d'entreprise, création complète
+  puis connexion de son admin, identifiant réservé, commission absente,
+  fonctionnalité fermée retirée de `/api/tenant`, entreprise suspendue
+  refusée connexion comprise, domaine non vérifié sans TXT, journal). e2e
+  90/90 sur base neuve ; écrans vérifiés en capture.
+
 ## Étape 10 — Deuxième entreprise
 
 - **Hébergement des sous-domaines (Q-MT-6, à trancher ici)** : Render payant

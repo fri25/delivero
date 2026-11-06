@@ -35,22 +35,30 @@ export class JournalActiviteInterceptor implements NestInterceptor {
     return next.handle().pipe(
       concatMap(async (reponse: unknown) => {
         // Public routes (sign-in, webhooks) have no account: not journaled.
-        if (requete.user && requete.tenantId) {
-          await this.ecrire(requete, requete.tenantId);
+        // A platform super-admin (étape 9) acts for the platform: tenant_id
+        // null, the company concerned is in the path.
+        if (requete.plateformeAdminId) {
+          await this.ecrire(requete, null, requete.plateformeAdminId);
+        } else if (requete.user && requete.tenantId) {
+          await this.ecrire(requete, requete.tenantId, requete.user.id);
         }
         return reponse;
       }),
     );
   }
 
-  private async ecrire(requete: Request, tenantId: string) {
+  private async ecrire(
+    requete: Request,
+    tenantId: string | null,
+    acteurId: string,
+  ) {
     const route = (requete.route as { path?: string } | undefined)?.path;
     const corps: unknown = requete.body;
     try {
       await this.prisma.auditLog.create({
         data: {
           tenantId,
-          acteurId: requete.user?.id,
+          acteurId,
           action: `${requete.method} ${route ?? requete.path}`,
           cibleId:
             typeof requete.params?.id === 'string' ? requete.params.id : null,

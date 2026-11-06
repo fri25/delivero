@@ -27,6 +27,7 @@ import { TenancyModule } from './tenancy/tenancy.module';
 import { TenantMiddleware } from './tenancy/tenant.middleware';
 import { ZonesModule } from './zones/zones.module';
 import { EntrepriseModule } from './entreprise/entreprise.module';
+import { PlateformeModule } from './plateforme/plateforme.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { EntrepriseModule } from './entreprise/entreprise.module';
     ZonesModule,
     AdminModule,
     EntrepriseModule,
+    PlateformeModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

@@ -36,7 +36,7 @@ Choix tranchés (voir [docs/decisions-arbitrage.md](docs/decisions-arbitrage.md)
   docs/pwa-offline.md). Prendre une course exige le réseau.
 - API REST — NestJS + PostgreSQL (Prisma). Monorepo pnpm multi-apps
   (`apps/api`, `apps/client`, `apps/partenaires`, `apps/livreur`, `apps/admin`,
-  `packages/config`).
+  `apps/plateforme` — super-admin RapidLiv depuis le 06/11, `packages/config`).
 - Temps réel : WebSockets (Socket.IO). Ajouté le 27/08 pour le suivi client
   (F-CLI-05, 4 services) et l'alerte nouvelle commande restaurant (F-RES-01) —
   voir `apps/api/src/realtime/`. Le polling reste en place comme filet de
@@ -76,6 +76,7 @@ pnpm dev:client               # apps/client   (PWA client)
 pnpm dev:partenaires          # apps/partenaires (PWA restaurant/commerce)
 pnpm dev:livreur              # apps/livreur  (PWA livreur)
 pnpm dev:admin                # apps/admin    (back-office)
+pnpm dev:plateforme           # apps/plateforme (super-admin RapidLiv, port 5180)
 pnpm dev:api                  # apps/api      (NestJS, watch mode)
 
 pnpm build                    # build de toutes les apps (apps/**)

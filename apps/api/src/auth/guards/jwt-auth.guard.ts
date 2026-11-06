@@ -47,6 +47,12 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Token invalide ou expiré.');
     }
 
+    // Étape 9: a platform session opens /api/plateforme only. Without this
+    // check, its missing tid would read as CHAP EXPRESS.
+    if (payload.scope === 'plateforme') {
+      throw new UnauthorizedException('Session plateforme : accès refusé ici.');
+    }
+
     // Étape 4 (docs/plan-migration-multi-tenant.md): a session belongs to
     // one company. Tokens issued before étape 4 carry no tid: CHAP EXPRESS.
     const tenantId = tenantCourant();

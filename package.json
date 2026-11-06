@@ -13,6 +13,7 @@
     "dev:livreur": "pnpm --filter @delivero/livreur dev",
     "dev:partenaires": "pnpm --filter @delivero/partenaires dev",
     "dev:admin": "pnpm --filter @delivero/admin dev",
+    "dev:plateforme": "pnpm --filter @delivero/plateforme dev",
     "dev:api": "pnpm --filter @delivero/api start:dev",
     "build": "pnpm -r --filter \"./apps/**\" build",
     "lint": "pnpm -r --filter \"./apps/**\" lint",

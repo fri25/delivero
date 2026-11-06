@@ -80,6 +80,11 @@ export class ResolutionTenantService {
     return TENANT_PAR_DEFAUT;
   }
 
+  /** After a change by the platform (status, domains), étape 9. */
+  oublier() {
+    this.cache.clear();
+  }
+
   /** For CORS: is this browser origin the domain of a company? */
   async origineConnue(origine: string): Promise<boolean> {
     const hote = nomHote(origine);

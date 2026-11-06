@@ -6,6 +6,8 @@ declare global {
       user?: AuthenticatedUser;
       /** Company of the request, set by TenantMiddleware (étape 4). */
       tenantId?: string;
+      /** Platform super-admin of a /api/plateforme request (étape 9). */
+      plateformeAdminId?: string;
     }
   }
 }

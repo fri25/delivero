@@ -63,7 +63,10 @@ describe('Appartenances (e2e)', () => {
     // users.role_id is the CHAP EXPRESS fallback: only its memberships must
     // match it (an account of another company has its own role there).
     const sansAppartenance = await executerEnPlateforme(() =>
-      prisma.user.count({ where: { memberships: { none: {} } } }),
+      prisma.user.count({
+        // Étape 9: a platform super-admin belongs to no company.
+        where: { memberships: { none: {} }, platformAdmin: null },
+      }),
     );
     expect(sansAppartenance).toBe(0);
     const roleDivergent = await executerEnPlateforme(

@@ -45,6 +45,14 @@ export function lierAuTenant(tenantId: string, suite: () => void): void {
   stockage.run({ tenantId, plateforme: false }, suite);
 }
 
+/**
+ * Same for the platform routes (/api/plateforme, étape 9): no company, the
+ * platform reads across companies and names the one it acts on.
+ */
+export function lierEnPlateforme(suite: () => void): void {
+  stockage.run({ tenantId: null, plateforme: true }, suite);
+}
+
 export function contexteTenant(): ContexteTenant | undefined {
   return stockage.getStore();
 }
