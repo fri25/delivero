@@ -16,8 +16,10 @@ requis pour Emplettes en mode catalogue, est entièrement à faire). L'app `admi
 rotation + réattribution manuelle) et une gestion des livreurs/zones depuis le
 28/08 ; depuis le 13/10 : tableau de bord (F-ADM-14), restaurants (création de
 compte, suspension, F-ADM-08), annulation par le dispatcher et remboursements
-manuels (F-ADM-06). Litiges, journal des actions et reversement restent à faire —
-voir F-ADM-06/07/18. Statut détaillé fonctionnalité par fonctionnalité :
+manuels (F-ADM-06) ; depuis le 06/11 (chantier multi-entreprises, étape 8) :
+réglages de l'entreprise, comptes du back-office (`admin_entreprise` /
+`gestionnaire`), journal des actions (F-ADM-07) et liste des clients. Litiges et
+reversement restent à faire — voir F-ADM-06/18. Statut détaillé fonctionnalité par fonctionnalité :
 [docs/modules.md](docs/modules.md), tenu à jour à chaque audit — le relire avant
 d'affirmer qu'une fonctionnalité existe ou non. Dernier audit :
 [docs/audit-chapexpress-2026-08-30.html](docs/audit-chapexpress-2026-08-30.html).

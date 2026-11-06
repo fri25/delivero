@@ -8,14 +8,23 @@ import type { Prisma, Role } from '@prisma/client';
  */
 export const TENANT_PAR_DEFAUT = 'tnt_chapexpress';
 
+// Étape 8: the profile lists the permissions, the admin app shows only the
+// screens of its role.
+const permissionsDuRole = {
+  permissions: { include: { permission: true } },
+} as const satisfies Prisma.RoleInclude;
+
 /**
  * Loads a user's membership in a company and, as a fallback, the legacy
- * users.role_id (only meaningful for CHAP EXPRESS, removed at étape 7).
+ * users.role_id (only meaningful for CHAP EXPRESS, removed at étape 10).
  */
 export const avecRole = (tenantId: string) =>
   ({
-    role: true,
-    memberships: { where: { tenantId }, include: { role: true } },
+    role: { include: permissionsDuRole },
+    memberships: {
+      where: { tenantId },
+      include: { role: { include: permissionsDuRole } },
+    },
   }) satisfies Prisma.UserInclude;
 
 export type UtilisateurAvecRole = Prisma.UserGetPayload<{

@@ -60,6 +60,8 @@ describe('Appartenances (e2e)', () => {
     // Since étape 4 the isolation suite adds accounts of a second company:
     // every account belongs to at least one, CHAP EXPRESS or that one.
     // Across companies: platform mode, or RLS (étape 7) hides memberships.
+    // users.role_id is the CHAP EXPRESS fallback: only its memberships must
+    // match it (an account of another company has its own role there).
     const sansAppartenance = await executerEnPlateforme(() =>
       prisma.user.count({ where: { memberships: { none: {} } } }),
     );
@@ -67,7 +69,7 @@ describe('Appartenances (e2e)', () => {
     const roleDivergent = await executerEnPlateforme(
       () => prisma.$queryRaw<{ n: bigint }[]>`
       SELECT count(*) AS n FROM memberships m JOIN users u ON u.id = m.user_id
-      WHERE m.role_id <> u.role_id`,
+      WHERE m.tenant_id = 'tnt_chapexpress' AND m.role_id <> u.role_id`,
     );
     expect(Number(roleDivergent[0].n)).toBe(0);
   });

@@ -13,6 +13,9 @@ process.env.CONTRE_REMBOURSEMENT_ACTIF = 'true';
 // CHAP EXPRESS's FedaPay webhook secret, for the cross-company webhook test
 // (étape 5). Test-only value.
 process.env.FEDAPAY_WEBHOOK_SECRET = 'wh_e2e_chapexpress';
+// Master key of tenant_secrets (étape 8: FedaPay keys typed in the
+// back-office). Test-only value.
+process.env.TENANT_SECRETS_KEY = 'ZTJlLXVuaXF1ZW1lbnQtY2xlLWRlLXRlc3QtMzItb2M=';
 
 // Étape 7 (RLS): the API under test connects with a role that is neither
 // superuser nor BYPASSRLS, as in production, so the row-level policies are

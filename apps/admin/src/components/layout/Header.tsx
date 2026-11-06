@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/auth-store';
 import { useEntreprise } from '@/lib/entreprise';
+import { LIBELLES_ROLES } from '@/lib/permissions';
 
 /** Brand, signed-in name and sign-out; the menu lives in Navigation. */
 export function Header() {
@@ -34,7 +35,7 @@ export function Header() {
             <>
               <div className="hidden sm:flex flex-col text-right">
                 <span className="text-xs font-semibold text-white">{user.nom}</span>
-                <span className="text-[10px] text-white/60 capitalize">{user.role}</span>
+                <span className="text-[10px] text-white/60">{LIBELLES_ROLES[user.role] ?? user.role}</span>
               </div>
               <Button
                 variant="ghost"

@@ -8,8 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useLogin } from '@/api/auth';
 import { useAuthStore } from '@/stores/auth-store';
 import { useEntreprise } from '@/lib/entreprise';
-
-const ADMIN_ROLE_NAME = 'admin_dispatcher';
+import { ROLES_BACK_OFFICE } from '@/lib/permissions';
 
 export function LoginPage() {
   const entreprise = useEntreprise();
@@ -53,7 +52,7 @@ export function LoginPage() {
               { telephone, motDePasse },
               {
                 onSuccess: (data) => {
-                  if (data.user.role !== ADMIN_ROLE_NAME) {
+                  if (!ROLES_BACK_OFFICE.includes(data.user.role)) {
                     toast.error("Ce compte n'a pas accès au back-office.");
                     return;
                   }

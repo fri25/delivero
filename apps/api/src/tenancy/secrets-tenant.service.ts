@@ -1,5 +1,9 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -39,7 +43,10 @@ export class SecretsTenantService {
   async ecrire(tenantId: string, cle: string, valeur: string): Promise<void> {
     const maitre = this.cleMaitre();
     if (!maitre) {
-      throw new Error('TENANT_SECRETS_KEY absente : impossible de chiffrer.');
+      // 503: a missing server setting, not a fault of the caller.
+      throw new ServiceUnavailableException(
+        'Enregistrement des identifiants indisponible : TENANT_SECRETS_KEY absente du serveur.',
+      );
     }
     const valeurChiffree = chiffrer(valeur, maitre);
     await this.prisma.tenantSecret.upsert({

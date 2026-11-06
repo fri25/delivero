@@ -131,12 +131,14 @@ export class AuthService {
   }
 
   private toProfile(user: UtilisateurAvecRole) {
+    const role = roleEffectif(user, tenantCourant());
     return {
       id: user.id,
       telephone: user.telephone,
       email: user.email ?? null,
       nom: user.nom,
-      role: roleEffectif(user, tenantCourant()).name,
+      role: role.name,
+      permissions: role.permissions.map((rp) => rp.permission.code),
     };
   }
 }

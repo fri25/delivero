@@ -101,6 +101,15 @@ Légende : ✔ autorisé · ✔* autorisé avec restriction (voir note) · — n
   effet observable tant qu'un seul rôle existe et porte tous les codes, mais
   un second rôle plus restreint échouera désormais réellement sur les
   actions qui lui manquent.
+  **Depuis l'étape 8 du chantier multi-entreprises (06/11/2026)** : deux rôles
+  de back-office par entreprise, `admin_entreprise` (tout, plus réglages,
+  comptes, journal, clients) et `gestionnaire` (commandes, saisie, livreurs,
+  caisse, incidents sans remboursement, statistiques, clients ; ni zones,
+  quartiers, restaurants, promotions, remboursements, réglages, comptes ni
+  journal). `admin_dispatcher` porte les mêmes permissions
+  qu'`admin_entreprise` jusqu'au renommage de ses appartenances (étape 10).
+  Liste exacte : `apps/api/prisma/socle.ts` (`PERMISSIONS_PAR_ROLE`), codes de
+  rôles : `apps/api/src/auth/roles.ts`.
 - La colonne « Expéditeur de colis » documente l'usage du service Colis par un
   compte Client ; ce n'est pas un compte techniquement distinct (voir
   [service-colis.md](service-colis.md)).

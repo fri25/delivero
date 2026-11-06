@@ -1,3 +1,4 @@
+import { estBackOffice } from '../auth/roles';
 import {
   BadRequestException,
   ConflictException,
@@ -77,8 +78,6 @@ const DISPONIBLES_INCLUDE = {
   articles: { orderBy: { createdAt: 'asc' } },
   zone: { select: { id: true, nom: true } },
 } satisfies Prisma.CommandeEmplettesInclude;
-
-const ADMIN_ROLE_NAME = 'admin_dispatcher';
 
 // Frais de service Emplettes : aucun pourcentage/forfait n'est arbitré (voir
 // docs/service-emplettes.md "Flux financier"). Valeur PROVISOIRE, non validée
@@ -644,7 +643,8 @@ export class CommandesEmplettesService {
     commande: CommandeEmplettesDetail,
   ) {
     const isClient = commande.commande.clientId === userId;
-    const isAdmin = role === ADMIN_ROLE_NAME;
+    // Back-office: admin_entreprise, gestionnaire (src/auth/roles.ts).
+    const isAdmin = estBackOffice(role);
     let isLivreur = false;
     if (!isClient && !isAdmin && role === 'livreur') {
       const livreur = await this.prisma.livreur.findUnique({

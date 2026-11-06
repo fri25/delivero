@@ -27,9 +27,9 @@ export class RolesGuard implements CanActivate {
     }
 
     // V13 : au-delà du rôle, un contrôleur peut exiger des permissions
-    // précises (voir RequirePermissions) — seul admin_dispatcher en porte
-    // aujourd'hui (docs/acteurs.md), mais un rôle admin plus restreint
-    // pourra les échouer sans changement de code.
+    // précises (voir RequirePermissions), portées par les rôles du
+    // back-office (docs/acteurs.md) : gestionnaire, plus restreint
+    // qu'admin_entreprise, en échoue certaines (étape 8).
     const requiredPermissions = this.reflector.getAllAndOverride<string[]>(
       PERMISSIONS_KEY,
       [context.getHandler(), context.getClass()],

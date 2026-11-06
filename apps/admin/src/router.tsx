@@ -11,6 +11,10 @@ import { SaisieManuellePage } from '@/pages/SaisieManuellePage';
 import { TableauDeBordPage } from '@/pages/TableauDeBordPage';
 import { RemboursementsPage } from '@/pages/RemboursementsPage';
 import { RestaurantsPage } from '@/pages/RestaurantsPage';
+import { ClientsPage } from '@/pages/ClientsPage';
+import { UtilisateursPage } from '@/pages/UtilisateursPage';
+import { JournalPage } from '@/pages/JournalPage';
+import { ReglagesPage } from '@/pages/ReglagesPage';
 
 export const router = createBrowserRouter([
   {
@@ -20,7 +24,7 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission="statistiques.consulter_tout">
             <TableauDeBordPage />
           </ProtectedRoute>
         ),
@@ -28,7 +32,7 @@ export const router = createBrowserRouter([
       {
         path: 'commandes',
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission="commandes.consulter_toutes">
             <OverviewPage />
           </ProtectedRoute>
         ),
@@ -36,7 +40,7 @@ export const router = createBrowserRouter([
       {
         path: 'remboursements',
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission="paiements.rembourser">
             <RemboursementsPage />
           </ProtectedRoute>
         ),
@@ -44,7 +48,7 @@ export const router = createBrowserRouter([
       {
         path: 'restaurants',
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission="partenaires.gerer">
             <RestaurantsPage />
           </ProtectedRoute>
         ),
@@ -52,7 +56,7 @@ export const router = createBrowserRouter([
       {
         path: 'livreurs',
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission="livreurs.gerer">
             <LivreursPage />
           </ProtectedRoute>
         ),
@@ -60,7 +64,7 @@ export const router = createBrowserRouter([
       {
         path: 'zones',
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission="zones.gerer">
             <ZonesPage />
           </ProtectedRoute>
         ),
@@ -68,7 +72,7 @@ export const router = createBrowserRouter([
       {
         path: 'quartiers',
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission="zones.gerer">
             <QuartiersPage />
           </ProtectedRoute>
         ),
@@ -76,7 +80,7 @@ export const router = createBrowserRouter([
       {
         path: 'caisse',
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission="caisse.rapprocher">
             <CaissePage />
           </ProtectedRoute>
         ),
@@ -84,8 +88,41 @@ export const router = createBrowserRouter([
       {
         path: 'saisie-manuelle',
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute permission="commandes.saisir_manuelle">
             <SaisieManuellePage />
+          </ProtectedRoute>
+        ),
+      },
+      // Étape 8: the company's own space.
+      {
+        path: 'clients',
+        element: (
+          <ProtectedRoute permission="clients.consulter">
+            <ClientsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'utilisateurs',
+        element: (
+          <ProtectedRoute permission="entreprise.utilisateurs">
+            <UtilisateursPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'journal',
+        element: (
+          <ProtectedRoute permission="journal.consulter">
+            <JournalPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'reglages',
+        element: (
+          <ProtectedRoute permission="entreprise.parametres">
+            <ReglagesPage />
           </ProtectedRoute>
         ),
       },

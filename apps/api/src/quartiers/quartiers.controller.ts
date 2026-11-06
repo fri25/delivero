@@ -10,6 +10,7 @@ import {
 import { Public } from '../auth/decorators/public.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { ROLES_BACK_OFFICE } from '../auth/roles';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreateQuartierDto } from './dto/create-quartier.dto';
@@ -31,7 +32,7 @@ export class QuartiersController {
 /** Back-office: neighbourhoods and their price (same right as zones). */
 @Controller('admin/quartiers')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin_dispatcher')
+@Roles(...ROLES_BACK_OFFICE)
 @RequirePermissions('zones.gerer')
 export class AdminQuartiersController {
   constructor(private readonly quartiers: QuartiersService) {}

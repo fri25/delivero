@@ -557,6 +557,43 @@ Dans l'app `admin` existante :
 **Tests.** Un `gestionnaire` ne voit ni réglages ni utilisateurs ; un admin
 de A ne lit pas le journal de B.
 
+**État au 06/11/2026** (branche `multi-tenant`, non déployé) :
+
+- Migration `20261106140000_roles_entreprise` (idempotente, retour arrière
+  dans `prisma/retour-arriere/`) : rôles `admin_entreprise` et
+  `gestionnaire`, cinq permissions (`paiements.rembourser`,
+  `entreprise.parametres`, `entreprise.utilisateurs`, `journal.consulter`,
+  `clients.consulter`). Mêmes listes dans `prisma/socle.ts`.
+- **Écart au plan** : les appartenances `admin_dispatcher` ne sont **pas**
+  renommées dans cette version. `admin_dispatcher` reçoit les permissions
+  d'`admin_entreprise` : pendant un déploiement, l'ancienne API (qui ne
+  connaît que `admin_dispatcher`) et la nouvelle acceptent le même compte.
+  Le renommage est reporté au nettoyage de l'étape 10.
+- Contrôleurs : `@Roles(...ROLES_BACK_OFFICE)` + permissions
+  (`src/auth/roles.ts`) ; les remboursements exigent `paiements.rembourser`
+  en plus d'`incidents.traiter` (un gestionnaire annule sans rembourser). Le
+  profil (`/auth/me`, connexion) porte les permissions ; l'app admin
+  n'affiche que les écrans du rôle, une session enregistrée avant
+  l'étape 8 recharge son profil.
+- `src/entreprise/` : réglages (nom, logo, couleurs avec aperçu, contacts,
+  ville, commission Repas — saisie par l'entreprise, aucune valeur
+  proposée, confirmation à l'écran), clés FedaPay (chiffrées, jamais
+  renvoyées, adresse du webhook affichée ; 503 si `TENANT_SECRETS_KEY`
+  manque), comptes du back-office (ajout d'un numéro nouveau ou déjà connu
+  ailleurs, changement de rôle, suspension ; ni soi-même ni le dernier
+  administrateur), journal (intercepteur global : route, cible, noms des
+  champs, jamais les valeurs ; filtré par entreprise), clients (recherche,
+  nombre de commandes). Pays, devise, fuseau, indicatif et fonctionnalités
+  restent du ressort de la plateforme (étape 9).
+- Non fait : « paramètres de livraison » — les tarifs par quartier et les
+  zones ont déjà leurs écrans.
+- Tests : `test/entreprise.e2e-spec.ts` (gestionnaire refusé sur réglages,
+  comptes, journal, zones, restaurants et remboursements ; réglages servis
+  aussitôt et à leur seule entreprise ; clés jamais réaffichées ni stockées
+  en clair ; journal sans valeurs et cloisonné ; admin de A sans prise sur un
+  compte de B). e2e 82/82 sur base neuve ; écrans vérifiés en capture
+  (admin et gestionnaire).
+
 ## Étape 9 — App plateforme (super-admin)
 
 Nouvelle app `apps/plateforme`, même stack et composants, servie sur

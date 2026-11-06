@@ -1,3 +1,4 @@
+import { estBackOffice } from '../auth/roles';
 import {
   type Demandeur,
   demandeurCommande,
@@ -115,8 +116,6 @@ const SUIVI_PUBLIC_SELECT = {
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.CommandeColisSelect;
-
-const ADMIN_ROLE_NAME = 'admin_dispatcher';
 
 @Injectable()
 export class CommandesColisService {
@@ -611,7 +610,8 @@ export class CommandesColisService {
     commandeColis: CommandeColisDetail,
   ) {
     const isClient = commandeColis.commande.clientId === userId;
-    const isAdmin = role === ADMIN_ROLE_NAME;
+    // Back-office: admin_entreprise, gestionnaire (src/auth/roles.ts).
+    const isAdmin = estBackOffice(role);
     let isLivreur = false;
     if (!isClient && !isAdmin && role === 'livreur') {
       const livreur = await this.prisma.livreur.findUnique({

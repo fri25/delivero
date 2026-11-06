@@ -3,6 +3,8 @@ export interface User {
   telephone: string;
   nom: string;
   role: string;
+  /** Since étape 8; absent from a session saved by an older version. */
+  permissions?: string[];
 }
 
 export interface AuthResponse {

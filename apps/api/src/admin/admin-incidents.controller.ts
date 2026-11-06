@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { ROLES_BACK_OFFICE } from '../auth/roles';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import type { AuthenticatedUser } from '../auth/types/auth-user.type';
@@ -9,12 +10,10 @@ import { AdminIncidentsService } from './admin-incidents.service';
 import { AnnulerCommandeDto } from './dto/annuler-commande.dto';
 import { RembourserDto } from './dto/rembourser.dto';
 
-const ADMIN_ROLE_NAME = 'admin_dispatcher';
-
 // F-ADM-06: cancellation by the dispatcher and manual refunds.
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(ADMIN_ROLE_NAME)
+@Roles(...ROLES_BACK_OFFICE)
 @RequirePermissions('incidents.traiter')
 export class AdminIncidentsController {
   constructor(private readonly incidents: AdminIncidentsService) {}
@@ -28,12 +27,15 @@ export class AdminIncidentsController {
     return this.incidents.annuler(id, dto, user.id);
   }
 
+  // Étape 8: refunds need their own permission (not a gestionnaire's).
   @Get('remboursements')
+  @RequirePermissions('incidents.traiter', 'paiements.rembourser')
   lister() {
     return this.incidents.listerRemboursements();
   }
 
   @Patch('remboursements/:id')
+  @RequirePermissions('incidents.traiter', 'paiements.rembourser')
   rembourser(
     @Param('id') id: string,
     @Body() dto: RembourserDto,

@@ -415,7 +415,12 @@ Compte de démo : `+22900000004` / `demo12345` (rôle `admin_dispatcher`, voir
       motif si partiel, trace de qui/quand, client prévenu ; historique des 50
       derniers. Voir `apps/api/src/admin/admin-incidents.service.ts`. Restent :
       litiges, colis refusé/endommagé, article contesté, journal F-ADM-07)*
-- [ ] F-ADM-07 — Journal complet des actions (traçabilité)
+- [x] F-ADM-07 — Journal complet des actions (traçabilité) — *(06/11, étape 8
+      du chantier multi-entreprises : toute requête d'écriture réussie d'un
+      compte connecté est écrite dans `audit_logs` pour son entreprise — route,
+      identifiant visé, noms des champs envoyés, jamais leurs valeurs — avec les
+      événements de sécurité ; écran Journal du back-office, filtrable, réservé
+      à `admin_entreprise`. Voir `apps/api/src/entreprise/`)*
 
 ### Administration et pilotage
 - [ ] F-ADM-08 — Gestion des partenaires (création, convention, taux de commission,

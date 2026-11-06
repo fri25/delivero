@@ -26,6 +26,7 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
 import { TenancyModule } from './tenancy/tenancy.module';
 import { TenantMiddleware } from './tenancy/tenant.middleware';
 import { ZonesModule } from './zones/zones.module';
+import { EntrepriseModule } from './entreprise/entreprise.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { ZonesModule } from './zones/zones.module';
     InviteModule,
     ZonesModule,
     AdminModule,
+    EntrepriseModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

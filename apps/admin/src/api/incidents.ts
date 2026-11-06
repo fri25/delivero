@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './client';
 import { useAuthStore } from '../stores/auth-store';
 import type { Remboursement, Remboursements, TypeService } from './types';
+import { usePeut } from '../lib/permissions';
 
 // F-ADM-06 — cancellation by the dispatcher and manual refunds.
 
@@ -33,10 +34,12 @@ export function useAnnulerCommande() {
 
 export function useRemboursements() {
   const token = useAuthStore((state) => state.token);
+  const peut = usePeut();
   return useQuery({
     queryKey: ['admin-remboursements'],
     queryFn: () => apiFetch<Remboursements>('/admin/remboursements', { token }),
-    enabled: Boolean(token),
+    // A gestionnaire does not handle refunds (étape 8).
+    enabled: Boolean(token) && peut('paiements.rembourser'),
     refetchInterval: 30_000,
   });
 }

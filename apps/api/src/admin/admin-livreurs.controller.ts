@@ -10,17 +10,16 @@ import {
 } from '@nestjs/common';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { ROLES_BACK_OFFICE } from '../auth/roles';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { AdminLivreursService } from './admin-livreurs.service';
 import { CreateLivreurDto } from './dto/create-livreur.dto';
 import { UpdateLivreurDto } from './dto/update-livreur.dto';
 
-const ADMIN_ROLE_NAME = 'admin_dispatcher';
-
 @Controller('admin/livreurs')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(ADMIN_ROLE_NAME)
+@Roles(...ROLES_BACK_OFFICE)
 @RequirePermissions('livreurs.gerer')
 export class AdminLivreursController {
   constructor(private readonly adminLivreursService: AdminLivreursService) {}

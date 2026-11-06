@@ -1,3 +1,4 @@
+import { estBackOffice } from '../auth/roles';
 import {
   type Demandeur,
   demandeurCommande,
@@ -80,8 +81,6 @@ const DISPONIBLES_INCLUDE = {
   etapes: { orderBy: { ordre: 'asc' } },
   zone: { select: { id: true, nom: true } },
 } satisfies Prisma.CommandeCoursesExpressInclude;
-
-const ADMIN_ROLE_NAME = 'admin_dispatcher';
 
 @Injectable()
 export class CommandesCoursesExpressService {
@@ -487,7 +486,8 @@ export class CommandesCoursesExpressService {
     commande: CommandeCoursesExpressDetail,
   ) {
     const isClient = commande.commande.clientId === userId;
-    const isAdmin = role === ADMIN_ROLE_NAME;
+    // Back-office: admin_entreprise, gestionnaire (src/auth/roles.ts).
+    const isAdmin = estBackOffice(role);
     let isLivreur = false;
     if (!isClient && !isAdmin && role === 'livreur') {
       const livreur = await this.prisma.livreur.findUnique({

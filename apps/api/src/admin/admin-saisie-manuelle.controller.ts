@@ -9,6 +9,7 @@ import {
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { ROLES_BACK_OFFICE } from '../auth/roles';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import type { AuthenticatedUser } from '../auth/types/auth-user.type';
@@ -20,11 +21,9 @@ import { SaisieManuelleCoursesExpressDto } from './dto/saisie-manuelle-courses-e
 import { SaisieManuelleEmplettesDto } from './dto/saisie-manuelle-emplettes.dto';
 import { SaisieManuelleRepasDto } from './dto/saisie-manuelle-repas.dto';
 
-const ADMIN_ROLE_NAME = 'admin_dispatcher';
-
 @Controller('admin/saisie-manuelle')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(ADMIN_ROLE_NAME)
+@Roles(...ROLES_BACK_OFFICE)
 @RequirePermissions('commandes.saisir_manuelle')
 export class AdminSaisieManuelleController {
   constructor(

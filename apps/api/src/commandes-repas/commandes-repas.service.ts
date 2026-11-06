@@ -1,3 +1,4 @@
+import { estBackOffice } from '../auth/roles';
 import {
   type Demandeur,
   demandeurCommande,
@@ -100,8 +101,6 @@ const DISPONIBLES_INCLUDE = {
   },
   lignes: { include: { plat: { select: { id: true, nom: true } } } },
 } satisfies Prisma.CommandeRepasInclude;
-
-const ADMIN_ROLE_NAME = 'admin_dispatcher';
 
 @Injectable()
 export class CommandesRepasService {
@@ -584,7 +583,8 @@ export class CommandesRepasService {
   ) {
     const isClient = commandeRepas.commande.clientId === userId;
     const isRestaurant = commandeRepas.partenaire.userId === userId;
-    const isAdmin = role === ADMIN_ROLE_NAME;
+    // Back-office: admin_entreprise, gestionnaire (src/auth/roles.ts).
+    const isAdmin = estBackOffice(role);
     let isLivreur = false;
     if (!isClient && !isRestaurant && !isAdmin && role === 'livreur') {
       const livreur = await this.prisma.livreur.findUnique({
