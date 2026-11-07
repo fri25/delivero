@@ -302,7 +302,7 @@ export function ZonesPage() {
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Frais de livraison et tarifs de base par zone opérationnelle (F-ADM-10).
+            Frais de livraison et tarifs de base par zone opérationnelle.
           </p>
         </div>
       </div>

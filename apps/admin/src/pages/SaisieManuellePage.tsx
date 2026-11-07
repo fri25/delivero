@@ -614,7 +614,7 @@ function FormColis() {
       <div className="flex items-start gap-2.5 rounded-xl bg-muted/40 p-3 text-xs text-muted-foreground border border-border/50">
         <Info className="size-4 shrink-0 text-primary mt-0.5" />
         <p>
-          Rappel réglementaire (RG-16) : l'opérateur doit s'assurer verbalement auprès de l'appelant qu'aucun produit
+          Rappel réglementaire : l'opérateur doit s'assurer verbalement auprès de l'appelant qu'aucun produit
           interdit, illicite ou dangereux n'est transporté avant validation.
         </p>
       </div>
@@ -995,7 +995,7 @@ export function SaisieManuellePage() {
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Prise de commande en direct par téléphone ou WhatsApp (F-ADM-04).
+            Prise de commande en direct par téléphone ou WhatsApp.
           </p>
         </div>
 

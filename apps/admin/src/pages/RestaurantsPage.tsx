@@ -368,7 +368,7 @@ export function RestaurantsPage() {
 
       <div className="rounded-2xl border border-border/60 bg-muted/30 p-3.5 text-xs text-muted-foreground">
         Commission Repas : 15 % facturés au client sur (plats + livraison). Le restaurant partenaire est payé
-        au prix net de sa carte (RG-08).
+        au prix net de sa carte.
       </div>
     </div>
   );

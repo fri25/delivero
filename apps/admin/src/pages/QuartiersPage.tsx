@@ -47,7 +47,7 @@ export function QuartiersPage() {
       <div className="flex items-start gap-3 rounded-2xl border border-border/70 bg-card p-4 shadow-xs text-xs sm:text-sm text-muted-foreground">
         <Info className="size-4 text-primary shrink-0 mt-0.5" />
         <p>
-          Règle tarifaire (Q-28) : Le quartier du client fixe les frais de livraison <strong className="text-foreground font-semibold">Repas</strong>, le prix d'un <strong className="text-foreground font-semibold">Colis</strong> (quartier du destinataire) et d'une <strong className="text-foreground font-semibold">Course express</strong> (quartier le plus cher × nombre d'arrêts). Toute modification n'affecte que les commandes futures.
+          Règle tarifaire : le quartier du client fixe les frais de livraison <strong className="text-foreground font-semibold">Repas</strong>, le prix d'un <strong className="text-foreground font-semibold">Colis</strong> (quartier du destinataire) et d'une <strong className="text-foreground font-semibold">Course express</strong> (quartier le plus cher × nombre d'arrêts). Toute modification n'affecte que les commandes futures.
         </p>
       </div>
 
