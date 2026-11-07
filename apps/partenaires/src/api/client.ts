@@ -1,3 +1,6 @@
+import { toast } from 'sonner';
+import { useAuthStore } from '../stores/auth-store';
+
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
 
 interface ApiErrorBody {
@@ -40,6 +43,15 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
+
+  // Expired or revoked session (JWT lasts 2h in production). Without this the
+  // stale token stays in storage and every screen fails. Only drop the session
+  // that made this request: a stale in-flight call must not log out an account
+  // that signed in since. The route guard then redirects to the login page.
+  if (response.status === 401 && token && useAuthStore.getState().token === token) {
+    useAuthStore.getState().logout();
+    toast.info('Votre session a expiré. Reconnectez-vous.', { id: 'session-expiree' });
+  }
 
   if (response.status === 204) {
     return undefined as T;
